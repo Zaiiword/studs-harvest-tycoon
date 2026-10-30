@@ -60,7 +60,8 @@ local function launchBricks(x: number, z: number, target: BasePart)
 		end
 		local jitterX = random:NextNumber(-SPAWN_JITTER, SPAWN_JITTER)
 		local jitterZ = random:NextNumber(-SPAWN_JITTER, SPAWN_JITTER)
-		local from = Vector3.new(x + jitterX, MapConfig.FLOOR_TOP + FieldConfig.STALK_SIZE[2], z + jitterZ)
+		local earHeight = FieldConfig.PLANT.STEM[2] + FieldConfig.PLANT.EAR[2] / 2 -- les briques partent de l'épi
+		local from = Vector3.new(x + jitterX, MapConfig.FLOOR_TOP + earHeight, z + jitterZ)
 		table.insert(flights, { part = part, from = from, target = target, startedAt = now })
 	end
 end

@@ -54,6 +54,9 @@ local function addConstraints(body: Part)
 	mover.PrimaryTangentAxis = Vector3.xAxis
 	mover.SecondaryTangentAxis = Vector3.zAxis
 	mover.PlaneVelocity = Vector2.zero
+	-- Force illimitée : l'engin suit exactement la consigne. Une force proportionnelle à AssemblyMass était
+	-- lue avant que la soudure soit prise en compte et valait presque zéro (véhicule immobile).
+	mover.MaxForce = math.huge
 	mover.Parent = body
 	local aligner = Instance.new("AlignOrientation")
 	aligner.Name = VehicleService.ALIGNER_NAME
@@ -94,8 +97,11 @@ local function mountVehicle(character: Model, tier: VehicleConfig.TierDef, def: 
 	addConstraints(body)
 	body.Parent = character
 	humanoid.PlatformStand = true -- l'Humanoid ne doit pas lutter contre LinearVelocity
-	local mover = body:FindFirstChild(VehicleService.MOVER_NAME) :: LinearVelocity
-	mover.MaxForce = root.AssemblyMass * HANDLING.MAX_FORCE_PER_MASS
+	-- Le pilote doit simuler lui-même son engin pour que ses consignes LinearVelocity s'appliquent.
+	local player = Players:GetPlayerFromCharacter(character)
+	if player then
+		pcall(root.SetNetworkOwner, root, player)
+	end
 end
 
 local function refreshVehicle(player: Player)

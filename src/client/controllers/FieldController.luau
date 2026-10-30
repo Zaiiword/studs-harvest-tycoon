@@ -23,16 +23,21 @@ local FieldController = {}
 
 FieldController.CellCut = Signal.new()
 
+-- Un brin affiché : une tige fine et un épi (A36).
+type Plant = { stem: Part, ear: Part }
+
 local PARKED = CFrame.new(0, -1000, 0)
-local STALK_SIZE = Vector3.new(FieldConfig.STALK_SIZE[1], FieldConfig.STALK_SIZE[2], FieldConfig.STALK_SIZE[3])
+local PLANT = FieldConfig.PLANT
+local STEM_SIZE = Vector3.new(PLANT.STEM[1], PLANT.STEM[2], PLANT.STEM[3])
+local EAR_SIZE = Vector3.new(PLANT.EAR[1], PLANT.EAR[2], PLANT.EAR[3])
 
 -- Miroir local : la rareté réelle de chaque brin vient du serveur (snapshot puis lots).
 local grid = FieldGrid.new(function()
 	return 0.5
 end)
 local chunkMap = FieldChunks.build(grid)
-local freeParts: { Part } = {}
-local stalks: { [number]: Part } = {} -- index → pièce, seulement pour les chunks affichés
+local freePlants: { Plant } = {}
+local stalks: { [number]: Plant } = {} -- index → brin affiché, seulement pour les chunks affichés
 local shownChunks: { [number]: FieldChunks.Chunk } = {}
 local beams: { [number]: Part } = {}
 local predicted: { [number]: number } = {} -- index → instant de la prédiction
@@ -65,30 +70,44 @@ local function setBeam(index: number, cell: FieldGrid.Cell, isVisible: boolean)
 	beams[index] = beam
 end
 
--- Met la pièce d'un brin affiché en accord avec le miroir (debout, coupé ou coupe prédite).
+local function shaded(rgb: { number }, shade: number): Color3
+	local color = Bricks.rgb(rgb)
+	return Color3.new(math.min(1, color.R * shade), math.min(1, color.G * shade), math.min(1, color.B * shade))
+end
+
+local function setVisible(plant: Plant, isVisible: boolean)
+	local transparency = if isVisible then 0 else 1
+	plant.stem.Transparency = transparency
+	plant.ear.Transparency = transparency
+end
+
+-- Met un brin affiché en accord avec le miroir (debout, coupé ou coupe prédite). La tige penche un peu,
+-- l'épi la prolonge : chaque brin a sa hauteur, son orientation et sa teinte (A35, A36).
 local function renderStalk(index: number)
 	local cell = grid:cell(index)
-	local part = stalks[index]
-	if not cell or not part then
+	local plant = stalks[index]
+	if not cell or not plant then
 		return
 	end
 	if not cell.isGrown or predicted[index] then
-		part.Transparency = 1
+		setVisible(plant, false)
 		return
 	end
-	local variation = Decor.stalkVariation(index) -- chaque brin un peu différent (A35)
-	local size = STALK_SIZE * Rarity.byId(cell.rarity).sizeMultiplier * Vector3.new(1, variation.heightScale, 1)
-	local isRainbow = cell.rarity == Rarity.RAINBOW
-	local base = Bricks.rgb(FieldConfig.WHEAT_ZONES[cell.zone].color)
-	part.Size = size
-	part.CFrame = CFrame.new(cell.x, MapConfig.FLOOR_TOP + size.Y / 2, cell.z) * CFrame.Angles(0, variation.yaw, 0)
-	part.Material = if isRainbow then Enum.Material.Neon else Enum.Material.Plastic
-	part.Color = Color3.new(
-		math.min(1, base.R * variation.shade),
-		math.min(1, base.G * variation.shade),
-		math.min(1, base.B * variation.shade)
-	)
-	part.Transparency = 0
+	local variation = Decor.stalkVariation(index)
+	local scale = Rarity.byId(cell.rarity).sizeMultiplier
+	local stemSize = STEM_SIZE * scale * Vector3.new(1, variation.heightScale, 1)
+	local earSize = EAR_SIZE * scale
+	local zone = FieldConfig.WHEAT_ZONES[cell.zone]
+	local foot = CFrame.new(cell.x, MapConfig.FLOOR_TOP, cell.z)
+		* CFrame.Angles(0, variation.yaw, 0)
+		* CFrame.Angles(variation.lean, 0, 0)
+	plant.stem.Size, plant.ear.Size = stemSize, earSize
+	plant.stem.CFrame = foot * CFrame.new(0, stemSize.Y / 2, 0)
+	plant.ear.CFrame = foot * CFrame.new(0, stemSize.Y + earSize.Y / 2, 0)
+	plant.stem.Color = shaded(zone.stemColor, variation.shade)
+	plant.ear.Color = shaded(zone.color, variation.shade)
+	plant.ear.Material = if cell.rarity == Rarity.RAINBOW then Enum.Material.Neon else Enum.Material.Plastic
+	setVisible(plant, true)
 end
 
 local function onCellChanged(index: number)
@@ -101,11 +120,11 @@ end
 
 local function releaseChunk(chunk: FieldChunks.Chunk)
 	for _, index in chunk.indices do
-		local part = stalks[index]
-		if part then
-			part.Transparency = 1
-			part.CFrame = PARKED
-			table.insert(freeParts, part)
+		local plant = stalks[index]
+		if plant then
+			setVisible(plant, false)
+			plant.stem.CFrame, plant.ear.CFrame = PARKED, PARKED
+			table.insert(freePlants, plant)
 			stalks[index] = nil
 		end
 	end
@@ -114,11 +133,11 @@ end
 
 local function showChunk(chunk: FieldChunks.Chunk)
 	for _, index in chunk.indices do
-		local part = table.remove(freeParts)
-		if not part then
+		local plant = table.remove(freePlants)
+		if not plant then
 			return -- impossible tant que FieldChunks.visible respecte le budget
 		end
-		stalks[index] = part
+		stalks[index] = plant
 		renderStalk(index)
 	end
 	shownChunks[chunk.key] = chunk
@@ -210,9 +229,9 @@ local function animateRainbows(deltaTime: number)
 	local color = Color3.fromHSV(hue, 1, 1)
 	for index, beam in beams do
 		beam.Color = color
-		local part = stalks[index]
-		if part then
-			part.Color = color
+		local plant = stalks[index]
+		if plant then
+			plant.ear.Color = color
 		end
 	end
 end
@@ -255,12 +274,18 @@ end
 function FieldController:Init()
 	folder = Instance.new("Folder")
 	folder.Name = "Field"
+	local zone = FieldConfig.WHEAT_ZONES.GreenWheat
 	for k = 1, FieldConfig.MAX_STALKS do
-		local part = Bricks.decor(`Stalk{k}`, STALK_SIZE, FieldConfig.WHEAT_ZONES.GreenWheat.color)
-		part.Transparency = 1
-		part.CFrame = PARKED
-		part.Parent = folder
-		table.insert(freeParts, part)
+		local plant = {
+			stem = Bricks.decor(`Stem{k}`, STEM_SIZE, zone.stemColor),
+			ear = Bricks.decor(`Ear{k}`, EAR_SIZE, zone.color),
+		}
+		for _, part in { plant.stem, plant.ear } do
+			part.Transparency = 1
+			part.CFrame = PARKED
+			part.Parent = folder
+		end
+		table.insert(freePlants, plant)
 	end
 	folder.Parent = Workspace
 end

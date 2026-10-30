@@ -2,6 +2,7 @@
 -- Placement du décor (CDC §2), sans API Roblox : murs de la tige, clôtures des bases, arbres, portiques
 -- et variation déterministe des brins. Les builders serveur et client se contentent de poser les pièces.
 local DecorConfig = require("../config/DecorConfig")
+local FieldConfig = require("../config/FieldConfig")
 local MapConfig = require("../config/MapConfig")
 local TycoonConfig = require("../config/TycoonConfig")
 local MapGeometry = require("./MapGeometry")
@@ -9,7 +10,7 @@ local MapGeometry = require("./MapGeometry")
 export type Segment = { x1: number, z1: number, x2: number, z2: number }
 export type Spot = { x: number, z: number }
 export type Gate = { id: string, x: number, halfWidth: number }
-export type StalkVariation = { heightScale: number, yaw: number, shade: number }
+export type StalkVariation = { heightScale: number, yaw: number, shade: number, lean: number }
 
 local Decor = {}
 
@@ -93,6 +94,7 @@ function Decor.stalkVariation(index: number): StalkVariation
 		heightScale = 1 + (hash01(index, 1) * 2 - 1) * variation.HEIGHT,
 		yaw = hash01(index, 2) * math.pi / 2, -- un quart de tour suffit pour une brique carrée
 		shade = 1 + (hash01(index, 3) * 2 - 1) * variation.SHADE,
+		lean = (hash01(index, 4) * 2 - 1) * FieldConfig.PLANT.MAX_LEAN,
 	}
 end
 

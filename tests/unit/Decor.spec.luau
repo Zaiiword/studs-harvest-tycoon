@@ -1,6 +1,7 @@
 --!strict
 local TestKit = require("../TestKit")
 local DecorConfig = require("../../src/shared/config/DecorConfig")
+local FieldConfig = require("../../src/shared/config/FieldConfig")
 local MapConfig = require("../../src/shared/config/MapConfig")
 local Decor = require("../../src/shared/domain/Decor")
 local MapGeometry = require("../../src/shared/domain/MapGeometry")
@@ -75,6 +76,7 @@ describe("Decor", function()
 				local v = Decor.stalkVariation(index)
 				expect(math.abs(v.heightScale - 1) <= variation.HEIGHT).toBe(true)
 				expect(math.abs(v.shade - 1) <= variation.SHADE).toBe(true)
+				expect(math.abs(v.lean) <= FieldConfig.PLANT.MAX_LEAN).toBe(true)
 			end
 		end)
 		it("varie d'un brin à l'autre", function()

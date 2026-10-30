@@ -5,7 +5,8 @@ local Freeze = require("../util/Freeze")
 export type WheatZoneDef = {
 	hp: number,
 	value: number,
-	color: { number },
+	color: { number }, -- couleur de l'épi
+	stemColor: { number },
 }
 
 export type RarityDef = {
@@ -27,9 +28,9 @@ return Freeze.deep({
 
 	-- CDC §3. Clés = id des bandes de MapConfig.
 	WHEAT_ZONES = {
-		GreenWheat = { hp = 1, value = 1, color = { 40, 127, 71 } },
-		GoldenCorn = { hp = 15, value = 25, color = { 245, 205, 48 } },
-		DiamondWheat = { hp = 100, value = 250, color = { 128, 230, 255 } },
+		GreenWheat = { hp = 1, value = 1, color = { 196, 220, 90 }, stemColor = { 75, 151, 75 } },
+		GoldenCorn = { hp = 15, value = 25, color = { 245, 205, 48 }, stemColor = { 120, 160, 60 } },
+		DiamondWheat = { hp = 100, value = 250, color = { 128, 230, 255 }, stemColor = { 90, 140, 200 } },
 	} :: { [string]: WheatZoneDef },
 
 	-- CDC §4 + décision A4 (le Géant a 3× plus de PV, l'Arc-en-ciel non).
@@ -59,7 +60,12 @@ return Freeze.deep({
 	PREDICTION_TIMEOUT = 1,
 
 	-- Rendu client des brins (CDC §2, §4).
-	STALK_SIZE = { 2.4, 4, 2.4 },
+	-- Un brin = une tige fine + un épi (2 pièces, A36). Hauteur totale : STEM + EAR (≈ 6 studs).
+	PLANT = {
+		STEM = { 0.5, 3.6, 0.5 },
+		EAR = { 1.3, 2.6, 1.3 },
+		MAX_LEAN = 0.18, -- inclinaison maximale (radians) : le champ n'est pas une grille au garde-à-vous
+	},
 	RAINBOW_BEAM_HEIGHT = 160, -- CDC §4 : faisceau visible de toute la carte
 	RAINBOW_BEAM_WIDTH = 0.8,
 	RAINBOW_BEAM_TRANSPARENCY = 0.4,

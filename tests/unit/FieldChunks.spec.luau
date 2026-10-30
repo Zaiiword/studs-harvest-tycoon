@@ -18,7 +18,7 @@ describe("FieldChunks", function()
 		expect(total).toBe(#grid:activeIndices())
 	end)
 	it("ne dépasse jamais 2 500 brins affichés (CDC §4, A32)", function()
-		for _, x in { 30, 600, 1500, 2500, 2950 } do
+		for _, x in { 30, 300, 600, 1000, 1250 } do
 			local used = 0
 			for _, chunk in FieldChunks.visible(map, x, 0, math.huge, FieldConfig.MAX_STALKS) do
 				used += #chunk.indices

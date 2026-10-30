@@ -35,8 +35,12 @@ local function flatten(vector: Vector3): Vector3
 	return if flat.Magnitude > 1e-6 then flat.Unit else Vector3.zero
 end
 
--- Direction voulue en coordonnées monde : le stick « avant » pousse dans la direction de la caméra.
-local function desiredDirection(): Vector3
+-- Direction voulue en coordonnées monde, relative à la caméra. Source principale : Humanoid.MoveDirection,
+-- que les scripts de contrôle Roblox mettent à jour sur PC, mobile et manette. Secours : le ControlModule.
+local function desiredDirection(humanoid: Humanoid?): Vector3
+	if humanoid and humanoid.MoveDirection.Magnitude > 0 then
+		return humanoid.MoveDirection
+	end
 	local camera = Workspace.CurrentCamera
 	if not controls or not camera then
 		return Vector3.zero
@@ -69,11 +73,15 @@ local function drive(deltaTime: number)
 		heading = nil
 		return
 	end
+	local humanoid = (character :: Model):FindFirstChildOfClass("Humanoid")
+	if humanoid and not humanoid.PlatformStand then
+		humanoid.PlatformStand = true -- au cas où la réplication serveur arrive après le montage
+	end
 	if heading == nil then
 		local look = root.CFrame.LookVector
 		heading = math.atan2(look.Z, look.X)
 	end
-	local direction = desiredDirection()
+	local direction = desiredDirection(humanoid)
 	local velocity = root.AssemblyLinearVelocity
 	local state = VehicleMotion.step(
 		{ heading = heading :: number, vx = velocity.X, vz = velocity.Z },
@@ -87,9 +95,16 @@ local function drive(deltaTime: number)
 end
 
 function VehicleController:Start()
-	local playerModule = localPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
-	controls = (require :: any)(playerModule):GetControls()
 	RunService.Heartbeat:Connect(drive)
+	local ok, result = pcall(function()
+		local playerModule = localPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule", 10)
+		return (require :: any)(playerModule):GetControls()
+	end)
+	if ok then
+		controls = result
+	else
+		warn(`[VehicleController] ControlModule indisponible, seul Humanoid.MoveDirection sera utilisé : {result}`)
+	end
 end
 
 return VehicleController

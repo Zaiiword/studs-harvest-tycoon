@@ -173,7 +173,6 @@ return Freeze.deep({
 		GRIP = 4,
 		LATERAL_GRIP = 2.2,
 		INPUT_DEADZONE = 0.05,
-		MAX_FORCE_PER_MASS = 400, -- force max des contraintes, proportionnelle à la masse de l'assemblage
 		ALIGN_RESPONSIVENESS = 40,
 		SEAT_HEIGHT = 1.5, -- le pilote est soudé 1,5 stud au-dessus de la carrosserie
 		FRICTION = 0.05, -- la carrosserie glisse : c'est LinearVelocity qui la déplace
