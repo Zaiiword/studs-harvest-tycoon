@@ -22,6 +22,9 @@ local function grantItems(player: Player)
 	for _, item in SabotageConfig.ITEMS do
 		InventoryService.add(player, item.id, DevCommands.ITEMS_GRANT)
 	end
+	for trophy in SabotageConfig.TROPHIES do -- Œufs Légendaires, pour tester l'éclosion
+		InventoryService.add(player, trophy, DevCommands.ITEMS_GRANT)
+	end
 	TycoonService.grantGems(player, DevCommands.GEMS_GRANT)
 end
 

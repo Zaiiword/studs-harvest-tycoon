@@ -4,6 +4,7 @@
 local TestKit = require("../TestKit")
 local FakeDataStore = require("../helpers/FakeDataStore")
 local TycoonConfig = require("../../src/shared/config/TycoonConfig")
+local Pets = require("../../src/shared/domain/Pets")
 local Profile = require("../../src/shared/domain/Profile")
 local ProfileStore = require("../../src/shared/domain/ProfileStore")
 local Rebirth = require("../../src/shared/domain/Rebirth")
@@ -35,7 +36,14 @@ describe("Session joueur", function()
 		state.money = 1_000_000
 		expect(Rebirth.apply(state, progress)).toBe(true)
 		Tycoon.deposit(state, 40)
-		server:save("player_1", Profile.fromGame(state, 1, progress, { LegendaryEgg = 1 }), true)
+		local parts = {
+			tycoon = state,
+			tier = 1,
+			progress = progress,
+			items = { LegendaryEgg = 1 },
+			pets = Pets.newCollection(),
+		}
+		server:save("player_1", Profile.fromGame(parts), true)
 
 		local restored = serverStore(fake, "srv-2", clock):load("player_1").data :: Profile.Data
 		expect(restored.rebirths).toBe(1)

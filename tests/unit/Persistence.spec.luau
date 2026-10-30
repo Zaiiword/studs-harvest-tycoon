@@ -3,6 +3,7 @@
 local TestKit = require("../TestKit")
 local FakeDataStore = require("../helpers/FakeDataStore")
 local TycoonConfig = require("../../src/shared/config/TycoonConfig")
+local Pets = require("../../src/shared/domain/Pets")
 local Profile = require("../../src/shared/domain/Profile")
 local ProfileStore = require("../../src/shared/domain/ProfileStore")
 local Rebirth = require("../../src/shared/domain/Rebirth")
@@ -74,7 +75,18 @@ describe("Profile", function()
 	it("fait l'aller-retour jeu → profil → jeu", function()
 		local state = completeTycoon(1234)
 		state.silo, state.conveyorLevel = 77, 5
-		local data = Profile.fromGame(state, 4, { rebirths = 2, gems = 30 }, { Mud = 3 })
+		local pets = Pets.newCollection()
+		Pets.add(pets, "Dragon:Gold")
+		Pets.equip(pets, "Dragon:Gold")
+		local data = Profile.fromGame({
+			tycoon = state,
+			tier = 4,
+			progress = { rebirths = 2, gems = 30 },
+			items = { Mud = 3 },
+			pets = pets,
+		})
+		expect(data.pets.owned["Dragon:Gold"]).toBe(1)
+		expect(data.pets.equipped[1]).toBe("Dragon:Gold")
 		local restored = Profile.toTycoon(data)
 		expect(restored.money).toBe(1234)
 		expect(restored.conveyorLevel).toBe(5)
@@ -83,9 +95,10 @@ describe("Profile", function()
 		expect(Profile.toProgress(data).gems).toBe(30)
 		expect(data.items.Mud).toBe(3)
 	end)
-	it("migre un profil v1 (sans inventaire) vers v2", function()
+	it("migre un profil v1 (sans inventaire ni Pets) vers la version courante", function()
 		local data = Profile.sanitize({ version = 1, money = 42, tier = 3 })
-		expect(data.version).toBe(2)
+		expect(data.version).toBe(Profile.VERSION)
+		expect(next(data.pets.owned)).toBe(nil)
 		expect(data.money).toBe(42)
 		expect(next(data.items)).toBe(nil)
 	end)

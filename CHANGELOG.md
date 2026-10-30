@@ -2,6 +2,19 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Sprint 6 — Gacha Pets
+
+### Ajouté
+- `Pets` (pur) : tirage pondéré par œuf, bonus par rareté (CDC §8), variantes Or ×2 / Arc-en-ciel ×5 (A17),
+  équipement (3 au plus), fusion de 5 identiques, nettoyage des données, encodage réseau.
+- `PetService` : distributeurs d'œufs sur chaque base (Basique, Ferme, Rebirth) avec prix et chances,
+  Œuf Légendaire ouvert depuis le menu, annonce du Secret Mythique dans le chat (A42, A43).
+- Bonus des Pets sur les revenus de l'usine et sur la puissance de coupe (récolte, boss) (A1, A2).
+- Client : Pets en briques qui suivent leur maître en sautillant (Or brillant, Arc-en-ciel animé), menu 🐾
+  (équiper, retirer, fusionner, ouvrir, chances), animation d'éclosion.
+- Profil v3 avec les Pets (migration automatique) ; `Profile.fromGame` prend une table typée.
+- Tests : tirage, fusion, équipement, sauvegarde, effet sur l'usine et la coupe, validation réseau.
+
 ## Sprint 5 — Événements, boss Météorite et sabotage
 
 ### Ajouté

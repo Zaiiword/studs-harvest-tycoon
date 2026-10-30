@@ -15,7 +15,7 @@ local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
-local Inventory = require(ReplicatedStorage.Shared.domain.Inventory)
+local Pets = require(ReplicatedStorage.Shared.domain.Pets)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Profile = require(ReplicatedStorage.Shared.domain.Profile)
 local Rebirth = require(ReplicatedStorage.Shared.domain.Rebirth)
@@ -58,11 +58,17 @@ local REBIRTH = TycoonConfig.REBIRTH_NAME
 local entries: { [Player]: Entry } = {}
 local pendingProfiles: { [Player]: Profile.Data } = {} -- profil chargé avant que la base soit attribuée
 
--- Bonus de revenus : Rebirths + multiplicateur temporaire posé par EventService (récompense du boss).
+-- Bonus de revenus : Rebirths, Pets équipés (attribut posé par PetService, CDC §8) et multiplicateur
+-- temporaire posé par EventService (récompense du boss). Lus dans les attributs : l'usine ne dépend
+-- ni des Pets ni des événements.
 local function bonusOf(player: Player, entry: Entry): Tycoon.IncomeBonus
 	local boostUntil = player:GetAttribute(PlayerAttributes.BOOST_UNTIL)
 	local isBoosted = typeof(boostUntil) == "number" and Workspace:GetServerTimeNow() < boostUntil
-	return Rebirth.incomeBonus(entry.progress, if isBoosted then EventConfig.METEOR.REWARD_INCOME_MULTIPLIER else 1)
+	local bonus =
+		Rebirth.incomeBonus(entry.progress, if isBoosted then EventConfig.METEOR.REWARD_INCOME_MULTIPLIER else 1)
+	local equipped = Pets.decodeEquipped(player:GetAttribute(PlayerAttributes.EQUIPPED_PETS))
+	bonus.petBonuses = Pets.bonuses({ owned = {}, equipped = equipped })
+	return bonus
 end
 local incomeElapsed, padElapsed = 0, 0
 
@@ -342,15 +348,27 @@ function TycoonService.restore(player: Player, data: Profile.Data)
 	end
 end
 
--- Profil à sauvegarder (avec l'inventaire fourni par InventoryService), ou nil sans usine.
-function TycoonService.snapshot(player: Player, items: Inventory.Inventory): Profile.Data?
+export type Snapshot = { tycoon: Tycoon.State, tier: number, progress: Rebirth.Progress }
+
+-- Part de l'usine dans le profil à sauvegarder (DataService y ajoute l'inventaire et les Pets).
+function TycoonService.snapshot(player: Player): Snapshot?
 	local entry = entries[player]
 	if not entry then
 		return nil
 	end
-	return Profile.fromGame(entry.state, VehicleService.tierOf(player).id, entry.progress, items)
+	return { tycoon = entry.state, tier = VehicleService.tierOf(player).id, progress = entry.progress }
 end
 
+-- Dépense de l'argent (distributeurs d'œufs). Renvoie false si le joueur n'en a pas assez.
+function TycoonService.spendMoney(player: Player, amount: number): boolean
+	local entry = entries[player]
+	if not entry or amount <= 0 or entry.state.money < amount then
+		return false
+	end
+	entry.state.money -= amount
+	publish(player, entry)
+	return true
+end
 -- Crédite des gemmes (panneau de test ; récompenses aux sprints suivants).
 function TycoonService.grantGems(player: Player, amount: number)
 	local entry = entries[player]

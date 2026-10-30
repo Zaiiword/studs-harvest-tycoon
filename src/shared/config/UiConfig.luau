@@ -48,6 +48,27 @@ return Freeze.deep({
 		TOAST_SECONDS = 2.5,
 		KEYS = { "One", "Two", "Three", "Four" } :: { string },
 	},
+	-- Menu des Pets (CDC §7.2) : bouton 🐾 en bas à gauche.
+	PET_MENU = {
+		WIDTH = 620,
+		HEIGHT = 420,
+		ROW_HEIGHT = 40,
+		NAME_WIDTH = 330,
+		BUTTON_WIDTH = 120,
+		TOGGLE_SIZE = 64,
+		TOGGLE_MARGIN = 16,
+		BUTTON_COLOR = { 98, 37, 209 },
+		ROW_COLOR = { 27, 42, 53 },
+	},
+	-- Éclosion : l'œuf tremble, puis le Pet est révélé.
+	HATCH = {
+		EGG_SIZE = 160,
+		REVEAL_WIDTH = 640,
+		REVEAL_HEIGHT = 60,
+		SHAKE_SECONDS = 1.2,
+		SHAKE_DEGREES = 18,
+		REVEAL_SECONDS = 3,
+	},
 	-- Panneau de test (Studio uniquement).
 	DEV_PANEL = {
 		BUTTON_WIDTH = 96,

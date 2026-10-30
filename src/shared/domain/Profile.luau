@@ -5,6 +5,7 @@
 local TycoonConfig = require("../config/TycoonConfig")
 local VehicleConfig = require("../config/VehicleConfig")
 local Inventory = require("./Inventory")
+local Pets = require("./Pets")
 local Rebirth = require("./Rebirth")
 local Tycoon = require("./Tycoon")
 
@@ -18,12 +19,23 @@ export type Data = {
 	rebirths: number,
 	gems: number,
 	items: Inventory.Inventory, -- v2 : objets de sabotage et récompenses (Sprint 5)
+	pets: Pets.Collection, -- v3 : Pets possédés et équipés (Sprint 6)
+}
+
+-- Ce que les services fournissent pour composer un profil à sauvegarder.
+export type GameParts = {
+	tycoon: Tycoon.State,
+	tier: number,
+	progress: Rebirth.Progress,
+	items: Inventory.Inventory,
+	pets: Pets.Collection,
 }
 
 local Profile = {}
 
--- v1 → v2 : ajout de `items`. Un profil v1 n'en a pas : sanitize lui donne un inventaire vide.
-Profile.VERSION = 2
+-- v1 → v2 : ajout de `items` ; v2 → v3 : ajout de `pets`. Un champ absent reprend sa valeur par défaut :
+-- la migration est donc faite par `sanitize`, sans code spécifique.
+Profile.VERSION = 3
 
 local knownMachines: { [string]: boolean } = {}
 for _, machine in TycoonConfig.MACHINES do
@@ -41,6 +53,7 @@ function Profile.default(): Data
 		rebirths = 0,
 		gems = 0,
 		items = {},
+		pets = Pets.newCollection(),
 	}
 end
 
@@ -79,15 +92,12 @@ function Profile.sanitize(raw: any): Data
 		rebirths = number(source.rebirths, 0, math.huge - 1, 0, true),
 		gems = number(source.gems, 0, math.huge - 1, 0, true),
 		items = Inventory.sanitize(source.items),
+		pets = Pets.sanitize(source.pets),
 	}
 end
 
-function Profile.fromGame(
-	state: Tycoon.State,
-	tier: number,
-	progress: Rebirth.Progress,
-	items: Inventory.Inventory
-): Data
+function Profile.fromGame(parts: GameParts): Data
+	local state = parts.tycoon
 	local machines: { string } = {}
 	for id, isOwned in state.machines do
 		if isOwned then
@@ -100,10 +110,11 @@ function Profile.fromGame(
 		silo = state.silo,
 		conveyorLevel = state.conveyorLevel,
 		machines = machines,
-		tier = tier,
-		rebirths = progress.rebirths,
-		gems = progress.gems,
-		items = items,
+		tier = parts.tier,
+		rebirths = parts.progress.rebirths,
+		gems = parts.progress.gems,
+		items = parts.items,
+		pets = parts.pets,
 	})
 end
 

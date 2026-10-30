@@ -138,7 +138,8 @@ local function predictCuts()
 		if room <= 0 then
 			return
 		end
-		if cell and cell.hp <= tier.cutPower and FieldController.predictCut(index) then
+		local cutPower = tier.cutPower * numberAttribute(PlayerAttributes.CUT_POWER_MULTIPLIER, 1) -- Pets (A2)
+		if cell and cell.hp <= cutPower and FieldController.predictCut(index) then
 			room -= 1
 			launchBricks(cell.x, cell.z, root)
 			playPop()

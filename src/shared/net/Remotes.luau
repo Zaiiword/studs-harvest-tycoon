@@ -14,8 +14,16 @@ Remotes.DEV_COMMAND = "DevCommand" -- client → serveur : panneau de test, igno
 Remotes.USE_ITEM = "UseItem" -- client → serveur : (itemId) utiliser un objet de sabotage
 Remotes.BUY_ITEM = "BuyItem" -- client → serveur : (itemId) acheter un objet avec des gemmes
 Remotes.ITEM_FEEDBACK = "ItemFeedback" -- serveur → client : (message) résultat d'une action d'objet
+Remotes.PET_ACTION = "PetAction" -- client → serveur : (action, clé) équiper / retirer / fusionner
+Remotes.OPEN_EGG = "OpenEgg" -- client → serveur : (eggId) ouvrir un œuf gagné (Œuf Légendaire)
+Remotes.HATCH_RESULT = "HatchResult" -- serveur → client : (eggId, clé) Pet obtenu
+Remotes.PET_ANNOUNCE = "PetAnnounce" -- serveur → clients : (nom affiché, clé) Secret Mythique obtenu
 
 local KINDS: { [string]: string } = {
+	[Remotes.PET_ACTION] = "RemoteEvent",
+	[Remotes.OPEN_EGG] = "RemoteEvent",
+	[Remotes.HATCH_RESULT] = "RemoteEvent",
+	[Remotes.PET_ANNOUNCE] = "RemoteEvent",
 	[Remotes.FIELD_BATCH] = "RemoteEvent",
 	[Remotes.FIELD_SNAPSHOT] = "RemoteFunction",
 	[Remotes.DEV_COMMAND] = "RemoteEvent",

@@ -14,6 +14,7 @@ local Profile = require(ReplicatedStorage.Shared.domain.Profile)
 local ProfileStore = require(ReplicatedStorage.Shared.domain.ProfileStore)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local InventoryService = require(script.Parent.InventoryService)
+local PetService = require(script.Parent.PetService)
 local TycoonService = require(script.Parent.TycoonService)
 
 local DataService = {}
@@ -82,11 +83,22 @@ local function loadPlayer(player: Player)
 	loaded[player] = true
 	TycoonService.restore(player, data)
 	InventoryService.restore(player, data.items)
+	PetService.restore(player, data.pets)
 	player:SetAttribute(PlayerAttributes.IS_DATA_LOADED, true)
 end
 
 local function capture(player: Player): Profile.Data?
-	return TycoonService.snapshot(player, InventoryService.snapshot(player))
+	local factory = TycoonService.snapshot(player)
+	if not factory then
+		return nil
+	end
+	return Profile.fromGame({
+		tycoon = factory.tycoon,
+		tier = factory.tier,
+		progress = factory.progress,
+		items = InventoryService.snapshot(player),
+		pets = PetService.snapshot(player),
+	})
 end
 
 local function save(player: Player, isRelease: boolean)
@@ -106,6 +118,7 @@ local function onPlayerRemoving(player: Player)
 	local data = if loaded[player] then capture(player) else nil
 	TycoonService.release(player)
 	InventoryService.release(player)
+	PetService.release(player)
 	local wasLoaded = loaded[player]
 	loaded[player] = nil
 	if data and wasLoaded then

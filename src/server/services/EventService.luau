@@ -138,7 +138,9 @@ local function hitBoss(active: ActiveBoss)
 		local tier = VehicleService.tierOf(player)
 		local reach = METEOR.HIT_RADIUS + tier.hitboxStuds
 		if root and (Vector3.new(root.Position.X - x, 0, root.Position.Z - z)).Magnitude <= reach then
-			MeteorBoss.hit(active.boss, player.UserId, MeteorBoss.damageFor(tier.cutPower))
+			local multiplier = player:GetAttribute(PlayerAttributes.CUT_POWER_MULTIPLIER)
+			local petFactor = if typeof(multiplier) == "number" and multiplier >= 1 then multiplier else 1
+			MeteorBoss.hit(active.boss, player.UserId, MeteorBoss.damageFor(tier.cutPower * petFactor))
 		end
 	end
 	refreshBossLabel(active)

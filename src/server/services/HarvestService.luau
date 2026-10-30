@@ -39,6 +39,12 @@ local function tierOf(player: Player): VehicleConfig.TierDef
 	return VehicleConfig.TIERS[if typeof(id) == "number" then id else 1] or VehicleConfig.TIERS[1]
 end
 
+-- Puissance de coupe : celle de l'outil × facteur des Pets équipés (A2, publié par PetService).
+function HarvestService.cutPowerOf(player: Player, tier: VehicleConfig.TierDef): number
+	local multiplier = player:GetAttribute(ATTR.CUT_POWER_MULTIPLIER)
+	return tier.cutPower * (if typeof(multiplier) == "number" and multiplier >= 1 then multiplier else 1)
+end
+
 local function setIfChanged(player: Player, name: string, value: any)
 	if player:GetAttribute(name) ~= value then
 		player:SetAttribute(name, value)
@@ -87,7 +93,7 @@ local function cutInFront(player: Player, state: PlayerState, root: BasePart, ti
 		if Bag.isFull(state.bag) then
 			return
 		end
-		local result = FieldService.damage(index, tier.cutPower, slot)
+		local result = FieldService.damage(index, HarvestService.cutPowerOf(player, tier), slot)
 		if result then
 			-- Pluie Dorée ×2 et hotspot ×3 (CDC §6, A11) s'appliquent à la valeur brute du blé coupé.
 			Bag.add(state.bag, result.value * EventService.valueMultiplierAt(result.x, result.z))
