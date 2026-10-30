@@ -1,0 +1,14 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: CompeyDev/setup-rokit@v0.1.2
+      - name: Format
+        run: stylua --check src tests
+      - name: Lint
+        run: selene src tests
+      - name: Tests (unit + integration + regression)
+        run: lune run tests/run
