@@ -20,6 +20,7 @@ local Format = require(ReplicatedStorage.Shared.util.Format)
 local MapService = require(script.Parent.MapService)
 local PlotService = require(script.Parent.PlotService)
 local VehicleService = require(script.Parent.VehicleService)
+local TycoonModels = require(script.Parent.Parent.builders.TycoonModels)
 
 local TycoonService = {}
 
@@ -29,6 +30,7 @@ type Entry = {
 	folder: Folder,
 	pads: { [string]: Part },
 	silo: Part,
+	siloRoof: Part,
 	currentPad: string?, -- un bouton n'achète qu'à l'arrivée dessus, pas en boucle
 	lastPurchaseAt: number,
 }
@@ -99,18 +101,17 @@ local function refreshSilo(entry: Entry)
 	local x, z = MapGeometry.baseToWorld(entry.base, spec.x, spec.z)
 	entry.silo.Size = Vector3.new(height, spec.radius * 2, spec.radius * 2)
 	entry.silo.CFrame = CFrame.new(x, MapConfig.DECK_TOP + height / 2, z) * CFrame.Angles(0, 0, math.pi / 2)
+	entry.siloRoof.CFrame = CFrame.new(x, MapConfig.DECK_TOP + height, z)
 end
 
 local function buildMachine(entry: Entry, machineId: string)
 	for _, machine in TycoonConfig.MACHINES do
 		if machine.id == machineId then
-			local block = placeBlock(entry, {
-				name = machine.id,
-				spot = LAYOUT.MACHINES[machine.id],
-				size = Vector3.one * LAYOUT.MACHINE_SIZE,
-				color = machine.color,
-			})
-			attachLabel(block, `{machine.name}\n×{machine.multiplier}`)
+			local spot = LAYOUT.MACHINES[machine.id]
+			local x, z = MapGeometry.baseToWorld(entry.base, spot.x, spot.z)
+			local origin = CFrame.new(x, MapConfig.DECK_TOP, z) * CFrame.Angles(0, -entry.base.angle, 0)
+			local main = TycoonModels.machine(entry.folder, machine, origin)
+			attachLabel(main, `{machine.name}\n×{machine.multiplier}`)
 		end
 	end
 end
@@ -149,6 +150,7 @@ local function buildFactory(entry: Entry)
 	})
 	entry.silo = placeBlock(entry, { name = "Silo", spot = LAYOUT.SILO, size = Vector3.one, color = COLORS.SILO })
 	entry.silo.Shape = Enum.PartType.Cylinder
+	entry.siloRoof = TycoonModels.siloRoof(entry.folder, LAYOUT.SILO.radius)
 end
 
 local function claimFactory(player: Player)
@@ -166,7 +168,8 @@ local function claimFactory(player: Player)
 		base = base,
 		folder = folder,
 		pads = {},
-		silo = nil :: any,
+		silo = nil :: any, -- posés par buildFactory
+		siloRoof = nil :: any,
 		lastPurchaseAt = -math.huge,
 	}
 	buildFactory(entry)

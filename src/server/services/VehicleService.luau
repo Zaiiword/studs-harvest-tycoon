@@ -11,6 +11,7 @@ local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Trove = require(ReplicatedStorage.Packages.Trove)
+local VehicleModels = require(script.Parent.Parent.builders.VehicleModels)
 
 local VehicleService = {}
 
@@ -75,7 +76,7 @@ local function removeVehicle(character: Model)
 end
 
 -- Le pilote est soudé au-dessus de la carrosserie, orientée comme lui (CDC §5 « personnage soudé »).
-local function mountVehicle(character: Model, def: VehicleConfig.BodyDef)
+local function mountVehicle(character: Model, tier: VehicleConfig.TierDef, def: VehicleConfig.BodyDef)
 	local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if not root or not humanoid then
@@ -86,6 +87,7 @@ local function mountVehicle(character: Model, def: VehicleConfig.BodyDef)
 	character:PivotTo(character:GetPivot() + Vector3.new(0, HANDLING.SEAT_HEIGHT + def.height, 0))
 	local body = newBody(def)
 	body.CFrame = root.CFrame * CFrame.new(0, -(root.Size.Y / 2 + HANDLING.SEAT_HEIGHT + def.height / 2), 0)
+	VehicleModels.decorate(body, tier, def)
 	local weld = Instance.new("WeldConstraint")
 	weld.Part0, weld.Part1 = body, root
 	weld.Parent = body
@@ -105,7 +107,7 @@ local function refreshVehicle(player: Player)
 	local tier = VehicleService.tierOf(player)
 	local def = VehicleConfig.BODIES[tier.id]
 	if tier.isVehicle and def then
-		local ok, err = pcall(mountVehicle, character, def)
+		local ok, err = pcall(mountVehicle, character, tier, def)
 		if not ok then
 			warn(`[VehicleService] échec du montage du palier {tier.id} : {err}`)
 		end

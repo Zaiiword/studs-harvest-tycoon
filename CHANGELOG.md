@@ -2,6 +2,19 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Passe visuelle 1 (A35)
+
+### Ajouté
+- `Decor` (domaine pur, testé) : murs de la tige, clôtures des bases ouvertes côté champ, arbres, portiques,
+  variation déterministe des brins.
+- `DecorService` : murs de briques le long du champ, portiques avec le nom de chaque zone, clôtures en bois et
+  enseigne « Base de … » par base, arbres Lego sur la barre, rambardes des ponts.
+- Véhicules en briques par palier : roues, cabine vitrée, pare-chocs, grandes roues arrière (tracteurs),
+  barre de coupe à la largeur de la hitbox (moissonneuses), néons (Cyber-Laser).
+- Machines en briques : moulin à ailes, four avec cheminée, usine à deux cheminées ; toit sur le silo.
+- `TycoonAnimController` : ailes de moulin qui tournent, briques qui défilent sur le tapis des usines actives.
+- Post-traitement : saturation, contraste, bloom et rayons du soleil légers.
+
 ## Sprint 3 — Tycoon : silo, tapis, machines et revenu
 
 ### Ajouté

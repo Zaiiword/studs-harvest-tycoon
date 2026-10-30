@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
+local Decor = require(ReplicatedStorage.Shared.domain.Decor)
 local FieldChunks = require(ReplicatedStorage.Shared.domain.FieldChunks)
 local FieldGrid = require(ReplicatedStorage.Shared.domain.FieldGrid)
 local Rarity = require(ReplicatedStorage.Shared.domain.Rarity)
@@ -75,12 +76,18 @@ local function renderStalk(index: number)
 		part.Transparency = 1
 		return
 	end
-	local size = STALK_SIZE * Rarity.byId(cell.rarity).sizeMultiplier
+	local variation = Decor.stalkVariation(index) -- chaque brin un peu différent (A35)
+	local size = STALK_SIZE * Rarity.byId(cell.rarity).sizeMultiplier * Vector3.new(1, variation.heightScale, 1)
 	local isRainbow = cell.rarity == Rarity.RAINBOW
+	local base = Bricks.rgb(FieldConfig.WHEAT_ZONES[cell.zone].color)
 	part.Size = size
-	part.CFrame = CFrame.new(cell.x, MapConfig.FLOOR_TOP + size.Y / 2, cell.z)
+	part.CFrame = CFrame.new(cell.x, MapConfig.FLOOR_TOP + size.Y / 2, cell.z) * CFrame.Angles(0, variation.yaw, 0)
 	part.Material = if isRainbow then Enum.Material.Neon else Enum.Material.Plastic
-	part.Color = Bricks.rgb(FieldConfig.WHEAT_ZONES[cell.zone].color)
+	part.Color = Color3.new(
+		math.min(1, base.R * variation.shade),
+		math.min(1, base.G * variation.shade),
+		math.min(1, base.B * variation.shade)
+	)
 	part.Transparency = 0
 end
 

@@ -100,14 +100,63 @@ export type BodyDef = {
 	width: number,
 	height: number,
 	color: { number },
+	accent: { number }, -- pare-chocs, barre de coupe, néons
+	hasBigRearWheels: boolean, -- silhouette de tracteur
+	hasHeader: boolean, -- barre de coupe frontale (moissonneuses)
+	hasNeon: boolean,
 }
 
 local BODIES: { [number]: BodyDef } = {
-	[3] = { length = 6, width = 4, height = 2, color = { 196, 40, 28 } }, -- Tondeuse Rouge
-	[4] = { length = 9, width = 6, height = 3, color = { 75, 151, 75 } }, -- Tracteur Fermier
-	[5] = { length = 11, width = 8, height = 3, color = { 13, 105, 172 } },
-	[6] = { length = 14, width = 10, height = 4, color = { 245, 205, 48 } },
-	[7] = { length = 17, width = 12, height = 4, color = { 98, 37, 209 } },
+	[3] = { -- Tondeuse Rouge
+		length = 6,
+		width = 4,
+		height = 2,
+		color = { 196, 40, 28 },
+		accent = { 248, 248, 248 },
+		hasBigRearWheels = false,
+		hasHeader = false,
+		hasNeon = false,
+	},
+	[4] = { -- Tracteur Fermier
+		length = 9,
+		width = 6,
+		height = 3,
+		color = { 75, 151, 75 },
+		accent = { 245, 205, 48 },
+		hasBigRearWheels = true,
+		hasHeader = false,
+		hasNeon = false,
+	},
+	[5] = { -- Double Faucheuse Turbo
+		length = 11,
+		width = 8,
+		height = 3,
+		color = { 13, 105, 172 },
+		accent = { 196, 40, 28 },
+		hasBigRearWheels = true,
+		hasHeader = true,
+		hasNeon = false,
+	},
+	[6] = { -- Moissonneuse Dorée XL
+		length = 14,
+		width = 10,
+		height = 4,
+		color = { 245, 205, 48 },
+		accent = { 196, 40, 28 },
+		hasBigRearWheels = false,
+		hasHeader = true,
+		hasNeon = false,
+	},
+	[7] = { -- Moissonneuse Cyber-Laser
+		length = 17,
+		width = 12,
+		height = 4,
+		color = { 27, 42, 53 },
+		accent = { 98, 37, 209 },
+		hasBigRearWheels = false,
+		hasHeader = true,
+		hasNeon = true,
+	},
 }
 
 return Freeze.deep({

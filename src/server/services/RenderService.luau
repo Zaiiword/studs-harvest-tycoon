@@ -5,6 +5,7 @@ local MaterialService = game:GetService("MaterialService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AssetIds = require(ReplicatedStorage.Shared.config.AssetIds)
+local DecorConfig = require(ReplicatedStorage.Shared.config.DecorConfig)
 local RenderConfig = require(ReplicatedStorage.Shared.config.RenderConfig)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 
@@ -37,8 +38,26 @@ local function createStudsVariant()
 	variant.Parent = MaterialService
 end
 
+-- Couleurs saturées et léger éclat (CDC §2), sans dénaturer les couleurs Lego.
+local function applyPostProcessing()
+	local post = DecorConfig.POST
+	local correction = Instance.new("ColorCorrectionEffect")
+	correction.Saturation = post.SATURATION
+	correction.Contrast = post.CONTRAST
+	correction.Parent = Lighting
+	local bloom = Instance.new("BloomEffect")
+	bloom.Intensity = post.BLOOM_INTENSITY
+	bloom.Size = post.BLOOM_SIZE
+	bloom.Threshold = post.BLOOM_THRESHOLD
+	bloom.Parent = Lighting
+	local sunRays = Instance.new("SunRaysEffect")
+	sunRays.Intensity = post.SUN_RAYS_INTENSITY
+	sunRays.Parent = Lighting
+end
+
 function RenderService:Init()
 	applyLighting()
+	applyPostProcessing()
 	createStudsVariant()
 end
 
