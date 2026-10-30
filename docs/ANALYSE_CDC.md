@@ -47,6 +47,9 @@ dans `src/shared/config/` pour pouvoir être modifiées sans toucher au code.
 | A18 | Batching 0,2 s vs requête de coupe 0,15 s | Deux fréquences différentes | Le client demande une coupe toutes les 0,15 s (limité par le serveur). Le serveur diffuse les coupes par lots toutes les 0,2 s. |
 | A19 | Téléportation « Retour Base Instantané » | Gratuite et illimitée ? | Gratuite, avec 30 s de recharge, disponible seulement si le sac est rempli à 90 % ou plus. |
 | A20 | Joueurs par serveur | Non précisé | **8 joueurs maximum**, soit un par base. |
+| A21 | Rayons des zones de la carte | Seul l'ordre (cœur, Blé Diamant, Maïs Doré, Blé Vert, couronne) est connu | Cœur 0–60, Blé Diamant 60–140, Maïs Doré 140–230, Blé Vert 230–330, fossé 330–350, couronne 350–450 (studs). Tout est dans `MapConfig`. Le PDF n'a pas pu être relu au Sprint 0 : à confronter au CDC §3. |
+| A22 | Bases | Taille et position non précisées | 8 bases de 60×60 studs, au rayon 400, décalées de 22,5° pour laisser les ponts entre elles. |
+| A23 | Ponts | « 4 ponts étroits » | 4 ponts de 12 studs de large aux angles 0°, 90°, 180°, 270°, avec 10 studs de recouvrement sur chaque rive du fossé. |
 
 ## 3. Incohérences relevées
 
