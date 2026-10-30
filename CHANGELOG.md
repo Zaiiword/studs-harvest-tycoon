@@ -2,6 +2,24 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Sprint 5 — Événements, boss Météorite et sabotage
+
+### Ajouté
+- Météo serveur (A10) : 4 min de beau temps puis 2 min de Pluie Dorée (×2), Tempête de Vent (véhicules
+  +25 %, chocs ×1,5) ou Nuit Néon (Arc-en-ciel ×5) ; ambiance client (teinte, brume, nuit).
+- Hotspot (A11) : zone ×3 qui se déplace toutes les 90 s dans le Blé Diamant, balise néon visible de loin.
+- Boss Météorite (A40) : Épi Géant de Cristal de 50 000 PV toutes les 12 min au bout du champ, barre de PV,
+  Top 3 récompensé (Œuf Légendaire, revenus ×3 pendant 5 min).
+- Sabotage (A41) : Flaque de Boue, Gant de Boxe, Onde de Choc, Bazooka ; ciblage et ligne de vue côté
+  serveur, immunité respectée ; achat en gemmes ; barre d'objets (touches 1 à 4) et messages de retour.
+- `InventoryService` ; profil v2 avec inventaire (migration automatique depuis v1).
+- `BumperService` expose `contestants`, `eject` et `spin` : sabotage et chocs partagent les mêmes règles.
+- HUD : bandeaux météo, boss et multiplicateur. Panneau de test : boss, météo, objets.
+- Tests : météo, hotspot, boss, ciblage, inventaire, combat de boss, validation réseau.
+
+### Modifié
+- Plantes détaillées par zone (blé, maïs, cristaux) avec niveau de détail (A39).
+
 ## Sprint 4 — Sauvegarde et Rebirth
 
 ### Ajouté

@@ -18,6 +18,7 @@ export type IncomeBonus = {
 	petBonuses: { number },
 	rebirths: number,
 	hasIncomeX2: boolean,
+	boostMultiplier: number?, -- multiplicateur temporaire (récompense du boss Météorite ×3, CDC §6)
 }
 
 export type Offer = {
@@ -68,15 +69,18 @@ function Tycoon.deposit(state: State, value: number): number
 end
 
 -- Revenu par seconde affiché : celui de l'usine à plein débit, 0 si le silo est vide.
-function Tycoon.incomePerSecond(state: State, bonus: IncomeBonus): number
-	local raw = if state.silo > 0 then Tycoon.conveyorRate(state) else 0
+local function income(state: State, rawPerSecond: number, bonus: IncomeBonus): number
 	return Formulas.incomePerSecond({
-		rawPerSecond = raw,
+		rawPerSecond = rawPerSecond,
 		machineMultiplier = Tycoon.machineMultiplier(state),
 		petBonuses = bonus.petBonuses,
 		rebirths = bonus.rebirths,
 		hasIncomeX2 = bonus.hasIncomeX2,
-	})
+	}) * (bonus.boostMultiplier or 1)
+end
+
+function Tycoon.incomePerSecond(state: State, bonus: IncomeBonus): number
+	return income(state, if state.silo > 0 then Tycoon.conveyorRate(state) else 0, bonus)
 end
 
 -- Fait tourner l'usine pendant `dt` secondes : le tapis vide le silo et le revenu est encaissé.
@@ -86,15 +90,9 @@ function Tycoon.tick(state: State, dt: number, bonus: IncomeBonus): number
 		return 0
 	end
 	state.silo -= consumed
-	local income = Formulas.incomePerSecond({
-		rawPerSecond = consumed / dt,
-		machineMultiplier = Tycoon.machineMultiplier(state),
-		petBonuses = bonus.petBonuses,
-		rebirths = bonus.rebirths,
-		hasIncomeX2 = bonus.hasIncomeX2,
-	}) * dt
-	state.money += income
-	return income
+	local earned = income(state, consumed / dt, bonus) * dt
+	state.money += earned
+	return earned
 end
 
 -- Secondes avant que le silo soit vide au débit actuel (CDC §10 « autonomie restante du silo »).

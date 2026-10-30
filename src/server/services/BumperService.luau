@@ -1,9 +1,11 @@
 --!strict
--- Bumper PvP autoritaire (CDC §5, §6, Sprint 2) : à 10 Hz, le serveur cherche les contacts entre joueurs,
--- décide avec Bumper qui éjecte qui, puis applique lui-même l'impulsion. Pendant le tournis (0,8 s), il
--- reprend la propriété physique de la cible pour que le client ne puisse pas annuler l'éjection.
+-- Bumper PvP autoritaire (CDC §5, §6, Sprints 2 et 5) : à 10 Hz, le serveur cherche les contacts entre joueurs,
+-- décide avec Bumper qui éjecte qui, puis applique lui-même l'impulsion. Pendant le tournis, il reprend la
+-- propriété physique de la cible pour que le client ne puisse pas annuler l'éjection.
 -- La cible ne perd jamais son blé ; elle gagne 15 s d'immunité, matérialisées par une bulle.
--- Dépendances : VehicleService (engins), Bumper / Formulas (règles pures).
+-- Expose `contestants`, `eject` et `spin` aux objets de sabotage (SabotageService), qui respectent ainsi les
+-- mêmes règles d'immunité. La Tempête de Vent amplifie les chocs (CDC §6).
+-- Dépendances : VehicleService (engins), Bumper / Formulas / Weather (règles pures).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,14 +15,23 @@ local BumperConfig = require(ReplicatedStorage.Shared.config.BumperConfig)
 local Bumper = require(ReplicatedStorage.Shared.domain.Bumper)
 local Formulas = require(ReplicatedStorage.Shared.domain.Formulas)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
+local Weather = require(ReplicatedStorage.Shared.domain.Weather)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local RateLimiter = require(ReplicatedStorage.Shared.util.RateLimiter)
 local VehicleService = require(script.Parent.VehicleService)
 
 local BumperService = {}
 
-type Contestant = { player: Player, root: BasePart, body: Bumper.Body }
+export type Contestant = { player: Player, root: BasePart, body: Bumper.Body }
+
+export type Ejection = {
+	dirX: number,
+	dirZ: number,
+	horizontal: number,
+	vertical: number,
+}
 
 local pairLimiter = RateLimiter.new(1, 1 / BumperConfig.PAIR_COOLDOWN)
 local elapsed = 0
@@ -28,6 +39,13 @@ local elapsed = 0
 local function isActive(player: Player, attribute: string, now: number): boolean
 	local untilTime = player:GetAttribute(attribute)
 	return typeof(untilTime) == "number" and now < untilTime
+end
+
+-- Masse PvP utilisée par la formule de knockback : +15 % par Rebirth, comptés une seule fois (A15).
+function BumperService.massOf(player: Player): number
+	local rebirths = player:GetAttribute(PlayerAttributes.REBIRTHS)
+	local count = if typeof(rebirths) == "number" then rebirths else 0
+	return Formulas.effectiveMass(VehicleService.tierOf(player).mass, count, false) -- Titan : Sprint 8
 end
 
 local function contestantOf(player: Player, now: number): Contestant?
@@ -54,6 +72,19 @@ local function contestantOf(player: Player, now: number): Contestant?
 		isProtected = isProtected,
 	}
 	return { player = player, root = root, body = body }
+end
+
+-- Tous les joueurs présents, décrits pour les règles pures (Bumper, Sabotage).
+function BumperService.contestants(): { Contestant }
+	local now = Workspace:GetServerTimeNow()
+	local list: { Contestant } = {}
+	for _, player in Players:GetPlayers() do
+		local contestant = contestantOf(player, now)
+		if contestant then
+			table.insert(list, contestant)
+		end
+	end
+	return list
 end
 
 -- Bulle d'immunité visible de tous (CDC §6) : une sphère soudée, détruite à la fin de l'immunité.
@@ -93,45 +124,78 @@ local function setControlEnabled(player: Player, isEnabled: boolean)
 	end
 end
 
-local function knock(target: Contestant, attacker: Contestant, collision: Bumper.Collision)
+-- Tournis : le serveur prend la main, fait tourner la cible, puis lui rend le contrôle après `seconds`.
+-- La cible gagne la bulle d'immunité : aucune éjection ne peut s'enchaîner sur elle.
+local function stun(target: Contestant, seconds: number): BasePart
 	local now = Workspace:GetServerTimeNow()
 	local player, root = target.player, target.root
-	player:SetAttribute(PlayerAttributes.DIZZY_UNTIL, now + BumperConfig.DIZZY_SECONDS)
+	player:SetAttribute(PlayerAttributes.DIZZY_UNTIL, now + seconds)
 	player:SetAttribute(PlayerAttributes.IMMUNE_UNTIL, now + BumperConfig.IMMUNITY_SECONDS)
-	pcall(root.SetNetworkOwner, root, nil) -- le serveur simule l'éjection : le client ne peut pas l'annuler
+	pcall(root.SetNetworkOwner, root, nil) -- le serveur simule : le client ne peut pas annuler l'effet
 	setControlEnabled(player, false)
-	local horizontal, vertical = Bumper.launchSpeeds(collision.impactSpeed, attacker.body.mass, target.body.mass)
-	root.AssemblyLinearVelocity = Vector3.new(collision.dirX * horizontal, vertical, collision.dirZ * horizontal)
 	root.AssemblyAngularVelocity = Vector3.new(0, BumperConfig.DIZZY_SPIN_SPEED, 0)
 	showBubble(root, target.body.radius)
-	task.delay(BumperConfig.DIZZY_SECONDS, function()
+	task.delay(seconds, function()
 		if root.Parent and player.Parent then
 			setControlEnabled(player, true)
 			pcall(root.SetNetworkOwner, root, player)
 		end
 	end)
+	return root
+end
+
+-- Multiplicateur d'éjection de la météo en cours (Tempête de Vent ×1,5).
+local function weatherKnockback(): number
+	local weather = ReplicatedStorage:GetAttribute(WorldAttributes.WEATHER)
+	return Weather.byId(if typeof(weather) == "string" then weather else "Clear").knockbackMultiplier
+end
+
+-- Éjecte une cible (choc ou objet de sabotage). Ne fait rien si elle est protégée.
+function BumperService.eject(target: Contestant, ejection: Ejection): boolean
+	if target.body.isProtected then
+		return false
+	end
+	local root = stun(target, BumperConfig.DIZZY_SECONDS)
+	local boost = weatherKnockback()
+	local horizontal = ejection.horizontal * boost
+	root.AssemblyLinearVelocity =
+		Vector3.new(ejection.dirX * horizontal, ejection.vertical * boost, ejection.dirZ * horizontal)
+	return true
+end
+
+-- Fait tourner une cible sur elle-même sans l'éjecter (Flaque de Boue, CDC §6).
+function BumperService.spin(target: Contestant, seconds: number): boolean
+	if target.body.isProtected then
+		return false
+	end
+	stun(target, seconds)
+	return true
 end
 
 local function pairKey(a: number, b: number): string
 	return if a < b then `{a}:{b}` else `{b}:{a}`
 end
 
+local function resolve(target: Contestant, attacker: Contestant, collision: Bumper.Collision)
+	local horizontal, vertical = Bumper.launchSpeeds(collision.impactSpeed, attacker.body.mass, target.body.mass)
+	BumperService.eject(target, {
+		dirX = collision.dirX,
+		dirZ = collision.dirZ,
+		horizontal = horizontal,
+		vertical = vertical,
+	})
+end
+
 local function detectCollisions()
 	local now = Workspace:GetServerTimeNow()
-	local contestants: { Contestant } = {}
-	for _, player in Players:GetPlayers() do
-		local contestant = contestantOf(player, now)
-		if contestant then
-			table.insert(contestants, contestant)
-		end
-	end
+	local contestants = BumperService.contestants()
 	for i = 1, #contestants - 1 do
 		for j = i + 1, #contestants do
 			local a, b = contestants[i], contestants[j]
 			local collision = Bumper.detect(a.body, b.body)
 			if collision and pairLimiter:allow(pairKey(a.body.id, b.body.id), now) then
 				local isAAttacker = collision.attackerId == a.body.id
-				knock(if isAAttacker then b else a, if isAAttacker then a else b, collision)
+				resolve(if isAAttacker then b else a, if isAAttacker then a else b, collision)
 			end
 		end
 	end
@@ -145,17 +209,6 @@ function BumperService:Start()
 			detectCollisions()
 		end
 	end)
-end
-
--- Masse PvP utilisée par la formule de knockback (exposée pour les futurs objets de sabotage, Sprint 5).
-function BumperService.massOf(player: Player): number
-	-- +15 % par Rebirth, compté une seule fois (A15) ; Gamepass Titan au Sprint 8.
-	local rebirths = player:GetAttribute(PlayerAttributes.REBIRTHS)
-	return Formulas.effectiveMass(
-		VehicleService.tierOf(player).mass,
-		if typeof(rebirths) == "number" then rebirths else 0,
-		false
-	)
 end
 
 return BumperService

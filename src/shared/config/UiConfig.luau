@@ -27,9 +27,30 @@ return Freeze.deep({
 		ALERT_HEIGHT = 28,
 		ALERT_COLOR = { 220, 40, 40 },
 	},
+	-- Bandeau des événements sous la trésorerie (météo, boss, multiplicateur) — CDC §6.
+	EVENT_BANNER = {
+		WIDTH = 520,
+		HEIGHT = 30,
+		TOP = 84,
+		SPACING = 6,
+		BOSS_BAR_COLOR = { 128, 230, 255 },
+		WEATHER_COLOR = { 245, 205, 48 },
+		BOOST_COLOR = { 75, 151, 75 },
+	},
+	-- Barre d'objets de sabotage à droite de l'écran ; touches 1 à 4.
+	ITEM_BAR = {
+		BUTTON_SIZE = 64,
+		BUY_HEIGHT = 22,
+		PADDING = 8,
+		RIGHT_MARGIN = 12,
+		COLOR = { 27, 42, 53 },
+		BUY_COLOR = { 98, 37, 209 },
+		TOAST_SECONDS = 2.5,
+		KEYS = { "One", "Two", "Three", "Four" } :: { string },
+	},
 	-- Panneau de test (Studio uniquement).
 	DEV_PANEL = {
-		BUTTON_WIDTH = 64,
+		BUTTON_WIDTH = 96,
 		BUTTON_HEIGHT = 32,
 		PADDING = 6,
 		LEFT_MARGIN = 12,

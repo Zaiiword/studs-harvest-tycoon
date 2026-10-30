@@ -8,11 +8,14 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
+local EventConfig = require(ReplicatedStorage.Shared.config.EventConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
+local Inventory = require(ReplicatedStorage.Shared.domain.Inventory)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Profile = require(ReplicatedStorage.Shared.domain.Profile)
 local Rebirth = require(ReplicatedStorage.Shared.domain.Rebirth)
@@ -54,6 +57,13 @@ local REBIRTH = TycoonConfig.REBIRTH_NAME
 
 local entries: { [Player]: Entry } = {}
 local pendingProfiles: { [Player]: Profile.Data } = {} -- profil chargé avant que la base soit attribuée
+
+-- Bonus de revenus : Rebirths + multiplicateur temporaire posé par EventService (récompense du boss).
+local function bonusOf(player: Player, entry: Entry): Tycoon.IncomeBonus
+	local boostUntil = player:GetAttribute(PlayerAttributes.BOOST_UNTIL)
+	local isBoosted = typeof(boostUntil) == "number" and Workspace:GetServerTimeNow() < boostUntil
+	return Rebirth.incomeBonus(entry.progress, if isBoosted then EventConfig.METEOR.REWARD_INCOME_MULTIPLIER else 1)
+end
 local incomeElapsed, padElapsed = 0, 0
 
 local function attachLabel(part: BasePart, text: string)
@@ -154,10 +164,7 @@ end
 local function publish(player: Player, entry: Entry)
 	local state = entry.state
 	player:SetAttribute(PlayerAttributes.MONEY, math.floor(state.money))
-	player:SetAttribute(
-		PlayerAttributes.INCOME_PER_SECOND,
-		Tycoon.incomePerSecond(state, Rebirth.incomeBonus(entry.progress))
-	)
+	player:SetAttribute(PlayerAttributes.INCOME_PER_SECOND, Tycoon.incomePerSecond(state, bonusOf(player, entry)))
 	player:SetAttribute(PlayerAttributes.SILO_VALUE, math.floor(state.silo))
 	player:SetAttribute(PlayerAttributes.SILO_CAPACITY, TycoonConfig.SILO_CAPACITY)
 	player:SetAttribute(PlayerAttributes.CONVEYOR_RATE, Tycoon.conveyorRate(state))
@@ -288,7 +295,7 @@ end
 
 local function payIncome()
 	for player, entry in entries do
-		Tycoon.tick(entry.state, TycoonConfig.INCOME_INTERVAL, Rebirth.incomeBonus(entry.progress))
+		Tycoon.tick(entry.state, TycoonConfig.INCOME_INTERVAL, bonusOf(player, entry))
 		publish(player, entry)
 	end
 end
@@ -335,13 +342,33 @@ function TycoonService.restore(player: Player, data: Profile.Data)
 	end
 end
 
--- Profil à sauvegarder, ou nil si le joueur n'a pas encore d'usine.
-function TycoonService.snapshot(player: Player): Profile.Data?
+-- Profil à sauvegarder (avec l'inventaire fourni par InventoryService), ou nil sans usine.
+function TycoonService.snapshot(player: Player, items: Inventory.Inventory): Profile.Data?
 	local entry = entries[player]
 	if not entry then
 		return nil
 	end
-	return Profile.fromGame(entry.state, VehicleService.tierOf(player).id, entry.progress)
+	return Profile.fromGame(entry.state, VehicleService.tierOf(player).id, entry.progress, items)
+end
+
+-- Crédite des gemmes (panneau de test ; récompenses aux sprints suivants).
+function TycoonService.grantGems(player: Player, amount: number)
+	local entry = entries[player]
+	if entry and amount > 0 then
+		entry.progress.gems += amount
+		publish(player, entry)
+	end
+end
+
+-- Dépense des gemmes (boutique de sabotage). Renvoie false si le joueur n'en a pas assez.
+function TycoonService.spendGems(player: Player, amount: number): boolean
+	local entry = entries[player]
+	if not entry or amount <= 0 or entry.progress.gems < amount then
+		return false
+	end
+	entry.progress.gems -= amount
+	publish(player, entry)
+	return true
 end
 
 -- Détruit l'usine d'un joueur qui part. Appelé par DataService après la capture du profil.

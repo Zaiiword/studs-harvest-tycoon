@@ -10,8 +10,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local DataConfig = require(ReplicatedStorage.Shared.config.DataConfig)
+local Profile = require(ReplicatedStorage.Shared.domain.Profile)
 local ProfileStore = require(ReplicatedStorage.Shared.domain.ProfileStore)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local InventoryService = require(script.Parent.InventoryService)
 local TycoonService = require(script.Parent.TycoonService)
 
 local DataService = {}
@@ -79,11 +81,16 @@ local function loadPlayer(player: Player)
 	end
 	loaded[player] = true
 	TycoonService.restore(player, data)
+	InventoryService.restore(player, data.items)
 	player:SetAttribute(PlayerAttributes.IS_DATA_LOADED, true)
 end
 
+local function capture(player: Player): Profile.Data?
+	return TycoonService.snapshot(player, InventoryService.snapshot(player))
+end
+
 local function save(player: Player, isRelease: boolean)
-	local data = TycoonService.snapshot(player)
+	local data = capture(player)
 	if not data or not loaded[player] then
 		return
 	end
@@ -94,10 +101,11 @@ local function save(player: Player, isRelease: boolean)
 	savesInFlight -= 1
 end
 
--- Capture le profil AVANT de détruire l'usine, puis sauvegarde en libérant le verrou.
+-- Capture le profil AVANT de libérer l'usine et l'inventaire, puis sauvegarde en libérant le verrou.
 local function onPlayerRemoving(player: Player)
-	local data = if loaded[player] then TycoonService.snapshot(player) else nil
+	local data = if loaded[player] then capture(player) else nil
 	TycoonService.release(player)
+	InventoryService.release(player)
 	local wasLoaded = loaded[player]
 	loaded[player] = nil
 	if data and wasLoaded then

@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local VehicleModels = require(script.Parent.Parent.builders.VehicleModels)
@@ -154,7 +155,9 @@ local function checkSpeeds()
 		if body and not isKnocked then
 			local velocity = body.AssemblyLinearVelocity
 			local horizontal = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
-			if horizontal > VehicleService.tierOf(player).speed * VehicleConfig.SPEED_TOLERANCE then
+			local weather = ReplicatedStorage:GetAttribute(WorldAttributes.VEHICLE_SPEED_MULTIPLIER)
+			local boost = if typeof(weather) == "number" then weather else 1
+			if horizontal > VehicleService.tierOf(player).speed * boost * VehicleConfig.SPEED_TOLERANCE then
 				warn(`[VehicleService] vitesse suspecte {math.floor(horizontal)} studs/s pour {player.UserId}`)
 			end
 		end

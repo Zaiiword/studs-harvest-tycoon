@@ -16,6 +16,7 @@ local Trove = require(ReplicatedStorage.Packages.Trove)
 local FieldService = require(script.Parent.FieldService)
 local PlotService = require(script.Parent.PlotService)
 local TycoonService = require(script.Parent.TycoonService)
+local EventService = require(script.Parent.EventService)
 
 local HarvestService = {}
 
@@ -88,7 +89,8 @@ local function cutInFront(player: Player, state: PlayerState, root: BasePart, ti
 		end
 		local result = FieldService.damage(index, tier.cutPower, slot)
 		if result then
-			Bag.add(state.bag, result.value)
+			-- Pluie Dorée ×2 et hotspot ×3 (CDC §6, A11) s'appliquent à la valeur brute du blé coupé.
+			Bag.add(state.bag, result.value * EventService.valueMultiplierAt(result.x, result.z))
 		end
 	end
 end

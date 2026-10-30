@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local FieldGrid = require(ReplicatedStorage.Shared.domain.FieldGrid)
+local Rarity = require(ReplicatedStorage.Shared.domain.Rarity)
 local FieldCodec = require(ReplicatedStorage.Shared.net.FieldCodec)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local RateLimiter = require(ReplicatedStorage.Shared.util.RateLimiter)
@@ -67,6 +68,11 @@ function FieldService.damage(index: number, power: number, harvesterSlot: number
 		table.insert(pending, { kind = FieldCodec.EVENT_CUT, index = index, data = harvesterSlot })
 	end
 	return result
+end
+
+-- Blé Arc-en-ciel debout le plus proche (Onde de Choc du Sprint 5).
+function FieldService.nearestRainbow(x: number, z: number, range: number): FieldGrid.Cell?
+	return grid:nearestOfRarity(x, z, range, Rarity.RAINBOW)
 end
 
 -- Multiplicateur de chance Arc-en-ciel (Nuit Néon, Sprint 5).

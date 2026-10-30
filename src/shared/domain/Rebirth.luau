@@ -58,8 +58,9 @@ function Rebirth.apply(state: Tycoon.State, progress: Progress): boolean
 end
 
 -- Bonus de revenus à appliquer à l'usine (Pets et Gamepass s'y ajouteront aux Sprints 6 et 8).
-function Rebirth.incomeBonus(progress: Progress): Tycoon.IncomeBonus
-	return { petBonuses = {}, rebirths = progress.rebirths, hasIncomeX2 = false }
+-- `boost` : multiplicateur temporaire (récompense du boss Météorite).
+function Rebirth.incomeBonus(progress: Progress, boost: number?): Tycoon.IncomeBonus
+	return { petBonuses = {}, rebirths = progress.rebirths, hasIncomeX2 = false, boostMultiplier = boost or 1 }
 end
 
 return Rebirth

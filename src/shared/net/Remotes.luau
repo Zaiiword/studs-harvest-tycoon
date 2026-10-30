@@ -11,11 +11,17 @@ local Remotes = {}
 Remotes.FIELD_BATCH = "FieldBatch" -- serveur → clients : lot d'événements FieldCodec toutes les 0,2 s
 Remotes.FIELD_SNAPSHOT = "FieldSnapshot" -- client → serveur (RemoteFunction) : état initial du champ
 Remotes.DEV_COMMAND = "DevCommand" -- client → serveur : panneau de test, ignoré hors de Studio
+Remotes.USE_ITEM = "UseItem" -- client → serveur : (itemId) utiliser un objet de sabotage
+Remotes.BUY_ITEM = "BuyItem" -- client → serveur : (itemId) acheter un objet avec des gemmes
+Remotes.ITEM_FEEDBACK = "ItemFeedback" -- serveur → client : (message) résultat d'une action d'objet
 
 local KINDS: { [string]: string } = {
 	[Remotes.FIELD_BATCH] = "RemoteEvent",
 	[Remotes.FIELD_SNAPSHOT] = "RemoteFunction",
 	[Remotes.DEV_COMMAND] = "RemoteEvent",
+	[Remotes.USE_ITEM] = "RemoteEvent",
+	[Remotes.BUY_ITEM] = "RemoteEvent",
+	[Remotes.ITEM_FEEDBACK] = "RemoteEvent",
 }
 
 local function folder(): Instance

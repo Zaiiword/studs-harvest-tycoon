@@ -4,6 +4,7 @@
 -- bornes reprend sa valeur par défaut. Le numéro de version permet de migrer le format plus tard.
 local TycoonConfig = require("../config/TycoonConfig")
 local VehicleConfig = require("../config/VehicleConfig")
+local Inventory = require("./Inventory")
 local Rebirth = require("./Rebirth")
 local Tycoon = require("./Tycoon")
 
@@ -16,11 +17,13 @@ export type Data = {
 	tier: number,
 	rebirths: number,
 	gems: number,
+	items: Inventory.Inventory, -- v2 : objets de sabotage et récompenses (Sprint 5)
 }
 
 local Profile = {}
 
-Profile.VERSION = 1
+-- v1 → v2 : ajout de `items`. Un profil v1 n'en a pas : sanitize lui donne un inventaire vide.
+Profile.VERSION = 2
 
 local knownMachines: { [string]: boolean } = {}
 for _, machine in TycoonConfig.MACHINES do
@@ -37,6 +40,7 @@ function Profile.default(): Data
 		tier = Rebirth.STARTING_TIER,
 		rebirths = 0,
 		gems = 0,
+		items = {},
 	}
 end
 
@@ -74,10 +78,16 @@ function Profile.sanitize(raw: any): Data
 		tier = number(source.tier, 1, #VehicleConfig.TIERS, defaults.tier, true),
 		rebirths = number(source.rebirths, 0, math.huge - 1, 0, true),
 		gems = number(source.gems, 0, math.huge - 1, 0, true),
+		items = Inventory.sanitize(source.items),
 	}
 end
 
-function Profile.fromGame(state: Tycoon.State, tier: number, progress: Rebirth.Progress): Data
+function Profile.fromGame(
+	state: Tycoon.State,
+	tier: number,
+	progress: Rebirth.Progress,
+	items: Inventory.Inventory
+): Data
 	local machines: { string } = {}
 	for id, isOwned in state.machines do
 		if isOwned then
@@ -93,6 +103,7 @@ function Profile.fromGame(state: Tycoon.State, tier: number, progress: Rebirth.P
 		tier = tier,
 		rebirths = progress.rebirths,
 		gems = progress.gems,
+		items = items,
 	})
 end
 

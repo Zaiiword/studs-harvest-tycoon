@@ -19,6 +19,8 @@ export type Cell = {
 
 export type CutResult = {
 	index: number,
+	x: number,
+	z: number,
 	zone: string,
 	rarity: number,
 	value: number,
@@ -162,7 +164,21 @@ function FieldGrid.damage(self: FieldGrid, index: number, power: number, now: nu
 	cell.isGrown = false
 	table.insert(self._regrowQueue, { index = index, at = now + FieldConfig.REGROW_SECONDS })
 	local value = FieldConfig.WHEAT_ZONES[cell.zone].value * Rarity.byId(cell.rarity).valueMultiplier
-	return { index = index, zone = cell.zone, rarity = cell.rarity, value = value }
+	return { index = index, x = cell.x, z = cell.z, zone = cell.zone, rarity = cell.rarity, value = value }
+end
+
+-- Brin debout de rareté `rarity` le plus proche de (x, z), à moins de `range` studs (Onde de Choc, CDC §6).
+function FieldGrid.nearestOfRarity(self: FieldGrid, x: number, z: number, range: number, rarity: number): Cell?
+	local best: Cell? = nil
+	local bestDistance = range * range
+	for _, index in self._activeIndices do
+		local cell = self._cells[index]
+		local distance = (cell.x - x) ^ 2 + (cell.z - z) ^ 2
+		if cell.isGrown and cell.rarity == rarity and distance <= bestDistance then
+			best, bestDistance = cell, distance
+		end
+	end
+	return best
 end
 
 local function compactQueue(self: FieldGrid)

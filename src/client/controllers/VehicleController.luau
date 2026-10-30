@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local VehicleMotion = require(ReplicatedStorage.Shared.domain.VehicleMotion)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
 
 local VehicleController = {}
 
@@ -28,6 +29,11 @@ end
 
 local function isDizzy(): boolean
 	return Workspace:GetServerTimeNow() < numberAttribute(PlayerAttributes.DIZZY_UNTIL, -math.huge)
+end
+
+local function weatherSpeed(): number
+	local multiplier = ReplicatedStorage:GetAttribute(WorldAttributes.VEHICLE_SPEED_MULTIPLIER)
+	return if typeof(multiplier) == "number" then multiplier else 1
 end
 
 local function flatten(vector: Vector3): Vector3
@@ -55,7 +61,7 @@ local function motionParams(): VehicleMotion.MotionParams
 	local isFull = numberAttribute(PlayerAttributes.BAG_COUNT, 0) >= capacity
 	local penalty = if isFull then VehicleConfig.FULL_SPEED_PENALTY else 0 -- CDC §4 : -10 % quand PLEIN
 	return {
-		maxSpeed = tier.speed * (1 - penalty),
+		maxSpeed = tier.speed * (1 - penalty) * weatherSpeed(), -- Tempête de Vent : +25 % (CDC §6)
 		turnRate = HANDLING.TURN_RATE,
 		grip = HANDLING.GRIP,
 		lateralGrip = HANDLING.LATERAL_GRIP,

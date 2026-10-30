@@ -16,4 +16,6 @@ return table.freeze({
 	REBIRTHS = "Rebirths", -- nombre de Rebirths (+50 % de revenus, +15 % de masse chacun)
 	GEMS = "Gems", -- Gemmes de Prestige
 	IS_DATA_LOADED = "IsDataLoaded", -- vrai une fois le profil chargé (DataService)
+	BOOST_UNTIL = "BoostUntil", -- fin du multiplicateur ×3 gagné contre le boss (EventService)
+	ITEM_PREFIX = "Item_", -- Item_Mud, Item_Glove… : nombre d'exemplaires (InventoryService)
 })
