@@ -1,0 +1,130 @@
+--!strict
+-- Rareté, sac, limiteur de fréquence, codec réseau et gel des configs.
+local TestKit = require("../TestKit")
+local FakeRng = require("../helpers/FakeRng")
+local FieldConfig = require("../../src/shared/config/FieldConfig")
+local Rarity = require("../../src/shared/domain/Rarity")
+local Bag = require("../../src/shared/domain/Bag")
+local RateLimiter = require("../../src/shared/util/RateLimiter")
+local Freeze = require("../../src/shared/util/Freeze")
+local FieldCodec = require("../../src/shared/net/FieldCodec")
+local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
+
+describe("Rarity", function()
+	it("tire un Arc-en-ciel sous 1/1000 (CDC §4)", function()
+		expect(Rarity.roll(FakeRng.constant(0.0009))).toBe(Rarity.RAINBOW)
+	end)
+	it("tire un Géant entre 1/1000 et 1/1000 + 1/100", function()
+		expect(Rarity.roll(FakeRng.constant(0.005))).toBe(Rarity.GIANT)
+	end)
+	it("tire un brin normal au-delà", function()
+		expect(Rarity.roll(FakeRng.constant(0.5))).toBe(Rarity.NORMAL)
+	end)
+	it("multiplie la chance Arc-en-ciel pendant la Nuit Néon (×5)", function()
+		expect(Rarity.roll(FakeRng.constant(0.004), 5)).toBe(Rarity.RAINBOW)
+	end)
+	it("respecte les fréquences sur un grand échantillon", function()
+		local rng = FakeRng.seeded(42)
+		local giants = 0
+		for _ = 1, 100_000 do
+			if Rarity.roll(rng) == Rarity.GIANT then
+				giants += 1
+			end
+		end
+		expect(math.abs(giants - 1000) < 150).toBe(true)
+	end)
+end)
+
+describe("Bag", function()
+	it("refuse un blé de plus une fois plein", function()
+		local bag = Bag.new(2)
+		expect(Bag.add(bag, 1)).toBe(true)
+		expect(Bag.add(bag, 25)).toBe(true)
+		expect(Bag.isFull(bag)).toBe(true)
+		expect(Bag.add(bag, 1)).toBe(false)
+		expect(bag.value).toBe(26)
+	end)
+	it("grandit par paliers de 10 % (CDC §4)", function()
+		local bag = Bag.new(25)
+		for _ = 1, 4 do
+			Bag.add(bag, 1)
+		end
+		expect(Bag.fillStep(bag)).toBe(1)
+		for _ = 1, 21 do
+			Bag.add(bag, 1)
+		end
+		expect(Bag.fillStep(bag)).toBe(10)
+	end)
+	it("se vide au déchargement en rendant son contenu", function()
+		local bag = Bag.new(10)
+		Bag.add(bag, 250)
+		local count, value = Bag.empty(bag)
+		expect(count).toBe(1)
+		expect(value).toBe(250)
+		expect(bag.count).toBe(0)
+	end)
+	it("n'est jamais plein avec la Remorque Infinie (A16)", function()
+		local bag = Bag.new(math.huge)
+		for _ = 1, 1000 do
+			Bag.add(bag, 1)
+		end
+		expect(Bag.isFull(bag)).toBe(false)
+		expect(Bag.fillStep(bag)).toBe(0)
+	end)
+end)
+
+describe("RateLimiter", function()
+	it("bloque au-delà de la capacité puis se recharge", function()
+		local limiter = RateLimiter.new(2, 1)
+		expect(limiter:allow("p", 0)).toBe(true)
+		expect(limiter:allow("p", 0)).toBe(true)
+		expect(limiter:allow("p", 0)).toBe(false)
+		expect(limiter:allow("p", 1)).toBe(true)
+	end)
+	it("isole les clés entre elles", function()
+		local limiter = RateLimiter.new(1, 1)
+		expect(limiter:allow("a", 0)).toBe(true)
+		expect(limiter:allow("b", 0)).toBe(true)
+	end)
+end)
+
+describe("FieldCodec", function()
+	it("encode un lot en 4 octets par événement et le relit à l'identique", function()
+		local events = {
+			{ kind = FieldCodec.EVENT_CUT, index = 1234, data = 3 },
+			{ kind = FieldCodec.EVENT_REGROW, index = 2500, data = Rarity.RAINBOW },
+		}
+		local encoded = FieldCodec.encodeEvents(events)
+		expect(buffer.len(encoded)).toBe(8)
+		local decoded = FieldCodec.decodeEvents(encoded)
+		expect(#decoded).toBe(2)
+		expect(decoded[1].index).toBe(1234)
+		expect(decoded[2].data).toBe(Rarity.RAINBOW)
+	end)
+	it("ignore un événement hors bornes", function()
+		local decoded = FieldCodec.decodeEvents(FieldCodec.encodeEvents({ { kind = 0, index = 9999, data = 0 } }))
+		expect(#decoded).toBe(0)
+	end)
+	it("encode l'état initial en 1 octet par cellule", function()
+		local encoded = FieldCodec.encodeSnapshot({ [1] = Rarity.NORMAL, [42] = Rarity.GIANT })
+		expect(buffer.len(encoded)).toBe(FieldConfig.GRID_SIZE ^ 2)
+		local decoded = FieldCodec.decodeSnapshot(encoded)
+		expect(decoded[1]).toBe(Rarity.NORMAL)
+		expect(decoded[42]).toBe(Rarity.GIANT)
+		expect(decoded[2]).toBe(nil)
+	end)
+end)
+
+describe("Freeze", function()
+	it("gèle les tables imbriquées", function()
+		local frozen = Freeze.deep({ inner = { value = 1 } })
+		expect(function()
+			(frozen.inner :: any).value = 2
+		end).toThrow()
+	end)
+	it("gèle la config du champ", function()
+		expect(function()
+			(FieldConfig.WHEAT_ZONES.GreenWheat :: any).value = 1000
+		end).toThrow()
+	end)
+end)

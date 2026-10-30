@@ -1,0 +1,57 @@
+--!strict
+-- Contrat réseau : noms des Remotes (docs/CLEAN_CODE.md §1.1). Le serveur les crée, le client les attend.
+-- Aucun Remote ne transporte de montant d'argent ; la récolte n'a besoin d'aucune requête client (décision A26).
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local FOLDER_NAME = "Remotes"
+
+local Remotes = {}
+
+Remotes.FIELD_BATCH = "FieldBatch" -- serveur → clients : lot d'événements FieldCodec toutes les 0,2 s
+Remotes.FIELD_SNAPSHOT = "FieldSnapshot" -- client → serveur (RemoteFunction) : état initial du champ
+
+local KINDS: { [string]: string } = {
+	[Remotes.FIELD_BATCH] = "RemoteEvent",
+	[Remotes.FIELD_SNAPSHOT] = "RemoteFunction",
+}
+
+local function folder(): Instance
+	if RunService:IsServer() then
+		local existing = ReplicatedStorage:FindFirstChild(FOLDER_NAME)
+		if existing then
+			return existing
+		end
+		local created = Instance.new("Folder")
+		created.Name = FOLDER_NAME
+		created.Parent = ReplicatedStorage
+		return created
+	end
+	return ReplicatedStorage:WaitForChild(FOLDER_NAME)
+end
+
+function Remotes.event(name: string): RemoteEvent
+	return Remotes._get(name) :: RemoteEvent
+end
+
+function Remotes.func(name: string): RemoteFunction
+	return Remotes._get(name) :: RemoteFunction
+end
+
+function Remotes._get(name: string): Instance
+	local kind = KINDS[name]
+	assert(kind, `remote inconnu : {name}`)
+	local parent = folder()
+	if RunService:IsClient() then
+		return parent:WaitForChild(name)
+	end
+	local remote = parent:FindFirstChild(name)
+	if not remote then
+		remote = Instance.new(kind)
+		remote.Name = name
+		remote.Parent = parent
+	end
+	return remote :: Instance
+end
+
+return Remotes
