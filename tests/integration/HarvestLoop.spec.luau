@@ -9,6 +9,11 @@ local FieldGrid = require("../../src/shared/domain/FieldGrid")
 local Bag = require("../../src/shared/domain/Bag")
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
+-- Couloir de marche au milieu de la tige : début du Blé Vert, et Blé Diamant.
+local LANE_Z = 4
+local GREEN_X = 30
+local DIAMOND_X = 670
+
 type Run = { grid: FieldGrid.FieldGrid, bag: Bag.Bag, cutIndices: { number }, now: number }
 
 -- Avance de `tier.speed` studs/s vers +x sur la ligne z, une requête de coupe toutes les 0,15 s.
@@ -42,14 +47,14 @@ end
 describe("Boucle de récolte", function()
 	it("les Mains Nues coupent du Blé Vert en marchant (Sprint 1)", function()
 		local run = newRun(1)
-		walk(run, 1, -60, -125, 2)
+		walk(run, 1, GREEN_X, LANE_Z, 2)
 		expect(run.bag.count > 0).toBe(true)
 		expect(run.bag.value).toBe(run.bag.count) -- Blé Vert : 1 $ par brin
 	end)
 
 	it("remplit le sac jusqu'à sa capacité puis s'arrête", function()
 		local run = newRun(1)
-		walk(run, 1, -140, -125, 20)
+		walk(run, 1, GREEN_X, LANE_Z, 20)
 		expect(Bag.isFull(run.bag)).toBe(true)
 		expect(run.bag.count).toBe(VehicleConfig.TIERS[1].capacity)
 	end)
@@ -58,14 +63,14 @@ describe("Boucle de récolte", function()
 	-- l'écart entre ces deux paliers vient de la puissance et de la capacité (décision A24).
 	it("un outil plus large coupe plus vite", function()
 		local hands, tractor = newRun(1), newRun(4)
-		walk(hands, 1, -60, -125, 1)
-		walk(tractor, 4, -60, -125, 1)
+		walk(hands, 1, GREEN_X, LANE_Z, 1)
+		walk(tractor, 4, GREEN_X, LANE_Z, 1)
 		expect(tractor.bag.count > 2 * hands.bag.count).toBe(true)
 	end)
 
 	it("les brins coupés repoussent 8 s plus tard et redeviennent récoltables", function()
 		local run = newRun(1)
-		walk(run, 1, -60, -125, 1)
+		walk(run, 1, GREEN_X, LANE_Z, 1)
 		local first = run.cutIndices[1]
 		expect((run.grid:cell(first) :: FieldGrid.Cell).isGrown).toBe(false)
 		run.grid:regrowDue(run.now + FieldConfig.REGROW_SECONDS)
@@ -74,7 +79,7 @@ describe("Boucle de récolte", function()
 
 	it("les Mains Nues n'abattent pas le Blé Diamant en un passage (verrou souple, A3)", function()
 		local run = newRun(1)
-		walk(run, 1, -30, -40, 1)
+		walk(run, 1, DIAMOND_X, LANE_Z, 1)
 		expect(run.bag.count).toBe(0)
 	end)
 end)

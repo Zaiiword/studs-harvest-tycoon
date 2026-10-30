@@ -4,6 +4,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée p
 
 ## Sprint 1 — Récolte, grille serveur et sac à dos
 
+### Modifié après le premier test en Studio
+- Carte en T (A21) : 8 bases sur la barre, fossé + 4 ponts, champ en tige de 880 studs qui se rétrécit,
+  rareté croissante en s'éloignant des bases. Grille 110×30 de 8 studs (2 378 brins), brins plus gros.
+- Sols colorés et contrastés avec le blé ; suppression automatique de la Baseplate grise du modèle Studio.
+- Plan d'eau sous toute la carte : tomber renvoie à sa base.
+
 ### Ajouté
 - `FieldGrid` (domaine pur) : grille 50×50 (1 898 brins actifs ≤ 2 500), PV par anneau, repousse à 8 s,
   tirage de rareté Géant (1/100, ×10 valeur, ×3 PV) et Arc-en-ciel (1/1 000, ×100), boîte de coupe devant l'outil.

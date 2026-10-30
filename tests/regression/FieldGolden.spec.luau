@@ -14,12 +14,12 @@ describe("Champ (golden)", function()
 		perZone[zone] = (perZone[zone] or 0) + 1
 	end
 
-	it("nombre de brins par anneau", function()
-		expect(perZone.GreenWheat).toBe(1078)
-		expect(perZone.GoldenCorn).toBe(556)
-		expect(perZone.DiamondWheat).toBe(264)
+	it("nombre de brins par bande (carte en T)", function()
+		expect(perZone.GreenWheat).toBe(1198)
+		expect(perZone.GoldenCorn).toBe(772)
+		expect(perZone.DiamondWheat).toBe(408)
 	end)
 	it("nombre de briques de sol", function()
-		expect(#MapGeometry.floorRuns()).toBe(316)
+		expect(#MapGeometry.floorRuns()).toBe(123)
 	end)
 end)

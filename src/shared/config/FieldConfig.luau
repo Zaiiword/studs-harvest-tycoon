@@ -1,5 +1,5 @@
 --!strict
--- Champ de blé, récolte et rareté — CDC §3 (anneaux), §4 (grille, repousse, RNG) et §11 (batching).
+-- Champ de blé, récolte et rareté — CDC §3 (bandes de blé), §4 (grille, repousse, RNG) et §11 (batching).
 local Freeze = require("../util/Freeze")
 
 export type WheatZoneDef = {
@@ -17,12 +17,13 @@ export type RarityDef = {
 }
 
 return Freeze.deep({
-	-- 50 × 50 = 2 500 cellules au maximum (CDC §4). Seules celles d'un anneau de blé sont actives.
-	GRID_SIZE = 50,
+	-- CDC §4 : au plus 2 500 brins simultanés (budget de 60 FPS sur mobile). La grille du champ est
+	-- MapConfig.FIELD_LATTICE ; seules ses cellules situées dans une bande de blé sont actives.
+	MAX_STALKS = 2500,
 
-	-- CDC §3. Clés = id des zones de MapConfig.
+	-- CDC §3. Clés = id des bandes de MapConfig.
 	WHEAT_ZONES = {
-		GreenWheat = { hp = 1, value = 1, color = { 75, 151, 75 } },
+		GreenWheat = { hp = 1, value = 1, color = { 40, 127, 71 } },
 		GoldenCorn = { hp = 15, value = 25, color = { 245, 205, 48 } },
 		DiamondWheat = { hp = 100, value = 250, color = { 128, 230, 255 } },
 	} :: { [string]: WheatZoneDef },
@@ -54,7 +55,7 @@ return Freeze.deep({
 	PREDICTION_TIMEOUT = 1,
 
 	-- Rendu client des brins (CDC §2, §4).
-	STALK_SIZE = { 1.4, 3, 1.4 },
+	STALK_SIZE = { 2.4, 4, 2.4 },
 	RAINBOW_BEAM_HEIGHT = 160, -- CDC §4 : faisceau visible de toute la carte
 	RAINBOW_BEAM_WIDTH = 0.8,
 	RAINBOW_BEAM_TRANSPARENCY = 0.4,

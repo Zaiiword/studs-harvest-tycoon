@@ -1,7 +1,7 @@
 --!strict
 -- Encodage binaire des événements du champ (CDC §4 « signal compressé », §11 batching, docs/CLEAN_CODE.md §9).
 -- Un lot d'événements tient en 4 octets par événement ; l'état initial en 1 octet par cellule.
-local FieldConfig = require("../config/FieldConfig")
+local MapConfig = require("../config/MapConfig")
 
 export type FieldEvent = {
 	kind: number,
@@ -15,7 +15,7 @@ FieldCodec.EVENT_CUT = 0
 FieldCodec.EVENT_REGROW = 1
 
 local EVENT_BYTES = 4
-local CELL_COUNT = FieldConfig.GRID_SIZE * FieldConfig.GRID_SIZE
+local CELL_COUNT = MapConfig.FIELD_LATTICE.cols * MapConfig.FIELD_LATTICE.rows -- ≤ 65 535 (index en u16)
 local NOT_GROWN = 0
 
 local function isValidIndex(index: number): boolean

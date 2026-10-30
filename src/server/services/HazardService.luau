@@ -1,5 +1,5 @@
 --!strict
--- Zones dangereuses de la carte : tomber dans le fossé renvoie le joueur sur sa base, sans perte de blé
+-- Zones dangereuses de la carte : tomber à l'eau (fossé ou bord) renvoie le joueur sur sa base, sans perte de blé
 -- (CDC §6 « Protection anti-frustration »). Dépendances : MapService (pièces), PlotService (téléportation).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,7 +14,7 @@ local HazardService = {}
 -- Un personnage touche le fond avec plusieurs pièces à la fois : on ne le renvoie qu'une fois.
 local returnLimiter = RateLimiter.new(1, 1 / MapConfig.RETURN_COOLDOWN)
 
-local function onMoatTouched(hit: BasePart)
+local function onWaterTouched(hit: BasePart)
 	local character = hit:FindFirstAncestorOfClass("Model")
 	local player = character and Players:GetPlayerFromCharacter(character)
 	if player and returnLimiter:allow(player, os.clock()) then
@@ -23,9 +23,9 @@ local function onMoatTouched(hit: BasePart)
 end
 
 function HazardService:Start()
-	local moat = MapService.moatFloor()
-	if moat then
-		moat.Touched:Connect(onMoatTouched)
+	local water = MapService.water()
+	if water then
+		water.Touched:Connect(onWaterTouched)
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		returnLimiter:forget(player)

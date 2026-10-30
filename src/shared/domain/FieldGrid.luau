@@ -1,6 +1,6 @@
 --!strict
 -- Matrice logique du champ (CDC §4) : état, PV et rareté de chaque brin, sans aucune API Roblox.
--- Table plate indexée (i - 1) × GRID_SIZE + j (docs/CLEAN_CODE.md §9). Le serveur fait autorité ;
+-- Table plate indexée (i - 1) × rows + j sur MapConfig.FIELD_LATTICE (docs/CLEAN_CODE.md §9). Le serveur fait autorité ;
 -- le client en garde un miroir (setGrown / setCut) pour sa prédiction et le placement des visuels.
 local FieldConfig = require("../config/FieldConfig")
 local MapConfig = require("../config/MapConfig")
@@ -47,14 +47,16 @@ type GridData = {
 }
 export type FieldGrid = typeof(setmetatable({} :: GridData, FieldGrid))
 
-local GRID_SIZE = FieldConfig.GRID_SIZE
+local LATTICE = MapConfig.FIELD_LATTICE
 local CELL_SIZE = MapConfig.CELL_SIZE
 -- Une cellule est touchée si son carré (et pas seulement son centre) recoupe la boîte (décision A24).
 local HITBOX_MARGIN = CELL_SIZE / 2
 local QUEUE_COMPACT_THRESHOLD = 512
 
+FieldGrid.CELL_COUNT = LATTICE.cols * LATTICE.rows
+
 function FieldGrid.indexOf(i: number, j: number): number
-	return (i - 1) * GRID_SIZE + j
+	return (i - 1) * LATTICE.rows + j
 end
 
 local function freshHp(zone: string, rarity: number): number
@@ -62,7 +64,7 @@ local function freshHp(zone: string, rarity: number): number
 end
 
 local function newCell(i: number, j: number, rng: Rarity.Rng): Cell?
-	local x, z = MapGeometry.cellCenter(GRID_SIZE, i, j)
+	local x, z = MapGeometry.cellCenter(LATTICE, i, j)
 	local zone = MapGeometry.zoneAt(x, z)
 	if not zone or not FieldConfig.WHEAT_ZONES[zone] or MapGeometry.isUnderBridge(x, z, HITBOX_MARGIN) then
 		return nil
@@ -83,8 +85,8 @@ function FieldGrid.new(rng: Rarity.Rng): FieldGrid
 		} :: GridData,
 		FieldGrid
 	)
-	for i = 1, GRID_SIZE do
-		for j = 1, GRID_SIZE do
+	for i = 1, LATTICE.cols do
+		for j = 1, LATTICE.rows do
 			local cell = newCell(i, j, rng)
 			if cell then
 				self._cells[cell.index] = cell
@@ -103,13 +105,10 @@ function FieldGrid.activeIndices(self: FieldGrid): { number }
 	return table.clone(self._activeIndices)
 end
 
-local function toGridCoord(world: number): number
-	return world / CELL_SIZE + (GRID_SIZE + 1) / 2
-end
-
-local function candidateRange(center: number, reach: number): (number, number)
-	local low = math.max(1, math.floor(toGridCoord(center - reach)))
-	local high = math.min(GRID_SIZE, math.ceil(toGridCoord(center + reach)))
+-- Plage d'indices (1-based) des cellules dont le centre peut se trouver dans [center - reach, center + reach].
+local function candidateRange(center: number, reach: number, min: number, count: number): (number, number)
+	local low = math.max(1, math.floor((center - reach - min) / CELL_SIZE + 0.5))
+	local high = math.min(count, math.ceil((center + reach - min) / CELL_SIZE + 0.5))
 	return low, high
 end
 
@@ -122,8 +121,8 @@ function FieldGrid.queryHitbox(self: FieldGrid, hitbox: Hitbox): { number }
 	local fx, fz = hitbox.dirX / length, hitbox.dirZ / length
 	local reach = hitbox.size + HITBOX_MARGIN
 	local halfWidth = hitbox.size / 2 + HITBOX_MARGIN
-	local iLow, iHigh = candidateRange(hitbox.x, reach)
-	local jLow, jHigh = candidateRange(hitbox.z, reach)
+	local iLow, iHigh = candidateRange(hitbox.x, reach, LATTICE.minX, LATTICE.cols)
+	local jLow, jHigh = candidateRange(hitbox.z, reach, LATTICE.minZ, LATTICE.rows)
 
 	local hits: { { index: number, along: number } } = {}
 	for i = iLow, iHigh do

@@ -13,7 +13,7 @@ local MapService = {}
 MapService.MAP_NAME = "Map"
 MapService.BASES_FOLDER = "Bases"
 MapService.SPAWN_NAME = "Spawn"
-MapService.MOAT_FLOOR_NAME = "MoatFloor"
+MapService.WATER_NAME = "Water"
 
 type SlabSpec = {
 	name: string,
@@ -62,19 +62,32 @@ local function buildFloor(map: Folder)
 	end
 end
 
--- Fond du fossé : trop profond pour en ressortir, il renvoie le joueur sur sa base (HazardService).
-local function buildMoatFloor(map: Folder)
-	local diameter = MapGeometry.zone("Moat").outerRadius * 2
+-- Plan d'eau sous toute la carte (fossé compris) : trop profond pour en ressortir, il renvoie le joueur
+-- sur sa base (HazardService) au lieu de le laisser tomber dans le vide.
+local function buildWater(map: Folder)
+	local lattice, margin = MapConfig.MAP_LATTICE, MapConfig.WATER_MARGIN
+	local sizeX = lattice.cols * MapConfig.CELL_SIZE + 2 * margin
+	local sizeZ = lattice.rows * MapConfig.CELL_SIZE + 2 * margin
 	slab({
-		name = MapService.MOAT_FLOOR_NAME,
-		x = 0,
-		z = 0,
+		name = MapService.WATER_NAME,
+		x = lattice.minX - margin + sizeX / 2,
+		z = lattice.minZ - margin + sizeZ / 2,
 		angle = 0,
-		top = MapConfig.MOAT_FLOOR_TOP,
-		sizeX = diameter,
-		sizeZ = diameter,
-		color = "Moat",
+		top = MapConfig.WATER_TOP,
+		sizeX = sizeX,
+		sizeZ = sizeZ,
+		color = "Water",
 	}, map)
+end
+
+-- Le modèle « Baseplate » de Studio pose un sol gris au niveau 0 qui recouvre la carte générée.
+local function removeTemplateLeftovers()
+	for _, name in MapConfig.TEMPLATE_LEFTOVERS do
+		local leftover = Workspace:FindFirstChild(name)
+		if leftover and leftover:IsA("BasePart") then
+			leftover:Destroy()
+		end
+	end
 end
 
 local function buildBridges(map: Folder)
@@ -129,11 +142,12 @@ function MapService:Init()
 	if existing then
 		existing:Destroy()
 	end
+	removeTemplateLeftovers()
 	local map = Instance.new("Folder")
 	map.Name = MapService.MAP_NAME
 
 	buildFloor(map)
-	buildMoatFloor(map)
+	buildWater(map)
 	buildBridges(map)
 	buildBases(map)
 
@@ -147,9 +161,9 @@ function MapService.basePart(index: number): BasePart?
 	return bases and bases:FindFirstChild(`Base{index}`) :: BasePart?
 end
 
-function MapService.moatFloor(): BasePart?
+function MapService.water(): BasePart?
 	local map = Workspace:FindFirstChild(MapService.MAP_NAME)
-	return map and map:FindFirstChild(MapService.MOAT_FLOOR_NAME) :: BasePart?
+	return map and map:FindFirstChild(MapService.WATER_NAME) :: BasePart?
 end
 
 return MapService
