@@ -23,8 +23,9 @@ describe("FieldGrid", function()
 	describe("new", function()
 		local grid = FieldGrid.new(ALWAYS_NORMAL)
 
-		it("ne dépasse pas 2 500 brins (CDC §4)", function()
-			expect(#grid:activeIndices() <= FieldConfig.MAX_STALKS).toBe(true)
+		it("tient dans des index sur 16 bits (codec réseau)", function()
+			expect(FieldGrid.CELL_COUNT <= 65535).toBe(true)
+			expect(#grid:activeIndices() <= FieldGrid.CELL_COUNT).toBe(true)
 		end)
 		it("ne fait pousser du blé que dans les bandes de blé", function()
 			for _, index in grid:activeIndices() do

@@ -17,9 +17,13 @@ export type RarityDef = {
 }
 
 return Freeze.deep({
-	-- CDC §4 : au plus 2 500 brins simultanés (budget de 60 FPS sur mobile). La grille du champ est
-	-- MapConfig.FIELD_LATTICE ; seules ses cellules situées dans une bande de blé sont actives.
+	-- CDC §4 : au plus 2 500 brins *affichés simultanément* (budget de 60 FPS sur mobile, décision A32).
+	-- Le serveur gère toute la grille (MapConfig.FIELD_LATTICE) ; chaque client n'affiche que les chunks
+	-- proches de sa caméra, avec un pool fixe de MAX_STALKS pièces recyclées.
 	MAX_STALKS = 2500,
+	CHUNK_CELLS = 8, -- un chunk = 8 × 8 cellules (64 × 64 studs)
+	RENDER_RADIUS = 220, -- studs autour du point suivi par la caméra
+	STREAM_INTERVAL = 0.25, -- secondes entre deux mises à jour des chunks affichés
 
 	-- CDC §3. Clés = id des bandes de MapConfig.
 	WHEAT_ZONES = {

@@ -23,9 +23,8 @@ local function onWaterTouched(hit: BasePart)
 end
 
 function HazardService:Start()
-	local water = MapService.water()
-	if water then
-		water.Touched:Connect(onWaterTouched)
+	for _, tile in MapService.waterTiles() do
+		tile.Touched:Connect(onWaterTouched)
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		returnLimiter:forget(player)

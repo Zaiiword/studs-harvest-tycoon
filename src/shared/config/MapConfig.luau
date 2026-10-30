@@ -1,8 +1,9 @@
 --!strict
--- Carte en T (décision A21, révisée à la demande du porteur de projet) : les 8 bases sont alignées sur la
--- barre du T (« Plaza »), un fossé franchi par 4 ponts étroits les sépare du champ, et le champ forme la tige
--- du T. Plus on s'éloigne des bases, plus le blé est rare et plus la tige se rétrécit : c'est l'« entonnoir »
--- du CDC §3 (rentabilité ↑, surface ↓, compétition ↑). L'arène du boss (« Core ») termine la tige.
+-- Carte en T (décision A21, à l'échelle demandée par le porteur de projet : « on ne voit pas le bout ») :
+-- les 8 bases sont alignées sur la barre du T (« Plaza »), un fossé franchi par 4 ponts étroits les sépare
+-- du champ, et le champ forme la tige du T, longue de 3 000 studs. Plus on s'éloigne des bases, plus le blé
+-- est rare et plus la tige se rétrécit : c'est l'« entonnoir » du CDC §3 (rentabilité ↑, surface ↓,
+-- compétition ↑). L'arène du boss (« Core ») termine la tige.
 -- Axe X : des bases vers le bout du champ. Axe Z : latéral. Unité : stud.
 -- Tout le sol est posé sur un réseau de cellules de CELL_SIZE, le même que la grille du champ (CDC §4).
 local Freeze = require("../util/Freeze")
@@ -24,33 +25,33 @@ return Freeze.deep({
 	CELL_SIZE = 8,
 
 	-- Barre du T : bases et circulation. Fossé : bande vide franchie par les ponts. Tige : champ.
-	PLAZA = { minX = -104, maxX = 0, halfWidth = 320 },
+	PLAZA = { minX = -160, maxX = 0, halfWidth = 600 },
 	MOAT = { minX = 0, maxX = 24 },
-	STEM = { minX = 24, maxX = 904, startHalfWidth = 120, endHalfWidth = 64 },
+	STEM = { minX = 24, maxX = 3024, startHalfWidth = 240, endHalfWidth = 120 },
 
 	-- Bandes de la tige, de la plus proche des bases à la plus lointaine (CDC §3).
 	STEM_BANDS = {
-		{ id = "GreenWheat", startDistance = 0, endDistance = 360 },
-		{ id = "GoldenCorn", startDistance = 360, endDistance = 640 },
-		{ id = "DiamondWheat", startDistance = 640, endDistance = 820 },
-		{ id = "Core", startDistance = 820, endDistance = 880 },
+		{ id = "GreenWheat", startDistance = 0, endDistance = 1200 },
+		{ id = "GoldenCorn", startDistance = 1200, endDistance = 2200 },
+		{ id = "DiamondWheat", startDistance = 2200, endDistance = 2800 },
+		{ id = "Core", startDistance = 2800, endDistance = 3000 },
 	} :: { BandDef },
 	-- Zones sans sol : on les franchit par les ponts.
 	VOID_ZONES = { Moat = true } :: { [string]: boolean },
 
 	-- Réseau de toute la carte (sol) et réseau du champ (FieldGrid). Ils sont alignés : mêmes cellules.
-	MAP_LATTICE = { minX = -104, minZ = -320, cols = 126, rows = 80 } :: Lattice,
-	FIELD_LATTICE = { minX = 24, minZ = -120, cols = 110, rows = 30 } :: Lattice,
+	MAP_LATTICE = { minX = -160, minZ = -600, cols = 398, rows = 150 } :: Lattice,
+	FIELD_LATTICE = { minX = 24, minZ = -240, cols = 375, rows = 60 } :: Lattice,
 
 	-- Bases Tycoon : alignées sur la barre, tournées vers le champ (CDC §3, A22).
 	BASE_COUNT = 8,
-	BASE_SIZE = 60,
-	BASE_PITCH = 80, -- distance entre deux centres de bases
-	BASE_CENTER_X = -52,
+	BASE_SIZE = 120,
+	BASE_PITCH = 145, -- distance entre deux centres de bases
+	BASE_CENTER_X = -80,
 
 	-- Ponts étroits qui franchissent le fossé (CDC §3, A23), répartis sur la largeur du début de la tige.
-	BRIDGE_Z = { -90, -30, 30, 90 } :: { number },
-	BRIDGE_WIDTH = 12,
+	BRIDGE_Z = { -180, -60, 60, 180 } :: { number },
+	BRIDGE_WIDTH = 14,
 	BRIDGE_OVERLAP = 10,
 
 	-- Altitudes des faces supérieures et épaisseur des briques de sol.
@@ -58,7 +59,8 @@ return Freeze.deep({
 	FLOOR_TOP = 0,
 	DECK_TOP = 0.4, -- ponts et bases, légèrement au-dessus du sol pour éviter le z-fighting
 	WATER_TOP = -10, -- plan d'eau sous toute la carte : y tomber renvoie à sa base (A27)
-	WATER_MARGIN = 200,
+	WATER_MARGIN = 400,
+	WATER_TILE_SIZE = 2000, -- une pièce Roblox ne dépasse pas 2 048 studs par côté
 	SPAWN_HEIGHT = 1,
 	RETURN_DROP_HEIGHT = 4, -- un joueur tombé à l'eau réapparaît 4 studs au-dessus de son spawn
 	RETURN_COOLDOWN = 1, -- secondes entre deux renvois d'un même joueur

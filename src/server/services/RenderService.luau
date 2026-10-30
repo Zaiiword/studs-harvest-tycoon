@@ -16,6 +16,11 @@ local function applyLighting()
 	Lighting.ColorShift_Top = Bricks.rgb(config.COLOR_SHIFT_TOP)
 	Lighting.OutdoorAmbient = Bricks.rgb(config.OUTDOOR_AMBIENT)
 	Lighting.ClockTime = config.CLOCK_TIME
+	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
+	atmosphere.Density = RenderConfig.ATMOSPHERE.DENSITY
+	atmosphere.Haze = RenderConfig.ATMOSPHERE.HAZE
+	atmosphere.Color = Bricks.rgb(RenderConfig.ATMOSPHERE.COLOR)
+	atmosphere.Parent = Lighting
 end
 
 -- Sans texture configurée, on garde les surfaces Studs/Inlet natives (voir Bricks et décision A25).

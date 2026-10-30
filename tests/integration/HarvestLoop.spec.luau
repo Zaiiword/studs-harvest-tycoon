@@ -12,7 +12,7 @@ local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 -- Couloir de marche au milieu de la tige : début du Blé Vert, et Blé Diamant.
 local LANE_Z = 4
 local GREEN_X = 30
-local DIAMOND_X = 670
+local DIAMOND_X = 2300
 
 type Run = { grid: FieldGrid.FieldGrid, bag: Bag.Bag, cutIndices: { number }, now: number }
 

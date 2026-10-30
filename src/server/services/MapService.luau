@@ -64,20 +64,28 @@ end
 
 -- Plan d'eau sous toute la carte (fossé compris) : trop profond pour en ressortir, il renvoie le joueur
 -- sur sa base (HazardService) au lieu de le laisser tomber dans le vide.
+-- Découpé en dalles : une pièce Roblox ne dépasse pas 2 048 studs par côté.
 local function buildWater(map: Folder)
-	local lattice, margin = MapConfig.MAP_LATTICE, MapConfig.WATER_MARGIN
-	local sizeX = lattice.cols * MapConfig.CELL_SIZE + 2 * margin
-	local sizeZ = lattice.rows * MapConfig.CELL_SIZE + 2 * margin
-	slab({
-		name = MapService.WATER_NAME,
-		x = lattice.minX - margin + sizeX / 2,
-		z = lattice.minZ - margin + sizeZ / 2,
-		angle = 0,
-		top = MapConfig.WATER_TOP,
-		sizeX = sizeX,
-		sizeZ = sizeZ,
-		color = "Water",
-	}, map)
+	local folder = newFolder(MapService.WATER_NAME, map)
+	local lattice, margin, tile = MapConfig.MAP_LATTICE, MapConfig.WATER_MARGIN, MapConfig.WATER_TILE_SIZE
+	local minX, minZ = lattice.minX - margin, lattice.minZ - margin
+	local totalX = lattice.cols * MapConfig.CELL_SIZE + 2 * margin
+	local totalZ = lattice.rows * MapConfig.CELL_SIZE + 2 * margin
+	for offsetX = 0, totalX - 1, tile do
+		for offsetZ = 0, totalZ - 1, tile do
+			local sizeX, sizeZ = math.min(tile, totalX - offsetX), math.min(tile, totalZ - offsetZ)
+			slab({
+				name = "WaterTile",
+				x = minX + offsetX + sizeX / 2,
+				z = minZ + offsetZ + sizeZ / 2,
+				angle = 0,
+				top = MapConfig.WATER_TOP,
+				sizeX = sizeX,
+				sizeZ = sizeZ,
+				color = "Water",
+			}, folder)
+		end
+	end
 end
 
 -- Le modèle « Baseplate » de Studio pose un sol gris au niveau 0 qui recouvre la carte générée.
@@ -161,9 +169,17 @@ function MapService.basePart(index: number): BasePart?
 	return bases and bases:FindFirstChild(`Base{index}`) :: BasePart?
 end
 
-function MapService.water(): BasePart?
+-- Dalles du plan d'eau (pour HazardService). Disponibles après Init.
+function MapService.waterTiles(): { BasePart }
 	local map = Workspace:FindFirstChild(MapService.MAP_NAME)
-	return map and map:FindFirstChild(MapService.WATER_NAME) :: BasePart?
+	local folder = map and map:FindFirstChild(MapService.WATER_NAME)
+	local tiles: { BasePart } = {}
+	for _, child in if folder then folder:GetChildren() else {} do
+		if child:IsA("BasePart") then
+			table.insert(tiles, child)
+		end
+	end
+	return tiles
 end
 
 return MapService
