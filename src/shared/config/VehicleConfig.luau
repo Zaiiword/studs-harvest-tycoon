@@ -1,5 +1,6 @@
 --!strict
 -- Paliers outils/véhicules — CDC §5 (tableau des paliers). CutPower : décision A2.
+local Freeze = require("../util/Freeze")
 
 export type TierDef = {
 	id: number,
@@ -93,13 +94,47 @@ local TIERS: { TierDef } = {
 	},
 }
 
-for _, tier in TIERS do
-	table.freeze(tier)
-end
+-- Carrosserie des engins (paliers 3 à 7) : la taille grandit avec le palier (CDC §2 « lisibilité »).
+export type BodyDef = {
+	length: number,
+	width: number,
+	height: number,
+	color: { number },
+}
 
-return table.freeze({
-	TIERS = table.freeze(TIERS),
+local BODIES: { [number]: BodyDef } = {
+	[3] = { length = 6, width = 4, height = 2, color = { 196, 40, 28 } }, -- Tondeuse Rouge
+	[4] = { length = 9, width = 6, height = 3, color = { 75, 151, 75 } }, -- Tracteur Fermier
+	[5] = { length = 11, width = 8, height = 3, color = { 13, 105, 172 } },
+	[6] = { length = 14, width = 10, height = 4, color = { 245, 205, 48 } },
+	[7] = { length = 17, width = 12, height = 4, color = { 98, 37, 209 } },
+}
+
+return Freeze.deep({
+	TIERS = TIERS,
+	BODIES = BODIES,
 	FULL_SPEED_PENALTY = 0.10, -- CDC §4 : -10 % de vitesse quand le sac est plein
 	REBIRTH_MASS_BONUS = 0.15, -- CDC §5/§7 (appliqué une seule fois, cf. ANALYSE A15)
 	TITAN_MASS_MULTIPLIER = 2.5, -- CDC §9
+
+	-- Contrôleur d'arcade (CDC §5) : cap qui pivote vers la direction voulue, adhérence avant forte et
+	-- adhérence latérale faible pour un dérapage fluide. Unités : rad/s et 1/s (constantes de lissage).
+	HANDLING = {
+		TURN_RATE = 3.2,
+		GRIP = 4,
+		LATERAL_GRIP = 2.2,
+		INPUT_DEADZONE = 0.05,
+		MAX_FORCE_PER_MASS = 400, -- force max des contraintes, proportionnelle à la masse de l'assemblage
+		ALIGN_RESPONSIVENESS = 40,
+		SEAT_HEIGHT = 1.5, -- le pilote est soudé 1,5 stud au-dessus de la carrosserie
+		FRICTION = 0.05, -- la carrosserie glisse : c'est LinearVelocity qui la déplace
+	},
+	-- Noms des pièces de l'engin, partagés entre VehicleService (serveur) et VehicleController (client).
+	PARTS = {
+		BODY = "Vehicle",
+		MOVER = "Mover", -- LinearVelocity
+		ALIGNER = "Aligner", -- AlignOrientation
+	},
+	SPEED_TOLERANCE = 1.5, -- au-delà de 150 % de la vitesse du palier, le serveur journalise (anti-triche)
+	SPEED_CHECK_INTERVAL = 1, -- secondes
 })

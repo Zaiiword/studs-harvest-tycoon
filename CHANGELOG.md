@@ -2,6 +2,22 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Sprint 2 — Véhicules arcade et Bumper PvP
+
+### Ajouté
+- `VehicleMotion` (domaine pur) : cap qui pivote vers la direction voulue, adhérence avant forte et latérale
+  faible (dérapage fluide).
+- `VehicleService` : carrosserie par palier (3 à 7) soudée au personnage, LinearVelocity + AlignOrientation,
+  surveillance de la vitesse. `VehicleController` : pilotage client relatif à la caméra (PC, mobile, manette).
+- `Bumper` (domaine pur) et `BumperService` : détection des chocs à 10 Hz, éjection selon la formule de
+  masse du CDC §5, tournis de 0,8 s, bulle d'immunité de 15 s, zones sécurisées (A29 à A31).
+- `DevCommandsService` : `!tier N` dans le chat, uniquement dans Studio.
+- Tests : conduite, détection des chocs, golden des vitesses d'éjection.
+
+### Modifié
+- Carte en T à grande échelle (tige de 3 000 studs) et affichage du champ par chunks avec un budget
+  de 2 500 brins côté client (A21, A32).
+
 ## Sprint 1 — Récolte, grille serveur et sac à dos
 
 ### Modifié après le premier test en Studio
