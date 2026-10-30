@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local AssetIds = require(ReplicatedStorage.Shared.config.AssetIds)
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
+local PlantConfig = require(ReplicatedStorage.Shared.config.PlantConfig)
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -60,8 +61,7 @@ local function launchBricks(x: number, z: number, target: BasePart)
 		end
 		local jitterX = random:NextNumber(-SPAWN_JITTER, SPAWN_JITTER)
 		local jitterZ = random:NextNumber(-SPAWN_JITTER, SPAWN_JITTER)
-		local earHeight = FieldConfig.PLANT.STEM[2] + FieldConfig.PLANT.EAR[2] / 2 -- les briques partent de l'épi
-		local from = Vector3.new(x + jitterX, MapConfig.FLOOR_TOP + earHeight, z + jitterZ)
+		local from = Vector3.new(x + jitterX, MapConfig.FLOOR_TOP + PlantConfig.EAR_HEIGHT, z + jitterZ)
 		table.insert(flights, { part = part, from = from, target = target, startedAt = now })
 	end
 end

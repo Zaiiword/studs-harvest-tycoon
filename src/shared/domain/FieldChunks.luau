@@ -53,6 +53,33 @@ function FieldChunks.build(grid: FieldGrid.FieldGrid): ChunkMap
 	return { chunks = chunks, ordered = ordered }
 end
 
+export type RenderBudget = {
+	detailRadius: number,
+	detailBudget: number, -- plantes détaillées au plus
+	farRadius: number,
+	totalBudget: number, -- plantes affichées au plus (détaillées comprises)
+}
+
+export type RenderPlan = { detailed: { Chunk }, simple: { Chunk } }
+
+-- Répartit les chunks proches en deux niveaux de détail (A39) : détaillés tant que le chunk est dans le
+-- rayon de détail et que le budget le permet, simples ensuite, jusqu'au budget total (CDC §4).
+function FieldChunks.plan(map: ChunkMap, x: number, z: number, budget: RenderBudget): RenderPlan
+	local plan: RenderPlan = { detailed = {}, simple = {} }
+	local detailedUsed = 0
+	for _, chunk in FieldChunks.visible(map, x, z, budget.farRadius, budget.totalBudget) do
+		local cost = #chunk.indices
+		local distance = math.sqrt((chunk.x - x) ^ 2 + (chunk.z - z) ^ 2)
+		if distance <= budget.detailRadius and detailedUsed + cost <= budget.detailBudget then
+			detailedUsed += cost
+			table.insert(plan.detailed, chunk)
+		else
+			table.insert(plan.simple, chunk)
+		end
+	end
+	return plan
+end
+
 -- Chunks à afficher autour de (x, z), du plus proche au plus lointain, sans dépasser `budget` brins.
 function FieldChunks.visible(map: ChunkMap, x: number, z: number, radius: number, budget: number): { Chunk }
 	local candidates: { { chunk: Chunk, distance: number } } = {}
