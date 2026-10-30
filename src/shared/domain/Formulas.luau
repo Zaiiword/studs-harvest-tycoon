@@ -52,7 +52,12 @@ end
 
 -- CDC §5 : VitesseImpact × (MasseAttaquant ÷ MasseCible) × BonusPareChocs.
 -- Le terme (1 + 0,15 × Rebirths) est déjà inclus dans effectiveMass.
-function Formulas.knockbackForce(impactSpeed: number, attackerMass: number, targetMass: number, bumperBonus: number): number
+function Formulas.knockbackForce(
+	impactSpeed: number,
+	attackerMass: number,
+	targetMass: number,
+	bumperBonus: number
+): number
 	assert(targetMass > 0, "targetMass doit être > 0")
 	return math.max(0, impactSpeed) * (attackerMass / targetMass) * bumperBonus
 end

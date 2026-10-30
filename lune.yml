@@ -1,0 +1,8 @@
+---
+# Bibliothèque standard Selene pour les tests exécutés sous Lune :
+# `require` accepte des chemins et des alias (@lune/...), pas seulement des instances.
+base: roblox
+globals:
+  require:
+    args:
+      - type: any

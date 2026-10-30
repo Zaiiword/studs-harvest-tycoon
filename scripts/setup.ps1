@@ -8,9 +8,10 @@ if (-not (Get-Command rokit -ErrorAction SilentlyContinue)) {
     $env:Path = "$env:USERPROFILE\.rokit\bin;$env:Path"
 }
 
-rokit trust --all 2>$null
+$tools = Select-String -Path rokit.toml -Pattern '"([^"]+@[^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value -replace '@[^@]*$', '' }
+rokit trust @tools
 rokit install
 wally install
-if (Test-Path Packages) { wally-package-types --sourcemap sourcemap.json Packages/ }
 rojo sourcemap default.project.json -o sourcemap.json
+if (Test-Path Packages) { wally-package-types --sourcemap sourcemap.json Packages/ }
 Write-Host "Environnement prêt. Lancez : .\scripts\dev.ps1" -ForegroundColor Green
