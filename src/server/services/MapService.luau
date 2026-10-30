@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
+local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 
@@ -114,15 +115,17 @@ local function buildBridges(map: Folder)
 	end
 end
 
-local function addSpawn(floor: Part)
+-- Posé sur la base, à l'emplacement prévu par le plan du Tycoon (les boutons occupent le centre).
+local function addSpawn(floor: Part, base: MapGeometry.Placement)
+	local spot = TycoonConfig.LAYOUT.SPAWN
+	local x, z = MapGeometry.baseToWorld(base, spot.x, spot.z)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = MapService.SPAWN_NAME
 	spawn.Anchored = true
 	spawn.Neutral = true
 	spawn.Duration = 0
 	spawn.Size = Vector3.new(6, MapConfig.SPAWN_HEIGHT, 6)
-	-- Posé sur la base : décalage = demi-épaisseur de la base + demi-hauteur du spawn.
-	spawn.CFrame = floor.CFrame + Vector3.new(0, (MapConfig.GROUND_THICKNESS + MapConfig.SPAWN_HEIGHT) / 2, 0)
+	spawn.CFrame = CFrame.new(x, MapConfig.DECK_TOP + MapConfig.SPAWN_HEIGHT / 2, z)
 	Bricks.style(spawn, MapConfig.COLORS.Core)
 	spawn.Parent = floor
 end
@@ -141,7 +144,7 @@ local function buildBases(map: Folder)
 			color = "Base",
 		}, folder)
 		floor:SetAttribute("BaseIndex", base.index)
-		addSpawn(floor)
+		addSpawn(floor, base)
 	end
 end
 

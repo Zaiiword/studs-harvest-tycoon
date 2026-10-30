@@ -19,9 +19,20 @@ return Freeze.deep({
 		ALERT_RATIO = 0.9, -- CDC §10 : la barre pulse en rouge dès 90 %
 		PULSE_SPEED = 6, -- radians par seconde
 	},
-	SILO_LABEL = {
-		WIDTH = 240,
-		HEIGHT = 32,
+	-- CDC §10 « Indicateur de revenu passif » : trésorerie, cadence de l'usine et autonomie du silo.
+	ECONOMY_PANEL = {
+		WIDTH = 460,
+		HEIGHT = 40,
 		TOP_MARGIN = 12,
+		ALERT_HEIGHT = 28,
+		ALERT_COLOR = { 220, 40, 40 },
+	},
+	-- Panneau de test (Studio uniquement).
+	DEV_PANEL = {
+		BUTTON_WIDTH = 64,
+		BUTTON_HEIGHT = 32,
+		PADDING = 6,
+		LEFT_MARGIN = 12,
+		COLOR = { 98, 37, 209 },
 	},
 })

@@ -2,6 +2,21 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Sprint 3 — Tycoon : silo, tapis, machines et revenu
+
+### Ajouté
+- `Tycoon` (domaine pur) : silo en $ bruts plafonné, tapis à niveaux, Moulin ×1,5 / Four ×3 / Usine ×8
+  cumulés, revenu à la seconde (formule du CDC §8), autonomie du silo, achats et Garage (A33).
+- `TycoonService` : usine construite sur la base (boutons au sol avec prix, grille de déchargement, silo dont
+  la hauteur suit le remplissage, tapis, machines qui apparaissent à l'achat), revenu encaissé chaque seconde.
+- `EconomyHudController` : trésorerie, $/s et autonomie du silo en haut de l'écran, alerte « silo vide ».
+- Panneau de test Studio (paliers, +10 000 $) en remplacement de `!tier` (A34).
+- Tests : usine, retrait partiel du sac, repère local de base, formatage, boucle économique, golden des prix.
+
+### Corrigé
+- Le véhicule n'apparaissait pas : la commande `!tier` passait par `Player.Chatted`, qui ne se déclenche pas
+  de façon fiable avec TextChatService. Le montage du véhicule signale désormais ses échecs dans l'Output.
+
 ## Sprint 2 — Véhicules arcade et Bumper PvP
 
 ### Ajouté

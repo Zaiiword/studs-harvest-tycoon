@@ -1,8 +1,8 @@
 --!strict
 -- Récolte autoritaire (CDC §4, Sprint 1) : toutes les 0,15 s, la boîte de coupe placée devant chaque joueur
 -- interroge la grille côté serveur, sans aucune requête client (décision A26). Remplit le sac, applique
--- la pénalité « PLEIN » (-10 % de vitesse) et vide le sac quand le joueur rentre sur sa base.
--- Dépendances : FieldService (brins), PlotService (bases). L'argent viendra de TycoonService (Sprint 3).
+-- la pénalité « PLEIN » (-10 % de vitesse) et vide le sac sur la grille de déchargement de sa base.
+-- Dépendances : FieldService (brins), PlotService (bases), TycoonService (silo).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -10,12 +10,12 @@ local RunService = game:GetService("RunService")
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
-local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local FieldService = require(script.Parent.FieldService)
 local PlotService = require(script.Parent.PlotService)
+local TycoonService = require(script.Parent.TycoonService)
 
 local HarvestService = {}
 
@@ -77,15 +77,6 @@ local function attachBackpack(state: PlayerState, character: Model)
 	resizeBackpack(state)
 end
 
-local function unload(player: Player, state: PlayerState)
-	if state.bag.count == 0 then
-		return
-	end
-	local _, value = Bag.empty(state.bag)
-	local silo = player:GetAttribute(ATTR.SILO_VALUE)
-	player:SetAttribute(ATTR.SILO_VALUE, (if typeof(silo) == "number" then silo else 0) + value)
-end
-
 local function cutInFront(player: Player, state: PlayerState, root: BasePart, tier: VehicleConfig.TierDef)
 	local look = root.CFrame.LookVector
 	local position = root.Position
@@ -121,9 +112,10 @@ local function harvestTick(player: Player, state: PlayerState)
 	end
 	local tier = tierOf(player)
 	Bag.setCapacity(state.bag, tier.capacity)
-	local base = PlotService.basePlacement(player)
-	if base and MapGeometry.isInsideBase(base, root.Position.X, root.Position.Z) then
-		unload(player, state)
+	if TycoonService.isOnUnloadPad(player, root.Position) then
+		if state.bag.count > 0 then
+			TycoonService.unload(player, state.bag)
+		end
 	elseif not Bag.isFull(state.bag) then
 		cutInFront(player, state, root, tier)
 	end

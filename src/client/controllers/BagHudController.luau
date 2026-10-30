@@ -12,13 +12,11 @@ local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local BagHudController = {}
 
 local BAR = UiConfig.BAG_BAR
-local SILO = UiConfig.SILO_LABEL
 local FONT = (Enum.Font :: any)[UiConfig.FONT] :: Enum.Font
 
 local localPlayer = Players.LocalPlayer
 local fill: Frame
 local label: TextLabel
-local siloLabel: TextLabel
 local isAlerting = false
 local screenGui: ScreenGui
 
@@ -65,18 +63,6 @@ local function buildBar(gui: ScreenGui)
 	label = newLabel(bar)
 end
 
-local function buildSiloLabel(gui: ScreenGui)
-	local frame = Instance.new("Frame")
-	frame.Name = "Silo"
-	frame.AnchorPoint = Vector2.new(0.5, 0)
-	frame.Position = UDim2.new(0.5, 0, 0, SILO.TOP_MARGIN)
-	frame.Size = UDim2.fromOffset(SILO.WIDTH, SILO.HEIGHT)
-	frame.BackgroundColor3 = Bricks.rgb(BAR.BACKGROUND)
-	decorate(frame)
-	frame.Parent = gui
-	siloLabel = newLabel(frame)
-end
-
 local function numberAttribute(name: string): number
 	local value = localPlayer:GetAttribute(name)
 	return if typeof(value) == "number" then value else 0
@@ -89,7 +75,6 @@ local function refresh()
 	fill.Size = UDim2.fromScale(ratio, 1)
 	isAlerting = ratio >= BAR.ALERT_RATIO
 	label.Text = if ratio >= 1 then "PLEIN !" else `{count} / {capacity} 🌾`
-	siloLabel.Text = `Silo : {numberAttribute(PlayerAttributes.SILO_VALUE)} $`
 	if not isAlerting then
 		fill.BackgroundColor3 = Bricks.rgb(BAR.FILL)
 	end
@@ -108,12 +93,11 @@ function BagHudController:Init()
 	screenGui.Name = "HarvestHud"
 	screenGui.ResetOnSpawn = false
 	buildBar(screenGui)
-	buildSiloLabel(screenGui)
 end
 
 function BagHudController:Start()
 	screenGui.Parent = localPlayer:WaitForChild("PlayerGui") -- attente autorisée dans Start, pas dans Init
-	for _, name in { PlayerAttributes.BAG_COUNT, PlayerAttributes.BAG_CAPACITY, PlayerAttributes.SILO_VALUE } do
+	for _, name in { PlayerAttributes.BAG_COUNT, PlayerAttributes.BAG_CAPACITY } do
 		localPlayer:GetAttributeChangedSignal(name):Connect(refresh)
 	end
 	refresh()

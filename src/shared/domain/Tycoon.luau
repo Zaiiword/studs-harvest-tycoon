@@ -1,0 +1,154 @@
+--!strict
+-- Économie Tycoon d'un joueur (CDC §7.1, §8), sans API Roblox : silo, tapis, machines, achats et revenu.
+-- Le silo stocke une valeur brute en $ (A5) ; le tapis en consomme `conveyorRate` par seconde ; le revenu
+-- applique ensuite les multiplicateurs (Formulas.incomePerSecond). Silo vide → l'usine s'arrête.
+local TycoonConfig = require("../config/TycoonConfig")
+local VehicleConfig = require("../config/VehicleConfig")
+local Formulas = require("./Formulas")
+
+export type State = {
+	money: number,
+	silo: number,
+	conveyorLevel: number,
+	machines: { [string]: boolean },
+}
+
+-- Bonus extérieurs à l'usine (Pets au Sprint 6, Rebirths au Sprint 4, Gamepass au Sprint 8).
+export type IncomeBonus = {
+	petBonuses: { number },
+	rebirths: number,
+	hasIncomeX2: boolean,
+}
+
+export type Offer = {
+	id: string,
+	label: string,
+	price: number?, -- nil : plus rien à acheter sur ce bouton
+}
+
+export type PurchaseResult = {
+	isPurchased: boolean,
+	newTier: number?, -- renseigné par le Garage
+}
+
+local Tycoon = {}
+
+local CONVEYOR = TycoonConfig.CONVEYOR
+local machinesById: { [string]: TycoonConfig.MachineDef } = {}
+for _, machine in TycoonConfig.MACHINES do
+	machinesById[machine.id] = machine
+end
+
+Tycoon.NO_BONUS = table.freeze({ petBonuses = {}, rebirths = 0, hasIncomeX2 = false }) :: IncomeBonus
+
+function Tycoon.new(): State
+	return { money = TycoonConfig.STARTING_MONEY, silo = 0, conveyorLevel = 1, machines = {} }
+end
+
+function Tycoon.conveyorRate(state: State): number
+	return CONVEYOR.BASE_RATE * CONVEYOR.RATE_GROWTH ^ (state.conveyorLevel - 1)
+end
+
+-- Produit des multiplicateurs des machines possédées (A6) ; 1 sans machine.
+function Tycoon.machineMultiplier(state: State): number
+	local multiplier = 1
+	for id, isOwned in state.machines do
+		if isOwned then
+			multiplier *= machinesById[id].multiplier
+		end
+	end
+	return multiplier
+end
+
+-- Verse une valeur brute dans le silo, dans la limite de sa capacité. Renvoie la part acceptée.
+function Tycoon.deposit(state: State, value: number): number
+	local accepted = math.clamp(value, 0, TycoonConfig.SILO_CAPACITY - state.silo)
+	state.silo += accepted
+	return accepted
+end
+
+-- Revenu par seconde affiché : celui de l'usine à plein débit, 0 si le silo est vide.
+function Tycoon.incomePerSecond(state: State, bonus: IncomeBonus): number
+	local raw = if state.silo > 0 then Tycoon.conveyorRate(state) else 0
+	return Formulas.incomePerSecond({
+		rawPerSecond = raw,
+		machineMultiplier = Tycoon.machineMultiplier(state),
+		petBonuses = bonus.petBonuses,
+		rebirths = bonus.rebirths,
+		hasIncomeX2 = bonus.hasIncomeX2,
+	})
+end
+
+-- Fait tourner l'usine pendant `dt` secondes : le tapis vide le silo et le revenu est encaissé.
+function Tycoon.tick(state: State, dt: number, bonus: IncomeBonus): number
+	local consumed = math.min(state.silo, Tycoon.conveyorRate(state) * dt)
+	if consumed <= 0 or dt <= 0 then
+		return 0
+	end
+	state.silo -= consumed
+	local income = Formulas.incomePerSecond({
+		rawPerSecond = consumed / dt,
+		machineMultiplier = Tycoon.machineMultiplier(state),
+		petBonuses = bonus.petBonuses,
+		rebirths = bonus.rebirths,
+		hasIncomeX2 = bonus.hasIncomeX2,
+	}) * dt
+	state.money += income
+	return income
+end
+
+-- Secondes avant que le silo soit vide au débit actuel (CDC §10 « autonomie restante du silo »).
+function Tycoon.autonomySeconds(state: State): number
+	return state.silo / Tycoon.conveyorRate(state)
+end
+
+local function conveyorOffer(state: State): Offer
+	local isMaxed = state.conveyorLevel >= CONVEYOR.MAX_LEVEL
+	local price = Formulas.tycoonButtonPrice(CONVEYOR.BASE_PRICE, state.conveyorLevel - 1)
+	return {
+		id = "Conveyor",
+		label = `{CONVEYOR.NAME} niv. {state.conveyorLevel + 1}`,
+		price = (not isMaxed) and price or nil,
+	}
+end
+
+local function garageOffer(tier: number): Offer
+	local nextTier = VehicleConfig.TIERS[tier + 1]
+	if not nextTier then
+		return { id = TycoonConfig.GARAGE_NAME, label = "Palier maximal", price = nil }
+	end
+	return { id = TycoonConfig.GARAGE_NAME, label = nextTier.name, price = nextTier.price }
+end
+
+-- Ce que propose chaque bouton au sol de la base, compte tenu de l'état et du palier actuel.
+function Tycoon.offer(state: State, buttonId: string, tier: number): Offer
+	if buttonId == "Conveyor" then
+		return conveyorOffer(state)
+	end
+	if buttonId == TycoonConfig.GARAGE_NAME then
+		return garageOffer(tier)
+	end
+	local machine = machinesById[buttonId]
+	assert(machine, `bouton inconnu : {buttonId}`)
+	return { id = machine.id, label = machine.name, price = if state.machines[machine.id] then nil else machine.price }
+end
+
+-- Achète ce que propose le bouton si le joueur en a les moyens. Le Garage renvoie le nouveau palier.
+function Tycoon.buy(state: State, buttonId: string, tier: number): PurchaseResult
+	local offer = Tycoon.offer(state, buttonId, tier)
+	local price = offer.price
+	if not price or state.money < price then
+		return { isPurchased = false }
+	end
+	state.money -= price
+	if buttonId == "Conveyor" then
+		state.conveyorLevel += 1
+	elseif buttonId == TycoonConfig.GARAGE_NAME then
+		return { isPurchased = true, newTier = tier + 1 }
+	else
+		state.machines[buttonId] = true
+	end
+	return { isPurchased = true }
+end
+
+return Tycoon

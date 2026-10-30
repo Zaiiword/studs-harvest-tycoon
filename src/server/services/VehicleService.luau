@@ -79,6 +79,7 @@ local function mountVehicle(character: Model, def: VehicleConfig.BodyDef)
 	local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if not root or not humanoid then
+		warn(`[VehicleService] montage impossible : HumanoidRootPart ou Humanoid absent sur {character.Name}`)
 		return
 	end
 	-- On soulève d'abord le pilote de la hauteur de l'engin, sinon la carrosserie naîtrait dans le sol.
@@ -104,7 +105,10 @@ local function refreshVehicle(player: Player)
 	local tier = VehicleService.tierOf(player)
 	local def = VehicleConfig.BODIES[tier.id]
 	if tier.isVehicle and def then
-		mountVehicle(character, def)
+		local ok, err = pcall(mountVehicle, character, def)
+		if not ok then
+			warn(`[VehicleService] échec du montage du palier {tier.id} : {err}`)
+		end
 	end
 end
 

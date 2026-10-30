@@ -1,36 +1,42 @@
 --!strict
--- Commandes de test, actives uniquement dans Roblox Studio (jamais en jeu publié) :
---   !tier N  → passe au palier N (1 à 7) pour essayer les engins avant la boutique du Sprint 3.
+-- Panneau de test, actif uniquement dans Roblox Studio (jamais en jeu publié) : changer de palier pour
+-- essayer les engins, se créditer de l'argent pour tester les achats. Commandes validées par DevCommands.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
+local DevCommands = require(ReplicatedStorage.Shared.net.DevCommands)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
+local RateLimiter = require(ReplicatedStorage.Shared.util.RateLimiter)
+local TycoonService = require(script.Parent.TycoonService)
 
 local DevCommandsService = {}
 
-local function onChatted(player: Player, message: string)
-	local tier = tonumber(string.match(message, "^!tier%s+(%d+)$"))
-	if tier and VehicleConfig.TIERS[tier] then
-		player:SetAttribute(PlayerAttributes.TIER, tier)
+local limiter = RateLimiter.new(5, 2)
+
+local function onCommand(player: Player, kind: any, value: any)
+	local command = DevCommands.parse(kind, value)
+	if not command or not limiter:allow(player, os.clock()) then
+		return
+	end
+	if command.kind == "tier" then
+		player:SetAttribute(PlayerAttributes.TIER, command.tier)
+	else
+		TycoonService.grant(player, DevCommands.MONEY_GRANT)
 	end
 end
 
-local function watch(player: Player)
-	player.Chatted:Connect(function(message)
-		onChatted(player, message)
-	end)
+function DevCommandsService:Init()
+	if RunService:IsStudio() then
+		Remotes.event(Remotes.DEV_COMMAND).OnServerEvent:Connect(onCommand)
+	end
 end
 
 function DevCommandsService:Start()
-	if not RunService:IsStudio() then
-		return
-	end
-	Players.PlayerAdded:Connect(watch)
-	for _, player in Players:GetPlayers() do
-		watch(player)
-	end
+	Players.PlayerRemoving:Connect(function(player)
+		limiter:forget(player)
+	end)
 end
 
 return DevCommandsService

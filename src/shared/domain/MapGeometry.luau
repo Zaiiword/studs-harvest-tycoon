@@ -87,6 +87,23 @@ function MapGeometry.baseCenters(): { Placement }
 	return bases
 end
 
+-- Repère local d'une base : +X vers le champ, Z latéral, origine au centre (utilisé par le Tycoon).
+function MapGeometry.baseToWorld(base: Placement, localX: number, localZ: number): (number, number)
+	local cos, sin = math.cos(base.angle), math.sin(base.angle)
+	return base.x + localX * cos - localZ * sin, base.z + localX * sin + localZ * cos
+end
+
+function MapGeometry.worldToBase(base: Placement, x: number, z: number): (number, number)
+	local dx, dz = x - base.x, z - base.z
+	local cos, sin = math.cos(base.angle), math.sin(base.angle)
+	return dx * cos + dz * sin, -dx * sin + dz * cos
+end
+
+-- Vrai si le point local (localX, localZ) est sur un carré de côté `size` centré en (centerX, centerZ).
+function MapGeometry.isOnSquare(localX: number, localZ: number, centerX: number, centerZ: number, size: number): boolean
+	return math.abs(localX - centerX) <= size / 2 and math.abs(localZ - centerZ) <= size / 2
+end
+
 -- Vrai si (x, z) est sur l'emprise carrée de la base.
 function MapGeometry.isInsideBase(base: Placement, x: number, z: number): boolean
 	local dx, dz = x - base.x, z - base.z

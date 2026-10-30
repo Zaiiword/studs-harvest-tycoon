@@ -51,6 +51,21 @@ function Bag.empty(bag: Bag): (number, number)
 	return count, value
 end
 
+-- Retire au plus `maxValue` $ du sac (silo presque plein) : on retire la même proportion de blés.
+-- Renvoie ce qui a été retiré.
+function Bag.withdraw(bag: Bag, maxValue: number): (number, number)
+	if bag.value <= maxValue then
+		return Bag.empty(bag)
+	end
+	if maxValue <= 0 or bag.value <= 0 then
+		return 0, 0
+	end
+	local count = math.floor(bag.count * maxValue / bag.value)
+	bag.count -= count
+	bag.value -= maxValue
+	return count, maxValue
+end
+
 -- Changement de palier : le contenu est conservé, même s'il dépasse la nouvelle capacité.
 function Bag.setCapacity(bag: Bag, capacity: number)
 	assert(capacity > 0, "capacity doit être > 0")
