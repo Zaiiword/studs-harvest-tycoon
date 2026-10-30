@@ -1,0 +1,14 @@
+[package]
+name = "zaiiword/studs-harvest-tycoon"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+Promise = "evaera/promise@4.0.0"   # asynchrone (DataStore, MarketplaceService)
+Signal = "sleitnick/signal@2.0.0"  # événements typés entre services
+Trove = "sleitnick/trove@1.1.0"    # nettoyage des connexions/instances
+
+[dev-dependencies]
+Jest = "jsdotlua/jest@3.6.0"              # tests e2e dans Roblox (run-in-roblox / Open Cloud)
+JestGlobals = "jsdotlua/jest-globals@3.6.0"

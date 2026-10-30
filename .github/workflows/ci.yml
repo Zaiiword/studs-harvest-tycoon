@@ -6,9 +6,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: CompeyDev/setup-rokit@v0.1.2
-      - name: Format
-        run: stylua --check src tests
-      - name: Lint
-        run: selene src tests
-      - name: Tests (unit + integration + regression)
-        run: lune run tests/run
+      - name: Packages Wally
+        run: wally install
+      - name: Format + Lint + Tests (unit, intégration, non-régression)
+        run: ./scripts/test.sh
+      - name: Build de la place
+        run: rojo build default.project.json -o StudsHarvestTycoon.rbxl
