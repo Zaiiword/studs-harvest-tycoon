@@ -7,4 +7,5 @@ return table.freeze({
 	REBIRTH_BASE_COST = 1_000_000, -- décision A8
 	REBIRTH_COST_GROWTH = 3,
 	INCOME_X2_MULTIPLIER = 2, -- Gamepass Revenus ×2
+	GEMS_PER_REBIRTH = 10, -- décision A9 : gemmes gagnées = 10 × (r + 1)
 })

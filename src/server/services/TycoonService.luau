@@ -1,9 +1,10 @@
 --!strict
--- Usine Tycoon de chaque joueur (CDC §7.1, §8, Sprint 3) : construit l'usine sur sa base, encaisse le revenu
--- chaque seconde, vend machines, niveaux de tapis et paliers (Garage) via des boutons au sol.
--- Le client ne fait que marcher : c'est le serveur qui détecte qu'il se tient sur un bouton (aucun Remote).
--- Dépendances : Tycoon (règles pures), MapService / PlotService (base), VehicleService (palier actuel).
--- La sauvegarde arrive au Sprint 4 (DataService) : pour l'instant l'usine repart de zéro à chaque session.
+-- Usine Tycoon de chaque joueur (CDC §7, §8, Sprints 3-4) : construit l'usine sur sa base, encaisse le revenu
+-- chaque seconde, vend machines, niveaux de tapis et paliers (Garage) via des boutons au sol, et gère le
+-- bouton Rebirth. Le client ne fait que marcher : le serveur détecte qu'il se tient sur un bouton (aucun Remote).
+-- Dépendances : Tycoon / Rebirth / Profile (règles pures), MapService / PlotService (base),
+-- VehicleService (palier). DataService restaure le profil (restore), le capture (snapshot) et libère l'usine
+-- au départ du joueur (release) : c'est lui qui décide quand, pour sauvegarder avant de détruire.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,6 +14,8 @@ local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
+local Profile = require(ReplicatedStorage.Shared.domain.Profile)
+local Rebirth = require(ReplicatedStorage.Shared.domain.Rebirth)
 local Tycoon = require(ReplicatedStorage.Shared.domain.Tycoon)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -26,8 +29,10 @@ local TycoonService = {}
 
 type Entry = {
 	state: Tycoon.State,
+	progress: Rebirth.Progress,
 	base: MapGeometry.Placement,
 	folder: Folder,
+	machines: { [string]: Model },
 	pads: { [string]: Part },
 	silo: Part,
 	siloRoof: Part,
@@ -45,8 +50,10 @@ type BlockSpec = {
 local LAYOUT = TycoonConfig.LAYOUT
 local COLORS = TycoonConfig.COLORS
 local LABEL = TycoonConfig.LABEL
+local REBIRTH = TycoonConfig.REBIRTH_NAME
 
 local entries: { [Player]: Entry } = {}
+local pendingProfiles: { [Player]: Profile.Data } = {} -- profil chargé avant que la base soit attribuée
 local incomeElapsed, padElapsed = 0, 0
 
 local function attachLabel(part: BasePart, text: string)
@@ -79,9 +86,26 @@ local function placeBlock(entry: Entry, spec: BlockSpec): Part
 	return part
 end
 
+local function refreshRebirthPad(entry: Entry, pad: Part)
+	local nextRebirth = entry.progress.rebirths + 1
+	if not Rebirth.isTycoonComplete(entry.state) then
+		pad.Color = Bricks.rgb(COLORS.PAD_SOLD_OUT)
+		attachLabel(pad, `Rebirth n°{nextRebirth}\nAchète toutes les machines`)
+		return
+	end
+	local cost = Rebirth.cost(entry.progress)
+	local isReady = Rebirth.canRebirth(entry.state, entry.progress)
+	pad.Color = Bricks.rgb(if isReady then COLORS.PAD_REBIRTH else COLORS.PAD_TOO_EXPENSIVE)
+	attachLabel(pad, `Rebirth n°{nextRebirth}\n{Format.money(cost)} $ · +{Rebirth.gemsFor(entry.progress)} 💎`)
+end
+
 local function refreshPads(player: Player, entry: Entry)
 	local tier = VehicleService.tierOf(player).id
 	for buttonId, pad in entry.pads do
+		if buttonId == REBIRTH then
+			refreshRebirthPad(entry, pad)
+			continue
+		end
 		local offer = Tycoon.offer(entry.state, buttonId, tier)
 		local price = offer.price
 		local color = if not price
@@ -104,14 +128,25 @@ local function refreshSilo(entry: Entry)
 	entry.siloRoof.CFrame = CFrame.new(x, MapConfig.DECK_TOP + height, z)
 end
 
-local function buildMachine(entry: Entry, machineId: string)
+local function buildMachine(entry: Entry, machine: TycoonConfig.MachineDef)
+	local spot = LAYOUT.MACHINES[machine.id]
+	local x, z = MapGeometry.baseToWorld(entry.base, spot.x, spot.z)
+	local origin = CFrame.new(x, MapConfig.DECK_TOP, z) * CFrame.Angles(0, -entry.base.angle, 0)
+	local main = TycoonModels.machine(entry.folder, machine, origin)
+	attachLabel(main, `{machine.name}\n×{machine.multiplier}`)
+	entry.machines[machine.id] = main.Parent :: Model
+end
+
+-- Fait correspondre les modèles de machines à l'état (achat, Rebirth, restauration d'un profil).
+local function syncMachines(entry: Entry)
 	for _, machine in TycoonConfig.MACHINES do
-		if machine.id == machineId then
-			local spot = LAYOUT.MACHINES[machine.id]
-			local x, z = MapGeometry.baseToWorld(entry.base, spot.x, spot.z)
-			local origin = CFrame.new(x, MapConfig.DECK_TOP, z) * CFrame.Angles(0, -entry.base.angle, 0)
-			local main = TycoonModels.machine(entry.folder, machine, origin)
-			attachLabel(main, `{machine.name}\n×{machine.multiplier}`)
+		local model = entry.machines[machine.id]
+		local isOwned = entry.state.machines[machine.id] == true
+		if isOwned and not model then
+			buildMachine(entry, machine)
+		elseif not isOwned and model then
+			model:Destroy()
+			entry.machines[machine.id] = nil
 		end
 	end
 end
@@ -119,10 +154,15 @@ end
 local function publish(player: Player, entry: Entry)
 	local state = entry.state
 	player:SetAttribute(PlayerAttributes.MONEY, math.floor(state.money))
-	player:SetAttribute(PlayerAttributes.INCOME_PER_SECOND, Tycoon.incomePerSecond(state, Tycoon.NO_BONUS))
+	player:SetAttribute(
+		PlayerAttributes.INCOME_PER_SECOND,
+		Tycoon.incomePerSecond(state, Rebirth.incomeBonus(entry.progress))
+	)
 	player:SetAttribute(PlayerAttributes.SILO_VALUE, math.floor(state.silo))
 	player:SetAttribute(PlayerAttributes.SILO_CAPACITY, TycoonConfig.SILO_CAPACITY)
 	player:SetAttribute(PlayerAttributes.CONVEYOR_RATE, Tycoon.conveyorRate(state))
+	player:SetAttribute(PlayerAttributes.REBIRTHS, entry.progress.rebirths)
+	player:SetAttribute(PlayerAttributes.GEMS, entry.progress.gems)
 	refreshPads(player, entry)
 	refreshSilo(entry)
 end
@@ -153,6 +193,14 @@ local function buildFactory(entry: Entry)
 	entry.siloRoof = TycoonModels.siloRoof(entry.folder, LAYOUT.SILO.radius)
 end
 
+local function applyProfile(player: Player, entry: Entry, data: Profile.Data)
+	entry.state = Profile.toTycoon(data)
+	entry.progress = Profile.toProgress(data)
+	syncMachines(entry)
+	player:SetAttribute(PlayerAttributes.TIER, data.tier)
+	publish(player, entry)
+end
+
 local function claimFactory(player: Player)
 	local base = PlotService.basePlacement(player)
 	local index = PlotService.baseIndexOf(player)
@@ -165,8 +213,10 @@ local function claimFactory(player: Player)
 	folder.Parent = floor
 	local entry: Entry = {
 		state = Tycoon.new(),
+		progress = Rebirth.newProgress(),
 		base = base,
 		folder = folder,
+		machines = {},
 		pads = {},
 		silo = nil :: any, -- posés par buildFactory
 		siloRoof = nil :: any,
@@ -174,7 +224,22 @@ local function claimFactory(player: Player)
 	}
 	buildFactory(entry)
 	entries[player] = entry
-	publish(player, entry)
+	local pending = pendingProfiles[player]
+	pendingProfiles[player] = nil
+	if pending then
+		applyProfile(player, entry, pending)
+	else
+		publish(player, entry)
+	end
+end
+
+local function tryRebirth(player: Player, entry: Entry): boolean
+	if not Rebirth.apply(entry.state, entry.progress) then
+		return false
+	end
+	player:SetAttribute(PlayerAttributes.TIER, Rebirth.STARTING_TIER) -- le véhicule est réinitialisé (CDC §7.3)
+	syncMachines(entry)
+	return true
 end
 
 local function tryPurchase(player: Player, entry: Entry, buttonId: string)
@@ -182,17 +247,21 @@ local function tryPurchase(player: Player, entry: Entry, buttonId: string)
 	if now - entry.lastPurchaseAt < TycoonConfig.PURCHASE_COOLDOWN then
 		return
 	end
-	local result = Tycoon.buy(entry.state, buttonId, VehicleService.tierOf(player).id)
-	if not result.isPurchased then
-		return
+	local isDone: boolean
+	if buttonId == REBIRTH then
+		isDone = tryRebirth(player, entry)
+	else
+		local result = Tycoon.buy(entry.state, buttonId, VehicleService.tierOf(player).id)
+		isDone = result.isPurchased
+		if result.newTier then
+			player:SetAttribute(PlayerAttributes.TIER, result.newTier)
+		end
+		syncMachines(entry)
 	end
-	entry.lastPurchaseAt = now
-	if result.newTier then
-		player:SetAttribute(PlayerAttributes.TIER, result.newTier)
-	elseif entry.state.machines[buttonId] then
-		buildMachine(entry, buttonId)
+	if isDone then
+		entry.lastPurchaseAt = now
+		publish(player, entry)
 	end
-	publish(player, entry)
 end
 
 local function padUnder(entry: Entry, position: Vector3): string?
@@ -219,7 +288,7 @@ end
 
 local function payIncome()
 	for player, entry in entries do
-		Tycoon.tick(entry.state, TycoonConfig.INCOME_INTERVAL, Tycoon.NO_BONUS)
+		Tycoon.tick(entry.state, TycoonConfig.INCOME_INTERVAL, Rebirth.incomeBonus(entry.progress))
 		publish(player, entry)
 	end
 end
@@ -256,7 +325,28 @@ function TycoonService.grant(player: Player, amount: number)
 	end
 end
 
-local function onPlayerRemoving(player: Player)
+-- Applique un profil chargé par DataService (tout de suite, ou dès que la base est attribuée).
+function TycoonService.restore(player: Player, data: Profile.Data)
+	local entry = entries[player]
+	if entry then
+		applyProfile(player, entry, data)
+	else
+		pendingProfiles[player] = data
+	end
+end
+
+-- Profil à sauvegarder, ou nil si le joueur n'a pas encore d'usine.
+function TycoonService.snapshot(player: Player): Profile.Data?
+	local entry = entries[player]
+	if not entry then
+		return nil
+	end
+	return Profile.fromGame(entry.state, VehicleService.tierOf(player).id, entry.progress)
+end
+
+-- Détruit l'usine d'un joueur qui part. Appelé par DataService après la capture du profil.
+function TycoonService.release(player: Player)
+	pendingProfiles[player] = nil
 	local entry = entries[player]
 	if entry then
 		entry.folder:Destroy()
@@ -279,7 +369,6 @@ end
 
 function TycoonService:Start()
 	Players.PlayerAdded:Connect(watch)
-	Players.PlayerRemoving:Connect(onPlayerRemoving)
 	for _, player in Players:GetPlayers() do
 		watch(player)
 	end

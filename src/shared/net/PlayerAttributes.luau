@@ -13,4 +13,7 @@ return table.freeze({
 	SILO_VALUE = "SiloValue", -- valeur brute en attente dans le silo
 	SILO_CAPACITY = "SiloCapacity",
 	CONVEYOR_RATE = "ConveyorRate", -- $ bruts consommés par seconde (autonomie = silo / débit)
+	REBIRTHS = "Rebirths", -- nombre de Rebirths (+50 % de revenus, +15 % de masse chacun)
+	GEMS = "Gems", -- Gemmes de Prestige
+	IS_DATA_LOADED = "IsDataLoaded", -- vrai une fois le profil chargé (DataService)
 })

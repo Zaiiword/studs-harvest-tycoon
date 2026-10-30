@@ -21,7 +21,7 @@ return Freeze.deep({
 	},
 	-- CDC §10 « Indicateur de revenu passif » : trésorerie, cadence de l'usine et autonomie du silo.
 	ECONOMY_PANEL = {
-		WIDTH = 460,
+		WIDTH = 600,
 		HEIGHT = 40,
 		TOP_MARGIN = 12,
 		ALERT_HEIGHT = 28,

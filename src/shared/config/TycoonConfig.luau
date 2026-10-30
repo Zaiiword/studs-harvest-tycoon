@@ -38,6 +38,7 @@ return Freeze.deep({
 		},
 	} :: { MachineDef },
 	GARAGE_NAME = "Garage", -- bouton d'achat du palier suivant (CDC §5)
+	REBIRTH_NAME = "Rebirth",
 
 	INCOME_INTERVAL = 1, -- CDC §8 : revenu calculé côté serveur chaque seconde
 	PAD_CHECK_INTERVAL = 0.25,
@@ -54,6 +55,7 @@ return Freeze.deep({
 			Oven = { x = 0, z = 0 },
 			Factory = { x = 0, z = 20 },
 			Garage = { x = 0, z = 40 },
+			Rebirth = { x = 20, z = 40 }, -- CDC §7.3 : bouton Rebirth (A8)
 		} :: { [string]: Spot },
 		SILO = { x = -42, z = -42, radius = 9, minHeight = 8, maxHeight = 80 },
 		CONVEYOR = { x = -42, fromZ = -30, toZ = 50, width = 6, height = 1 },
@@ -70,6 +72,7 @@ return Freeze.deep({
 		PAD_AFFORDABLE = { 75, 151, 75 },
 		PAD_TOO_EXPENSIVE = { 196, 40, 28 },
 		PAD_SOLD_OUT = { 99, 95, 98 },
+		PAD_REBIRTH = { 98, 37, 209 },
 		UNLOAD_PAD = { 245, 205, 48 },
 		SILO = { 248, 248, 248 },
 		CONVEYOR = { 27, 42, 53 },

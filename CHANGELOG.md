@@ -2,6 +2,26 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Sprint 4 — Sauvegarde et Rebirth
+
+### Ajouté
+- `Profile` (pur) : format sauvegardé versionné ; toute donnée lue est nettoyée (types, NaN, bornes, machines
+  inconnues).
+- `ProfileStore` (pur) : verrou de session via UpdateAsync, expiration après 5 min, refus d'écrire sans le
+  verrou, réessais avec délai doublé (A38).
+- `DataService` : chargement à l'arrivée (expulsion avec message si le profil est verrouillé ailleurs),
+  sauvegarde toutes les 60 s, au départ et à la fermeture du serveur ; repli en mémoire dans Studio.
+- `Rebirth` (pur) et bouton Rebirth sur la base : toutes les machines + 1e6 × 3^r $, remise à zéro de
+  l'argent, des machines, du tapis et du palier, +50 % de revenus, +15 % de masse PvP, 10 × (r + 1) gemmes (A37).
+- HUD : Rebirths et gemmes.
+- Tests : Rebirth, nettoyage du profil, verrou de session (faux DataStore), session complète et
+  scénario anti-duplication.
+
+### Corrigé (après test de la passe visuelle)
+- Véhicules immobiles : force de LinearVelocity quasi nulle au montage. Force illimitée, direction lue dans
+  `Humanoid.MoveDirection`, propriété réseau rendue au pilote.
+- Blé : tige + épi légèrement penché ; sols en tons de terre (A36). Zones raccourcies (Blé Vert ÷ 3).
+
 ## Passe visuelle 1 (A35)
 
 ### Ajouté

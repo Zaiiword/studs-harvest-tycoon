@@ -68,7 +68,9 @@ local function refresh()
 	local autonomy = if rate > 0 then Format.duration(silo / rate) else "—"
 	local money = Format.money(numberAttribute(PlayerAttributes.MONEY))
 	local income = Format.money(numberAttribute(PlayerAttributes.INCOME_PER_SECOND))
-	summary.Text = `💰 {money} $   ·   +{income} $/s   ·   Silo {autonomy}`
+	local prestige =
+		`♻️ {numberAttribute(PlayerAttributes.REBIRTHS)}  💎 {numberAttribute(PlayerAttributes.GEMS)}`
+	summary.Text = `💰 {money} $  ·  +{income} $/s  ·  Silo {autonomy}  ·  {prestige}`
 	-- L'alerte n'a de sens qu'une fois l'usine lancée (quelque chose a déjà été déposé ou gagné).
 	alert.Visible = silo <= 0 and numberAttribute(PlayerAttributes.MONEY) > 0
 end
@@ -88,6 +90,8 @@ function EconomyHudController:Start()
 			PlayerAttributes.INCOME_PER_SECOND,
 			PlayerAttributes.SILO_VALUE,
 			PlayerAttributes.CONVEYOR_RATE,
+			PlayerAttributes.REBIRTHS,
+			PlayerAttributes.GEMS,
 		}
 	do
 		localPlayer:GetAttributeChangedSignal(name):Connect(refresh)

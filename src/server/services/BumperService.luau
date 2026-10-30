@@ -36,7 +36,6 @@ local function contestantOf(player: Player, now: number): Contestant?
 	if not root then
 		return nil
 	end
-	local tier = VehicleService.tierOf(player)
 	local vehicle = VehicleService.bodyOf(player)
 	local position, velocity = root.Position, root.AssemblyLinearVelocity
 	local isProtected = isActive(player, PlayerAttributes.IMMUNE_UNTIL, now)
@@ -50,7 +49,7 @@ local function contestantOf(player: Player, now: number): Contestant?
 		vx = velocity.X,
 		vz = velocity.Z,
 		radius = radius,
-		mass = Formulas.effectiveMass(tier.mass, 0, false), -- Rebirths (Sprint 4) et Titan (Sprint 8) à venir
+		mass = BumperService.massOf(player),
 		isVehicle = vehicle ~= nil,
 		isProtected = isProtected,
 	}
@@ -150,7 +149,13 @@ end
 
 -- Masse PvP utilisée par la formule de knockback (exposée pour les futurs objets de sabotage, Sprint 5).
 function BumperService.massOf(player: Player): number
-	return Formulas.effectiveMass(VehicleService.tierOf(player).mass, 0, false)
+	-- +15 % par Rebirth, compté une seule fois (A15) ; Gamepass Titan au Sprint 8.
+	local rebirths = player:GetAttribute(PlayerAttributes.REBIRTHS)
+	return Formulas.effectiveMass(
+		VehicleService.tierOf(player).mass,
+		if typeof(rebirths) == "number" then rebirths else 0,
+		false
+	)
 end
 
 return BumperService
