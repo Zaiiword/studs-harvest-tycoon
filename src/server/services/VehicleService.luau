@@ -1,6 +1,7 @@
 --!strict
 -- Engins des paliers 3 à 7 (CDC §5, Sprint 2) : une carrosserie soudée au HumanoidRootPart (WeldConstraint),
--- déplacée par LinearVelocity et orientée par AlignOrientation. Le client pilote ces contraintes
+-- déplacée par LinearVelocity et orientée par AlignOrientation. Elle est cachée côté client et habillée par
+-- VehicleVisualController (A52) : le serveur ne gère que la physique. Le client pilote ces contraintes
 -- (VehicleController) car il possède physiquement son personnage ; le serveur construit l'engin, surveille
 -- la vitesse (anti-triche) et reprend la main pendant une éjection (BumperService).
 local Players = game:GetService("Players")
@@ -13,7 +14,6 @@ local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
 local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Trove = require(ReplicatedStorage.Packages.Trove)
-local VehicleModels = require(script.Parent.Parent.builders.VehicleModels)
 
 local VehicleService = {}
 
@@ -87,7 +87,7 @@ local function removeVehicle(character: Model)
 end
 
 -- Le pilote est soudé au-dessus de la carrosserie, orientée comme lui (CDC §5 « personnage soudé »).
-local function mountVehicle(character: Model, tier: VehicleConfig.TierDef, def: VehicleConfig.BodyDef)
+local function mountVehicle(character: Model, def: VehicleConfig.BodyDef)
 	local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if not root or not humanoid then
@@ -98,14 +98,13 @@ local function mountVehicle(character: Model, tier: VehicleConfig.TierDef, def: 
 	character:PivotTo(character:GetPivot() + Vector3.new(0, HANDLING.SEAT_HEIGHT + def.height, 0))
 	local body = newBody(def)
 	body.CFrame = root.CFrame * CFrame.new(0, -(root.Size.Y / 2 + HANDLING.SEAT_HEIGHT + def.height / 2), 0)
-	local player = Players:GetPlayerFromCharacter(character)
-	VehicleModels.decorate(body, tier, def, player ~= nil and Perks.hasPass(player, "Titan"))
 	local weld = Instance.new("WeldConstraint")
 	weld.Part0, weld.Part1 = body, root
 	weld.Parent = body
 	addConstraints(body)
 	body.Parent = character
 	humanoid.PlatformStand = true -- l'Humanoid ne doit pas lutter contre LinearVelocity
+	local player = Players:GetPlayerFromCharacter(character)
 	-- Le pilote doit simuler lui-même son engin pour que ses consignes LinearVelocity s'appliquent.
 	if player then
 		pcall(root.SetNetworkOwner, root, player)
@@ -121,7 +120,7 @@ local function refreshVehicle(player: Player)
 	local tier = VehicleService.tierOf(player)
 	local def = VehicleConfig.BODIES[tier.id]
 	if tier.isVehicle and def then
-		local ok, err = pcall(mountVehicle, character, tier, def)
+		local ok, err = pcall(mountVehicle, character, def)
 		if not ok then
 			warn(`[VehicleService] échec du montage du palier {tier.id} : {err}`)
 		end
@@ -131,10 +130,8 @@ end
 local function onPlayerAdded(player: Player)
 	local trove = Trove.new()
 	troves[player] = trove
-	-- Le palier, le Mini-Tracteur Turbo et le Titan changent l'engin ou son habillage.
-	for _, name in
-		{ PlayerAttributes.TIER, PlayerAttributes.HAS_TURBO_TRACTOR, PlayerAttributes.PASS_PREFIX .. "Titan" }
-	do
+	-- Le palier et le Mini-Tracteur Turbo changent la carrosserie (le Titan ne change que l'habillage client).
+	for _, name in { PlayerAttributes.TIER, PlayerAttributes.HAS_TURBO_TRACTOR } do
 		trove:Connect(player:GetAttributeChangedSignal(name), function()
 			refreshVehicle(player)
 		end)

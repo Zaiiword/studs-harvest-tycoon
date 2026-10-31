@@ -2,6 +2,21 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Engins — habillage détaillé (A52)
+
+### Ajouté
+- `VehicleVisualConfig` et `VehicleLooks` : modèle en briques détaillé pour chaque engin (Tiers 3 à 7), palettes,
+  livrée Turbo, pare-buffle Titan généré d'après la carrosserie.
+- `VehicleVisualController` : habillage local de tous les engins, roues et rabatteurs qui tournent selon la
+  vitesse, pods en lévitation, néons et gyrophares pulsants, phares (SpotLight), fumée d'échappement et
+  flammes de réacteur proportionnelles à l'accélérateur, paille projetée en fauchant dans le champ, gerbe de
+  briques à l'apparition.
+- Tests de cohérence des modèles (roues au sol, pilote dégagé, coupe = hitbox, Turbo, Titan).
+
+### Modifié
+- Le serveur ne construit plus que la carrosserie physique (`VehicleModels` supprimé) ; le Titan ne
+  reconstruit plus l'engin côté serveur.
+
 ## Sprint 8 — Monétisation, équilibrage et publication
 
 ### Ajouté
