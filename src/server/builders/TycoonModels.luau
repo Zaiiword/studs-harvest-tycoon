@@ -104,7 +104,7 @@ local BUILDERS: { [string]: Builder } = {
 }
 
 -- Construit la machine et renvoie sa pièce principale (qui porte l'étiquette).
-function TycoonModels.machine(parent: Instance, machine: TycoonConfig.MachineDef, origin: CFrame): Part
+function TycoonModels.machine(parent: Instance?, machine: TycoonConfig.MachineDef, origin: CFrame): Part
 	local model = Instance.new("Model")
 	model.Name = machine.id
 	local main = BUILDERS[machine.id](model, origin, TycoonConfig.LAYOUT.MACHINE_SIZE, machine.color)

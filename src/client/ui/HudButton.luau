@@ -11,7 +11,7 @@ local Style = require(script.Parent.Style)
 local HudButton = {}
 
 export type Spec = { icon: string, caption: string, top: { number }, bottom: { number }, fromBottom: number }
-export type HudButton = { button: TextButton, alert: Frame, wiggles: boolean }
+export type HudButton = { button: TextButton, icon: TextLabel, caption: TextLabel, alert: Frame, wiggles: boolean }
 
 local HUD = UiConfig.HUD_BUTTON
 local ALERT_SIZE = 26
@@ -60,11 +60,13 @@ function HudButton.new(parent: Instance, spec: Spec): HudButton
 	button.Position = UDim2.new(0, HUD.LEFT, 1, -spec.fromBottom)
 	button.Size = UDim2.fromOffset(HUD.SIZE, HUD.SIZE)
 	Style.shine(button)
-	Style.label(button, spec.icon, UDim2.fromScale(0.8, 0.7)).Position = UDim2.fromScale(0.1, 0.02)
+	local icon = Style.label(button, spec.icon, UDim2.fromScale(0.8, 0.7))
+	icon.Position = UDim2.fromScale(0.1, 0.02)
 	local caption = Style.label(button, spec.caption, UDim2.fromScale(1.25, 0.32))
 	caption.AnchorPoint = Vector2.new(0.5, 0.5)
 	caption.Position = UDim2.fromScale(0.5, 0.92)
-	local hud: HudButton = { button = button, alert = addAlert(button), wiggles = false }
+	local hud: HudButton =
+		{ button = button, icon = icon, caption = caption, alert = addAlert(button), wiggles = false }
 	table.insert(buttons, hud)
 	if not isAnimating then
 		isAnimating = true
