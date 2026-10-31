@@ -11,6 +11,7 @@ local Pets = require(ReplicatedStorage.Shared.domain.Pets)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
+local Window = require(script.Parent.Parent.ui.Window)
 
 local PetMenuController = {}
 
@@ -173,6 +174,9 @@ local function buildPanel()
 	panel.Visible = false
 	rounded(panel)
 	panel.Parent = screenGui
+	Window.closeButton(panel, function()
+		panel.Visible = false
+	end)
 	local title = newText(panel, `🐾 Mes Pets (équipés : {PetConfig.MAX_EQUIPPED} au plus)`)
 	title.Size = UDim2.new(1, -16, 0, MENU.ROW_HEIGHT)
 	title.Position = UDim2.fromOffset(8, 4)

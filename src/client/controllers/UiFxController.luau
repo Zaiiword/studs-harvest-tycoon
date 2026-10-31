@@ -34,7 +34,7 @@ local function decorate(button: GuiButton)
 end
 
 local function onDescendantAdded(instance: Instance)
-	if instance:IsA("GuiButton") then
+	if instance:IsA("GuiButton") and not instance:GetAttribute(JUICE.NO_BOUNCE_ATTRIBUTE) then
 		decorate(instance)
 	end
 end

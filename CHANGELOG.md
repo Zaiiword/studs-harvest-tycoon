@@ -2,6 +2,19 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Boutique — refonte visuelle
+
+### Ajouté
+- `ui/Window` : fenêtre de menu « premium » réutilisable (fond assombri, dégradé, gros contour, titre doré,
+  croix rouge, ouverture qui rebondit) ; se ferme par la croix, un clic à côté ou B à la manette.
+- `ui/Style` : coins, contours, dégradés, gros textes contourés et boutons « bonbon ».
+- Boutique : onglets Gamepasses / Objets, grille de cartes colorées (icône flottante, badges MEILLEUR,
+  POPULAIRE, ÉPIQUE, bouton d'achat vert avec icône Robux, état « POSSÉDÉ »), 2 à 4 colonnes selon l'écran,
+  bouton 🛒 du HUD qui frétille.
+
+### Corrigé
+- La boutique, le menu des Pets et le menu Cadeaux se ferment enfin par une croix.
+
 ## Engins — habillage détaillé (A52)
 
 ### Ajouté
