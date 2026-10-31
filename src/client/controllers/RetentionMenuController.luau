@@ -20,6 +20,7 @@ local Grid = require(script.Parent.Parent.ui.Grid)
 local HudButton = require(script.Parent.Parent.ui.HudButton)
 local Style = require(script.Parent.Parent.ui.Style)
 local Tabs = require(script.Parent.Parent.ui.Tabs)
+local RewardPopup = require(script.Parent.Parent.ui.RewardPopup)
 local Window = require(script.Parent.Parent.ui.Window)
 
 local RetentionMenuController = {}
@@ -30,6 +31,7 @@ type QuestRow = { icon: TextLabel, title: TextLabel, fill: Frame, count: TextLab
 
 local MENU = UiConfig.RETENTION_MENU
 local WINDOW = UiConfig.WINDOW
+local POPUP = UiConfig.REWARD_POPUP
 local HUD = UiConfig.HUD_BUTTON
 local PAD = MENU.PADDING
 local REFRESH_INTERVAL = 0.5
@@ -56,6 +58,8 @@ local hud: HudButton.HudButton
 local giftTiles: { Tile } = {}
 local questRows: { QuestRow } = {}
 local rotor: Frame
+local pointer: TextLabel
+local lastSegment = 0 -- case sous le pointeur, pour le faire claquer à chaque passage
 local spinTile: Tile
 local remotes: { [string]: RemoteEvent } = {}
 local elapsed = 0
@@ -222,14 +226,20 @@ local function buildSegments(face: Frame)
 	local count = #RetentionConfig.WHEEL
 	local step = 360 / count
 	for index, segment in RetentionConfig.WHEEL do
+		-- Roblox fait tourner un cadre autour de SON centre (pas de son AnchorPoint) : le séparateur est donc
+		-- posé sur un bras transparent de la taille de la roue, et c'est le bras qui tourne autour du centre.
+		local arm = Instance.new("Frame")
+		arm.BackgroundTransparency = 1
+		arm.Size = UDim2.fromScale(1, 1)
+		arm.Rotation = (index - 1) * step
+		arm.Parent = rotor
 		local divider = Instance.new("Frame")
-		divider.AnchorPoint = Vector2.new(0.5, 1)
-		divider.Position = UDim2.fromScale(0.5, 0.5)
+		divider.AnchorPoint = Vector2.new(0.5, 0)
+		divider.Position = UDim2.fromScale(0.5, 0)
 		divider.Size = UDim2.new(0, DIVIDER_WIDTH, 0.5, 0)
-		divider.Rotation = (index - 1) * step
 		divider.BackgroundColor3 = Bricks.rgb(WINDOW.STROKE_COLOR)
 		divider.BorderSizePixel = 0
-		divider.Parent = rotor
+		divider.Parent = arm
 		local angle = math.rad((index - 0.5) * step)
 		local chip = Instance.new("Frame")
 		chip.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -266,7 +276,7 @@ local function buildWheelDisc(page: Frame)
 	Style.gradient(hub, MENU.WHEEL_RIM_TOP, MENU.WHEEL_RIM_BOTTOM)
 	Style.stroke(hub, WINDOW.STROKE_COLOR, 2)
 	Style.label(hub, "⭐", UDim2.fromScale(0.7, 0.7)).Position = UDim2.fromScale(0.15, 0.15)
-	local pointer = Style.label(rim, "▼", UDim2.fromScale(POINTER_SIZE, POINTER_SIZE))
+	pointer = Style.label(rim, "▼", UDim2.fromScale(POINTER_SIZE, POINTER_SIZE))
 	pointer.AnchorPoint = Vector2.new(0.5, 0.6)
 	pointer.Position = UDim2.fromScale(0.5, 0)
 	pointer.TextColor3 = Bricks.rgb(MENU.POINTER_COLOR)
@@ -326,7 +336,25 @@ local function spinTo(index: number)
 	local target = 360 * MENU.SPIN_TURNS - (index - 0.5) * 360 / count
 	rotor.Rotation = 0
 	local info = TweenInfo.new(MENU.SPIN_SECONDS, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-	TweenService:Create(rotor, info, { Rotation = target }):Play()
+	local spin = TweenService:Create(rotor, info, { Rotation = target })
+	spin.Completed:Once(function()
+		local reward = RetentionConfig.WHEEL[index].reward
+		RewardPopup.show(RewardText.icon(reward), RewardText.label(reward))
+	end)
+	spin:Play()
+end
+
+-- Le pointeur claque à chaque case qui passe dessous, comme une vraie roue de fête foraine.
+local function flickPointer()
+	local step = 360 / #RetentionConfig.WHEEL
+	local segment = math.floor(rotor.Rotation / step)
+	if segment == lastSegment then
+		return
+	end
+	lastSegment = segment
+	pointer.Rotation = -POPUP.POINTER_FLICK_DEGREES
+	local info = TweenInfo.new(POPUP.POINTER_FLICK_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(pointer, info, { Rotation = 0 }):Play()
 end
 
 -- Rafraîchissement ---------------------------------------------------------------------------------------------
@@ -415,6 +443,7 @@ local function animate(deltaTime: number)
 		row.tile.pulse.Scale = if row.tile.state == "ready" then scale else 1
 	end
 	spinTile.pulse.Scale = if spinTile.state == "ready" then scale else 1
+	flickPointer()
 end
 
 function RetentionMenuController:Init()
