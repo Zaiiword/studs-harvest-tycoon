@@ -94,19 +94,69 @@ return Freeze.deep({
 		BOUNCE_SCALE = 0.88,
 		BOUNCE_SECONDS = 0.25,
 		TOAST_SECONDS = 2.5,
+		NO_BOUNCE_ATTRIBUTE = "NoBounce", -- bouton qui ne rebondit pas (fond cliquable d'une fenêtre)
 		CRITICAL_COLOR = { 255, 176, 0 },
 		RAINBOW_COLOR = { 255, 89, 89 },
 	},
 	-- Boutique Robux et offres contextuelles (CDC §9, §10).
 	SHOP = {
-		WIDTH = 600,
-		HEIGHT = 440,
-		ROW_HEIGHT = 64,
-		BUTTON_WIDTH = 120,
 		ROW_COLOR = { 27, 42, 53 },
-		DETAIL_COLOR = { 200, 200, 200 },
 		BUY_COLOR = { 0, 162, 255 },
 		REVENGE_COLOR = { 196, 40, 28 },
+		-- Grille de cartes : autant de colonnes que la largeur le permet, entre MIN et MAX.
+		CARD_MIN_WIDTH = 190,
+		CARD_HEIGHT = 250,
+		MIN_COLUMNS = 2,
+		MAX_COLUMNS = 4,
+		CARD_PADDING = 12,
+		ICON_BOB = { height = 4, speed = 2.5 }, -- l'icône de chaque carte flotte doucement
+		BUY_TOP = { 120, 230, 60 }, -- bouton d'achat vert (dégradé)
+		BUY_BOTTOM = { 40, 165, 30 },
+		BUY_STROKE = { 20, 90, 15 },
+		OWNED_TOP = { 160, 160, 170 },
+		OWNED_BOTTOM = { 110, 110, 120 },
+		BADGE_COLOR = { 255, 60, 90 },
+		TAB_ON_TOP = { 255, 225, 80 },
+		TAB_ON_BOTTOM = { 255, 160, 20 },
+		TAB_OFF_TOP = { 70, 120, 220 },
+		TAB_OFF_BOTTOM = { 40, 80, 170 },
+		TOGGLE_TOP = { 255, 225, 80 }, -- bouton 🛒 du HUD
+		TOGGLE_BOTTOM = { 255, 140, 20 },
+		TOGGLE_WIGGLE = { degrees = 8, period = 4 }, -- petit frétillement pour attirer l'œil
+		-- Habillage de chaque offre : icône, dégradé de la carte, bandeau facultatif.
+		CARDS = {
+			InfiniteTrailer = { icon = "🚛", top = { 90, 200, 255 }, bottom = { 30, 110, 220 }, badge = "MEILLEUR" },
+			IncomeX2 = { icon = "💰", top = { 255, 220, 70 }, bottom = { 240, 140, 20 }, badge = "POPULAIRE" },
+			Titan = { icon = "🛡️", top = { 255, 120, 90 }, bottom = { 200, 40, 50 } },
+			Magnet = { icon = "🧲", top = { 200, 120, 255 }, bottom = { 120, 50, 210 } },
+			TripleHatch = { icon = "🥚", top = { 120, 235, 160 }, bottom = { 30, 160, 90 } },
+			Bazooka = { icon = "💥", top = { 255, 150, 80 }, bottom = { 220, 70, 30 } },
+			Meteor = { icon = "☄️", top = { 255, 210, 90 }, bottom = { 190, 110, 20 }, badge = "ÉPIQUE" },
+		} :: { [string]: { icon: string, top: { number }, bottom: { number }, badge: string? } },
+	},
+	-- Fenêtres de menu « premium » (boutique…) : dégradé, gros contour, croix rouge, ouverture qui rebondit.
+	WINDOW = {
+		SCALE = { 0.9, 0.86 }, -- part de l'écran occupée, bornée par MAX_SIZE
+		MAX_SIZE = { 820, 560 },
+		HEADER_HEIGHT = 64,
+		TAB_HEIGHT = 46,
+		CORNER = 20,
+		STROKE = 5,
+		TOP = { 80, 160, 255 },
+		BOTTOM = { 35, 95, 215 },
+		STROKE_COLOR = { 15, 35, 90 },
+		INNER = { 225, 238, 255 }, -- fond clair de la zone de contenu
+		INNER_TRANSPARENCY = 0.15,
+		TITLE_TOP = { 255, 245, 140 },
+		TITLE_BOTTOM = { 255, 175, 30 },
+		CLOSE_SIZE = 54,
+		CLOSE_TOP = { 255, 95, 95 },
+		CLOSE_BOTTOM = { 205, 25, 35 },
+		CLOSE_STROKE = { 100, 0, 10 },
+		BACKDROP_TRANSPARENCY = 0.45,
+		OPEN_SECONDS = 0.35,
+		CLOSE_SECONDS = 0.15,
+		OPEN_FROM_SCALE = 0.6,
 	},
 	-- Panneau de test (Studio uniquement).
 	DEV_PANEL = {

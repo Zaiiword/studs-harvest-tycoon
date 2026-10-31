@@ -14,6 +14,7 @@ local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Format = require(ReplicatedStorage.Shared.util.Format)
+local Window = require(script.Parent.Parent.ui.Window)
 
 local RetentionMenuController = {}
 
@@ -224,6 +225,9 @@ function RetentionMenuController:Init()
 	panel.Visible = false
 	rounded(panel)
 	panel.Parent = screenGui
+	Window.closeButton(panel, function()
+		panel.Visible = false
+	end)
 	newText(
 		panel,
 		UDim2.new(1, -24, 0, 32),
