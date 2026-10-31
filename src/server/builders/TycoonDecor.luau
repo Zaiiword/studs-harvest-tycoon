@@ -83,10 +83,15 @@ local function fountain(model: Model, origin: CFrame, _: string)
 	local flat = CFrame.Angles(0, 0, math.pi / 2) -- un cylindre Roblox est couché sur X : on le redresse
 	block(model, "Basin", origin * CFrame.new(0, 0.75, 0) * flat, Vector3.new(1.5, 12, 12), STONE).Shape =
 		Enum.PartType.Cylinder
-	local water = block(model, "Water", origin * CFrame.new(0, 1.4, 0) * flat, Vector3.new(0.2, 10.6, 10.6), WATER)
+	-- L'eau flotte au-dessus du bassin (1,5) sans toucher sa face : deux faces au même niveau scintillent.
+	local water = block(model, "Water", origin * CFrame.new(0, 1.62, 0) * flat, Vector3.new(0.12, 10.4, 10.4), WATER)
 	water.Shape = Enum.PartType.Cylinder
-	water.Material = Enum.Material.Glass
-	water.Transparency = 0.25
+	water.Material = Enum.Material.SmoothPlastic
+	for _, face in Enum.NormalId:GetEnumItems() do
+		(water :: any)[`{face.Name}Surface`] = Enum.SurfaceType.Smooth -- pas de tenons sur l'eau
+	end
+	water.Transparency = 0.15
+	water.Reflectance = 0.2
 	block(model, "Pillar", origin * CFrame.new(0, 3, 0) * flat, Vector3.new(4, 1.6, 1.6), STONE).Shape =
 		Enum.PartType.Cylinder
 	block(model, "Bowl", origin * CFrame.new(0, 5.2, 0) * flat, Vector3.new(0.8, 5, 5), STONE).Shape =

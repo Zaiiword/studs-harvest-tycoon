@@ -47,19 +47,25 @@ local function isMine(instance: Instance): boolean
 	return instance:GetAttribute("OwnerId") == localPlayer.UserId
 end
 
+-- Le serveur marque « Guided » les boutons déjà achetés une fois et la grille déjà utilisée (sauvegardé).
 local function situation(): Guide.Situation
 	local buttons: { Guide.Button } = {}
+	local seen: { [string]: boolean } = {}
 	for _, pad in CollectionService:GetTagged(TycoonConfig.PAD_TAG) do
-		local price = pad:GetAttribute("Price")
-		if pad:IsA("BasePart") and isMine(pad) and typeof(price) == "number" then
-			local id = pad:GetAttribute("ButtonId")
-			table.insert(buttons, { id = tostring(id), price = price, x = pad.Position.X, z = pad.Position.Z })
+		if pad:IsA("BasePart") and isMine(pad) then
+			local id = tostring(pad:GetAttribute("ButtonId"))
+			local price = pad:GetAttribute("Price")
+			seen[id] = pad:GetAttribute("Guided") == true
+			if typeof(price) == "number" then
+				table.insert(buttons, { id = id, price = price, x = pad.Position.X, z = pad.Position.Z })
+			end
 		end
 	end
 	local unload: Guide.Point? = nil
 	for _, pad in CollectionService:GetTagged(TycoonConfig.UNLOAD_TAG) do
 		if pad:IsA("BasePart") and isMine(pad) then
 			unload = { x = pad.Position.X, z = pad.Position.Z }
+			seen[Guide.UNLOAD] = pad:GetAttribute("Guided") == true
 		end
 	end
 	local count, capacity = numberAttribute(PlayerAttributes.BAG_COUNT), numberAttribute(PlayerAttributes.BAG_CAPACITY)
@@ -68,6 +74,7 @@ local function situation(): Guide.Situation
 		isBagFull = count ~= nil and capacity ~= nil and count >= capacity,
 		unload = unload,
 		buttons = buttons,
+		seen = seen,
 	}
 end
 

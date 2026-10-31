@@ -13,6 +13,7 @@ export type State = {
 	machines: { [string]: boolean },
 	siloLevel: number, -- agrandissements du silo achetés (A53)
 	decor: { [string]: boolean }, -- décorations achetées (A53)
+	guided: { [string]: boolean }, -- boutons déjà achetés une fois (et déchargement fait) : plus de flèches (A53)
 }
 
 -- Bonus extérieurs à l'usine (Pets au Sprint 6, Rebirths au Sprint 4, Gamepass au Sprint 8).
@@ -57,6 +58,7 @@ function Tycoon.new(): State
 		machines = {},
 		siloLevel = 0,
 		decor = {},
+		guided = {},
 	}
 end
 
@@ -178,6 +180,7 @@ function Tycoon.buy(state: State, buttonId: string, tier: number): PurchaseResul
 		return { isPurchased = false }
 	end
 	state.money -= price
+	state.guided[buttonId] = true
 	if buttonId == "Conveyor" then
 		state.conveyorLevel += 1
 	elseif buttonId == TycoonConfig.GARAGE_NAME then

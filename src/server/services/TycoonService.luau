@@ -29,6 +29,7 @@ local PlotService = require(script.Parent.PlotService)
 local VehicleService = require(script.Parent.VehicleService)
 local TycoonButtons = require(script.Parent.Parent.builders.TycoonButtons)
 local TycoonDecor = require(script.Parent.Parent.builders.TycoonDecor)
+local TycoonGrounds = require(script.Parent.Parent.builders.TycoonGrounds)
 local TycoonModels = require(script.Parent.Parent.builders.TycoonModels)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
@@ -46,6 +47,7 @@ type Entry = {
 	pads: { [string]: TycoonButtons.Pad },
 	silo: Part,
 	siloRoof: Part,
+	unloadPad: Part,
 	currentPad: string?, -- un bouton n'achète qu'à l'arrivée dessus, pas en boucle
 	lastPurchaseAt: number,
 }
@@ -147,6 +149,7 @@ local function refreshPads(player: Player, entry: Entry)
 		-- Lus par les flèches de guidage du client (GuideController).
 		pad.top:SetAttribute("Price", price)
 		pad.top:SetAttribute("State", view.state)
+		pad.top:SetAttribute("Guided", entry.state.guided[buttonId] == true)
 	end
 end
 
@@ -228,12 +231,17 @@ local function buildUnloadPad(player: Player, entry: Entry)
 		color = COLORS.UNLOAD_PAD,
 	})
 	unloadPad:SetAttribute("OwnerId", player.UserId)
+	entry.unloadPad = unloadPad
 	CollectionService:AddTag(unloadPad, TycoonConfig.UNLOAD_TAG)
 	local label = TycoonButtons.label(unloadPad, "📥", PAD_STYLE.LABEL_HEIGHT_ABOVE)
 	TycoonButtons.paint(label, "unload", "DÉCHARGER ICI", "Vide ton sac au silo")
 end
 
 local function buildFactory(player: Player, entry: Entry)
+	local function toWorld(x: number, z: number): CFrame
+		return originAt(entry, { x = x, z = z })
+	end
+	TycoonGrounds.build(entry.folder, toWorld)
 	for buttonId, spot in LAYOUT.PADS do
 		local pad = TycoonButtons.build(entry.folder, buttonId, originAt(entry, spot))
 		pad.top:SetAttribute("ButtonId", buttonId)
@@ -249,6 +257,8 @@ local function buildFactory(player: Player, entry: Entry)
 		size = Vector3.new(conveyor.width, conveyor.height, conveyor.toZ - conveyor.fromZ),
 		color = COLORS.CONVEYOR,
 	})
+	TycoonGrounds.dressConveyor(entry.folder, toWorld)
+	TycoonGrounds.dressUnloadPad(entry.folder, toWorld)
 	entry.silo = placeBlock(entry, { name = "Silo", spot = LAYOUT.SILO, size = Vector3.one, color = COLORS.SILO })
 	entry.silo.Shape = Enum.PartType.Cylinder
 	entry.siloRoof = TycoonModels.siloRoof(entry.folder, LAYOUT.SILO.radius)
@@ -259,6 +269,7 @@ local function applyProfile(player: Player, entry: Entry, data: Profile.Data)
 	entry.progress = Profile.toProgress(data)
 	syncMachines(entry, false)
 	syncDecor(player, entry, false)
+	entry.unloadPad:SetAttribute("Guided", entry.state.guided[TycoonConfig.GUIDE_UNLOAD_KEY] == true)
 	player:SetAttribute(PlayerAttributes.TIER, data.tier)
 	publish(player, entry)
 end
@@ -283,6 +294,7 @@ local function claimFactory(player: Player)
 		pads = {},
 		silo = nil :: any, -- posés par buildFactory
 		siloRoof = nil :: any,
+		unloadPad = nil :: any,
 		lastPurchaseAt = -math.huge,
 	}
 	buildFactory(player, entry)
@@ -301,6 +313,7 @@ local function tryRebirth(player: Player, entry: Entry): boolean
 		return false
 	end
 	player:SetAttribute(PlayerAttributes.TIER, Rebirth.STARTING_TIER) -- le véhicule est réinitialisé (CDC §7.3)
+	entry.state.guided[REBIRTH] = true
 	syncMachines(entry, false)
 	return true
 end
@@ -379,6 +392,10 @@ function TycoonService.unload(player: Player, bag: Bag.Bag): number
 	end
 	local _, value = Bag.withdraw(bag, Tycoon.siloCapacity(entry.state) - entry.state.silo)
 	local accepted = Tycoon.deposit(entry.state, value)
+	if accepted > 0 and not entry.state.guided[TycoonConfig.GUIDE_UNLOAD_KEY] then
+		entry.state.guided[TycoonConfig.GUIDE_UNLOAD_KEY] = true
+		entry.unloadPad:SetAttribute("Guided", true)
+	end
 	publish(player, entry)
 	return accepted
 end

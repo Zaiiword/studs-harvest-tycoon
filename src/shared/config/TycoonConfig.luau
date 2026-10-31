@@ -12,6 +12,7 @@ export type MachineDef = {
 }
 
 export type Spot = { x: number, z: number }
+export type Zone = { name: string, minX: number, maxX: number, minZ: number, maxZ: number, color: { number } }
 
 -- Décoration (A53) : purement esthétique, achetée une fois, conservée au Rebirth. `spots` : où la construire.
 export type DecorDef = { id: string, name: string, price: number, spots: { Spot }, footprint: { number } }
@@ -56,12 +57,13 @@ return Freeze.deep({
 			id = "Lamps",
 			name = "Lampadaires",
 			price = 750,
-			spots = {
-				{ x = 10, z = -48 },
-				{ x = 10, z = -28 },
-				{ x = 10, z = -8 },
-				{ x = 10, z = 12 },
-				{ x = 10, z = 32 },
+			spots = { -- de part et d'autre de l'allée centrale
+				{ x = 6, z = -50 },
+				{ x = 14, z = -50 },
+				{ x = 6, z = -10 },
+				{ x = 14, z = -10 },
+				{ x = 6, z = 30 },
+				{ x = 14, z = 30 },
 			},
 			footprint = { 2, 2 },
 		},
@@ -120,13 +122,37 @@ return Freeze.deep({
 			Windmill = { x = 44, z = 53 },
 		} :: { [string]: Spot },
 		SILO = { x = -42, z = -42, radius = 9, minHeight = 8, maxHeight = 80, levelHeight = 15 },
-		CONVEYOR = { x = -42, fromZ = -30, toZ = 50, width = 6, height = 1 },
+		CONVEYOR = { x = -42, fromZ = -30, toZ = 44, width = 6, height = 1 },
 		MACHINE_SIZE = 10,
 		MACHINES = {
 			Mill = { x = -26, z = -10 },
 			Oven = { x = -26, z = 14 },
 			Factory = { x = -26, z = 38 },
 		} :: { [string]: Spot },
+		-- Zones au sol (A53) : dalles colorées bordées, pour une base lisible. Rectangles en coordonnées locales.
+		ZONES = {
+			{ name = "Factory", minX = -59, maxX = -15, minZ = -58, maxZ = 46, color = { 110, 115, 125 } },
+			{ name = "Shop", minX = -8, maxX = 6, minZ = -56, maxZ = 46, color = { 205, 210, 218 } },
+			{ name = "EggsSouth", minX = 14, maxX = 34, minZ = -58, maxZ = -4, color = { 255, 175, 215 } },
+			{ name = "EggsNorth", minX = 14, maxX = 34, minZ = 4, maxZ = 22, color = { 255, 175, 215 } },
+			{ name = "Garden", minX = -46, maxX = 52, minZ = 47, maxZ = 59, color = { 90, 170, 80 } },
+		} :: { Zone },
+		-- Allées pavées, un peu plus hautes que les zones (pas de faces au même niveau qui scintillent).
+		AVENUES = {
+			{ name = "Main", minX = 6, maxX = 14, minZ = -58, maxZ = 47, color = { 240, 238, 230 } },
+			{ name = "ToUnload", minX = 14, maxX = 35, minZ = -4, maxZ = 4, color = { 240, 238, 230 } },
+		} :: { Zone },
+		ZONE_THICKNESS = 0.08,
+		AVENUE_THICKNESS = 0.12,
+		BORDER = { width = 0.6, height = 0.3, color = { 27, 42, 53 } },
+		-- Panneaux de zone sur poteau ; `footprint` vérifié par le test du plan de la base.
+		SIGNS = {
+			{ text = "🏭 USINE", x = -30, z = -56 },
+			{ text = "⭐ ACHATS", x = 0, z = -53 },
+			{ text = "🥚 ŒUFS", x = 24, z = -55 },
+			{ text = "🌷 DÉCO", x = -40, z = 53 },
+		} :: { { text: string, x: number, z: number } },
+		SIGN = { width = 7, height = 2.6, postHeight = 3.4, footprint = { 7, 1 } },
 	},
 	-- Boutons au sol façon grands tycoons (A53) : socle sombre, plaque colorée, anneau néon, panneau de prix.
 	-- Un bouton épuisé (machine achetée, décoration construite…) disparaît, comme dans les tycoons classiques.
@@ -160,14 +186,16 @@ return Freeze.deep({
 			locked = { top = { 175, 175, 185 }, bottom = { 110, 110, 120 }, ring = { 140, 140, 150 } },
 			info = { top = { 110, 175, 255 }, bottom = { 40, 95, 215 }, ring = { 110, 175, 255 } },
 			unload = { top = { 255, 230, 90 }, bottom = { 255, 150, 20 }, ring = { 255, 220, 60 } },
+			egg = { top = { 255, 140, 200 }, bottom = { 170, 60, 210 }, ring = { 255, 140, 200 } },
 		} :: { [string]: { top: { number }, bottom: { number }, ring: { number } } },
 	},
 	BUILD_ANIM_ATTRIBUTE = "BuiltAt", -- heure serveur de construction : le client anime l'arrivée des briques
 	PAD_TAG = "TycoonPad", -- boutons repérés par les flèches de guidage (attributs ButtonId, OwnerId, Price, State)
 	UNLOAD_TAG = "UnloadPad",
+	GUIDE_UNLOAD_KEY = "Unload", -- premier déchargement fait : les flèches n'y ramènent plus (A53)
 
 	-- Étiquettes flottantes au-dessus des boutons et des machines.
-	LABEL = { WIDTH = 220, HEIGHT = 60, HEIGHT_ABOVE = 5, MAX_DISTANCE = 150 },
+	LABEL = { MAX_DISTANCE = 110 }, -- au-delà, les panneaux disparaissent (moins de fouillis vu de loin)
 	COLORS = {
 		UNLOAD_PAD = { 245, 205, 48 },
 		SILO = { 248, 248, 248 },

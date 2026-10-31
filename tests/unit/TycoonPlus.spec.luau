@@ -158,6 +158,9 @@ local function footprints(): { Box }
 			add(`{decor.id} {k}`, spot.x, spot.z, decor.footprint[1], decor.footprint[2])
 		end
 	end
+	for _, sign in LAYOUT.SIGNS do
+		add(`panneau {sign.text}`, sign.x, sign.z, LAYOUT.SIGN.footprint[1], LAYOUT.SIGN.footprint[2])
+	end
 	return boxes
 end
 
@@ -177,6 +180,19 @@ describe("Plan de la base", function()
 		end
 	end)
 
+	it("ne superpose pas deux dalles de même hauteur (elles scintilleraient)", function()
+		for _, group in { LAYOUT.ZONES, LAYOUT.AVENUES } do
+			for i = 1, #group do
+				for j = i + 1, #group do
+					local a, b = group[i], group[j]
+					local isApart = a.maxX <= b.minX or b.maxX <= a.minX or a.maxZ <= b.minZ or b.maxZ <= a.minZ
+					expect(isApart).toBe(true)
+				end
+			end
+		end
+		expect(LAYOUT.AVENUE_THICKNESS > LAYOUT.ZONE_THICKNESS).toBe(true)
+	end)
+
 	it("garde tout à l'intérieur de la base", function()
 		local half = MapConfig.BASE_SIZE / 2
 		for _, box in footprints() do
@@ -194,19 +210,20 @@ describe("Guide", function()
 	}
 
 	it("montre le bouton abordable le moins cher", function()
-		local target = Guide.target({ money = 300, isBagFull = false, unload = nil, buttons = buttons }) :: Guide.Target
+		local target =
+			Guide.target({ money = 300, isBagFull = false, unload = nil, buttons = buttons, seen = {} }) :: Guide.Target
 		expect(target.kind).toBe("button")
 		expect(target.id).toBe("Conveyor")
 	end)
 
 	it("ne montre rien quand aucun bouton n'est abordable", function()
-		expect(Guide.target({ money = 10, isBagFull = false, unload = nil, buttons = buttons })).toBe(nil)
+		expect(Guide.target({ money = 10, isBagFull = false, unload = nil, buttons = buttons, seen = {} })).toBe(nil)
 	end)
 
 	it("emmène d'abord décharger quand le sac est plein", function()
 		local unload = { x = 1, z = 2 }
 		local target =
-			Guide.target({ money = 1e6, isBagFull = true, unload = unload, buttons = buttons }) :: Guide.Target
+			Guide.target({ money = 1e6, isBagFull = true, unload = unload, buttons = buttons, seen = {} }) :: Guide.Target
 		expect(target.kind).toBe("unload")
 		expect(target.point).toBe(unload)
 	end)
@@ -240,5 +257,37 @@ describe("Guide", function()
 		local chevrons = Guide.chevrons({ { x = 0, z = 0 }, { x = 500, z = 0 } }, spec)
 		expect(#chevrons).toBe(5)
 		expect(chevrons[#chevrons].x <= 20).toBe(true)
+	end)
+end)
+
+describe("Guidage une seule fois par objet", function()
+	local buttons = {
+		{ id = "Conveyor", price = 68, x = 0, z = -40 },
+		{ id = "Mill", price = 250, x = 0, z = -20 },
+	}
+
+	it("passe au bouton suivant une fois le tapis déjà acheté", function()
+		local seen = { Conveyor = true }
+		local target = Guide.target({ money = 300, isBagFull = false, unload = nil, buttons = buttons, seen = seen })
+		expect((target :: Guide.Target).id).toBe("Mill")
+	end)
+
+	it("ne ramène plus à la grille de déchargement après le premier déchargement", function()
+		local unload = { x = 1, z = 2 }
+		local seen = { [Guide.UNLOAD] = true, Conveyor = true, Mill = true }
+		expect(Guide.target({ money = 1e6, isBagFull = true, unload = unload, buttons = buttons, seen = seen })).toBe(
+			nil
+		)
+	end)
+
+	it("retient chaque bouton acheté, et le garde au Rebirth et dans la sauvegarde", function()
+		local state = Tycoon.new()
+		state.money = 1e6
+		Tycoon.buy(state, "Conveyor", 1)
+		expect(state.guided.Conveyor).toBe(true)
+		expect(state.guided.Mill).toBe(nil)
+		local data = Profile.sanitize({ guided = { "Conveyor", "Unload", "Inconnu" } })
+		expect(#data.guided).toBe(2)
+		expect(Profile.toTycoon(data).guided.Unload).toBe(true)
 	end)
 end)

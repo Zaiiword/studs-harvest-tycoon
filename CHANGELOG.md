@@ -4,6 +4,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée p
 
 ## Usine — plus d'options, boutons et flèches de guidage (A53)
 
+### Corrigé
+- La fontaine scintillait : l'eau était au même niveau que le dessus du bassin.
+
 ### Ajouté
 - **Silo Géant** : 4 agrandissements (capacité ×2 chacun), le silo grandit aussi en hauteur.
 - **7 décorations** à acheter : Lampadaires, Parterres Fleuris, Fontaine (jet d'eau), Drapeau Géant et Arche
@@ -16,7 +19,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée p
 - **Flèches de guidage au sol** : chevrons lumineux qui défilent vers le bouton abordable le moins cher (ou
   le silo, en jaune, quand le sac est plein), en passant par les ponts ; grosse flèche au-dessus de la cible.
   Bouton ➡️ du HUD pour les activer / masquer.
-- Profil v6 (niveau du silo, décorations) ; tests : achats, Rebirth, sauvegarde, plan de la base sans
+- Flèches **une seule fois par objet** : un bouton déjà acheté (ou la grille déjà utilisée) n'est plus
+  montré, même après reconnexion (sauvegardé).
+- **Base aménagée** : dalles colorées et bordées par zone (Usine, Achats, Œufs, Jardin), allées pavées vers
+  la grille, panneaux de zone, lampadaires alignés le long de l'allée, tapis à rails et rouleaux, grille de
+  déchargement à cadre et barreaux, panneaux d'œufs au style des boutons (chances dans le menu 🐾).
+- Profil v6 (niveau du silo, décorations, objets déjà guidés) ; tests : achats, Rebirth, sauvegarde, plan de la base sans
   chevauchement, choix de la cible et trajet des flèches.
 
 ## Menu Pets et pop-up de la roue

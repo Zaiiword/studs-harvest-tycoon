@@ -26,6 +26,7 @@ export type Data = {
 	purchases: Purchases.Purchases, -- v5 : reçus Robux traités, Starter Pack (Sprint 8)
 	siloLevel: number, -- v6 : agrandissements du silo (A53)
 	decor: { string }, -- v6 : décorations achetées (A53)
+	guided: { string }, -- v6 : objets où les flèches de guidage ne ramènent plus (A53)
 }
 
 -- Ce que les services fournissent pour composer un profil à sauvegarder.
@@ -41,7 +42,7 @@ export type GameParts = {
 
 local Profile = {}
 
--- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases` ; v5 → v6 : `siloLevel`, `decor`. Un champ absent reprend sa valeur par défaut :
+-- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases` ; v5 → v6 : `siloLevel`, `decor`, `guided`. Un champ absent reprend sa valeur par défaut :
 -- la migration est donc faite par `sanitize`, sans code spécifique.
 Profile.VERSION = 6
 
@@ -52,6 +53,10 @@ end
 local knownDecor: { [string]: boolean } = {}
 for _, decor in TycoonConfig.DECORATIONS do
 	knownDecor[decor.id] = true
+end
+local knownGuided: { [string]: boolean } = { [TycoonConfig.GUIDE_UNLOAD_KEY] = true }
+for buttonId in TycoonConfig.LAYOUT.PADS do
+	knownGuided[buttonId] = true
 end
 
 function Profile.default(): Data
@@ -70,6 +75,7 @@ function Profile.default(): Data
 		purchases = Purchases.new(),
 		siloLevel = 0,
 		decor = {},
+		guided = {},
 	}
 end
 
@@ -125,6 +131,7 @@ function Profile.sanitize(raw: any): Data
 		purchases = Purchases.sanitize(source.purchases),
 		siloLevel = number(source.siloLevel, 0, #TycoonConfig.SILO_UPGRADE.PRICES, 0, true),
 		decor = idsOf(source.decor, knownDecor),
+		guided = idsOf(source.guided, knownGuided),
 	}
 end
 
@@ -144,6 +151,7 @@ function Profile.fromGame(parts: GameParts): Data
 		purchases = parts.purchases,
 		siloLevel = state.siloLevel,
 		decor = sortedKeys(state.decor),
+		guided = sortedKeys(state.guided),
 	})
 end
 
@@ -156,6 +164,9 @@ function Profile.toTycoon(data: Data): Tycoon.State
 	state.siloLevel = data.siloLevel
 	for _, id in data.decor do
 		state.decor[id] = true
+	end
+	for _, id in data.guided do
+		state.guided[id] = true
 	end
 	return state
 end
