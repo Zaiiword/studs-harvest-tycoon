@@ -18,6 +18,7 @@ local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Weather = require(ReplicatedStorage.Shared.domain.Weather)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
+local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local RateLimiter = require(ReplicatedStorage.Shared.util.RateLimiter)
 local VehicleService = require(script.Parent.VehicleService)
@@ -49,7 +50,7 @@ end
 function BumperService.massOf(player: Player): number
 	local rebirths = player:GetAttribute(PlayerAttributes.REBIRTHS)
 	local count = if typeof(rebirths) == "number" then rebirths else 0
-	return Formulas.effectiveMass(VehicleService.tierOf(player).mass, count, false) -- Titan : Sprint 8
+	return Formulas.effectiveMass(VehicleService.tierOf(player).mass, count, Perks.hasPass(player, "Titan")) -- CDC §9 : ×2,5
 end
 
 local function contestantOf(player: Player, now: number): Contestant?

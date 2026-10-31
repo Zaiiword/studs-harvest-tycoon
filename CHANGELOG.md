@@ -2,6 +2,23 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Sprint 8 — Monétisation, équilibrage et publication
+
+### Ajouté
+- `MonetizationService` : 5 Gamepasses (vérifiés à l'arrivée et à l'achat), 4 Developer Products,
+  `ProcessReceipt` idempotent qui ne confirme qu'après une sauvegarde réussie (historique des reçus).
+- Effets : Remorque Infinie, Revenus ×2, Titan (masse ×2,5, pare-buffle doré), Aimant (hitbox +35 %,
+  vitesse +20 %), Triple Éclosion & Auto-Hatch ; palier effectif commun serveur/client (`Loadout`, A48).
+- Bazooka (3 tirs), Météorite Dorée avec le nom de l'acheteur en géant (mise en file si un boss est
+  déjà là), « Se venger ! » contextuel 6 s (A49), Starter Pack une fois par compte (A50).
+- Client : boutique 🛒, bouton de vengeance, offre Starter Pack avec compte à rebours ; achats simulés dans
+  Studio tant que les identifiants valent 0.
+- Profil v5 (achats). Simulation d'économie et test de la courbe de progression (A51).
+- `docs/EQUILIBRAGE.md` et `docs/PUBLICATION.md` (Creator Hub, identifiants, conformité).
+
+### Modifié
+- Équilibrage (A51) : tapis ×1,15 par niveau, Four 20 000 $, Usine 400 000 $.
+
 ## Sprint 7 — Rétention, HUD « Studs Pop », effets et audio
 
 ### Ajouté

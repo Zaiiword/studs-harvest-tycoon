@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
+local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local VehicleModels = require(script.Parent.Parent.builders.VehicleModels)
@@ -25,9 +26,15 @@ local SPEED_CHECK_INTERVAL = VehicleConfig.SPEED_CHECK_INTERVAL
 
 local troves: { [Player]: any } = {}
 
+-- Palier effectif (Garage + avantages Robux, voir Loadout) : c'est lui qui coupe, roule et pèse.
 function VehicleService.tierOf(player: Player): VehicleConfig.TierDef
+	return Perks.tierOf(player)
+end
+
+-- Palier acheté au Garage (sans avantage) : c'est lui que vend le Garage et que garde la sauvegarde.
+function VehicleService.purchasedTierOf(player: Player): number
 	local id = player:GetAttribute(PlayerAttributes.TIER)
-	return VehicleConfig.TIERS[if typeof(id) == "number" then id else 1] or VehicleConfig.TIERS[1]
+	return if typeof(id) == "number" and VehicleConfig.TIERS[id] then id else 1
 end
 
 function VehicleService.bodyOf(player: Player): BasePart?
@@ -91,7 +98,8 @@ local function mountVehicle(character: Model, tier: VehicleConfig.TierDef, def: 
 	character:PivotTo(character:GetPivot() + Vector3.new(0, HANDLING.SEAT_HEIGHT + def.height, 0))
 	local body = newBody(def)
 	body.CFrame = root.CFrame * CFrame.new(0, -(root.Size.Y / 2 + HANDLING.SEAT_HEIGHT + def.height / 2), 0)
-	VehicleModels.decorate(body, tier, def)
+	local player = Players:GetPlayerFromCharacter(character)
+	VehicleModels.decorate(body, tier, def, player ~= nil and Perks.hasPass(player, "Titan"))
 	local weld = Instance.new("WeldConstraint")
 	weld.Part0, weld.Part1 = body, root
 	weld.Parent = body
@@ -99,7 +107,6 @@ local function mountVehicle(character: Model, tier: VehicleConfig.TierDef, def: 
 	body.Parent = character
 	humanoid.PlatformStand = true -- l'Humanoid ne doit pas lutter contre LinearVelocity
 	-- Le pilote doit simuler lui-même son engin pour que ses consignes LinearVelocity s'appliquent.
-	local player = Players:GetPlayerFromCharacter(character)
 	if player then
 		pcall(root.SetNetworkOwner, root, player)
 	end
@@ -124,9 +131,14 @@ end
 local function onPlayerAdded(player: Player)
 	local trove = Trove.new()
 	troves[player] = trove
-	trove:Connect(player:GetAttributeChangedSignal(PlayerAttributes.TIER), function()
-		refreshVehicle(player)
-	end)
+	-- Le palier, le Mini-Tracteur Turbo et le Titan changent l'engin ou son habillage.
+	for _, name in
+		{ PlayerAttributes.TIER, PlayerAttributes.HAS_TURBO_TRACTOR, PlayerAttributes.PASS_PREFIX .. "Titan" }
+	do
+		trove:Connect(player:GetAttributeChangedSignal(name), function()
+			refreshVehicle(player)
+		end)
+	end
 	trove:Connect(player.CharacterAdded, function(character: Model)
 		character:WaitForChild("HumanoidRootPart", 5)
 		refreshVehicle(player)

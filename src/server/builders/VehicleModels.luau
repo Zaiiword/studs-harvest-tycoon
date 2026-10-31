@@ -15,6 +15,7 @@ local GLASS_TRANSPARENCY = 0.35
 local WHEEL_WIDTH = 1.2
 local REAR_WHEEL_SCALE = 1.5
 local NEON_THICKNESS = 0.3
+local TITAN_COLOR = { 255, 196, 0 }
 
 local function addWheels(body: Part, def: VehicleConfig.BodyDef)
 	local radius = def.height * 0.6
@@ -66,6 +67,18 @@ local function addHeader(body: Part, def: VehicleConfig.BodyDef, hitbox: number)
 	})
 end
 
+-- Pare-buffle doré et brillant, plus large que l'engin.
+local function addTitanGuard(body: Part, def: VehicleConfig.BodyDef)
+	local guard = Build.attached(body, {
+		name = "TitanGuard",
+		cframe = CFrame.new(0, 0, -(def.length / 2 + 1.4)),
+		size = Vector3.new(def.width + 2, def.height, 0.8),
+		color = TITAN_COLOR,
+	})
+	guard.Material = Enum.Material.Metal
+	guard.Reflectance = 0.4
+end
+
 local function addNeon(body: Part, def: VehicleConfig.BodyDef)
 	for _, x in { -1, 1 } do
 		local stripe = Build.attached(body, {
@@ -78,10 +91,14 @@ local function addNeon(body: Part, def: VehicleConfig.BodyDef)
 	end
 end
 
-function VehicleModels.decorate(body: Part, tier: VehicleConfig.TierDef, def: VehicleConfig.BodyDef)
+-- `hasTitan` : Gamepass Pare-Chocs Lourd Titan, pare-buffle doré à l'avant (CDC §9).
+function VehicleModels.decorate(body: Part, tier: VehicleConfig.TierDef, def: VehicleConfig.BodyDef, hasTitan: boolean)
 	addWheels(body, def)
 	addCabin(body, def)
 	addBumper(body, def)
+	if hasTitan then
+		addTitanGuard(body, def)
+	end
 	if def.hasHeader then
 		addHeader(body, def, tier.hitboxStuds)
 	end

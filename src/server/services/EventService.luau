@@ -38,6 +38,7 @@ local hotspotMovesAt = 0
 local hotspotModel: Model
 local nextMeteorAt = 0
 local activeBoss: ActiveBoss? = nil
+local pendingSummons: { string } = {} -- invocations payées en attente (nom affiché de l'acheteur)
 local hitElapsed = 0
 
 local function now(): number
@@ -89,10 +90,15 @@ local function refreshBossLabel(active: ActiveBoss)
 	setWorld(WorldAttributes.BOSS_HP, math.ceil(boss.hp))
 end
 
--- Fait apparaître l'Épi Géant de Cristal au cœur de l'arène (CDC §6).
-function EventService.summonMeteor()
+-- Fait apparaître l'Épi Géant de Cristal au cœur de l'arène (CDC §6). `buyerName` : DevProduct « Invoquer
+-- Météorite Dorée » (CDC §9), affiché en géant. Si un boss est déjà là, l'invocation payée attend son tour
+-- (on ne fait jamais payer pour rien). Renvoie vrai si le boss est apparu tout de suite.
+function EventService.summonMeteor(buyerName: string?): boolean
 	if activeBoss then
-		return
+		if buyerName then
+			table.insert(pendingSummons, buyerName)
+		end
+		return false
 	end
 	local x, z = arenaCenter()
 	local active: ActiveBoss = {
@@ -104,6 +110,10 @@ function EventService.summonMeteor()
 	setWorld(WorldAttributes.BOSS_MAX_HP, METEOR.MAX_HP)
 	setWorld(WorldAttributes.BOSS_LEAVES_AT, active.leavesAt)
 	refreshBossLabel(active)
+	if buyerName then
+		EventModels.showSummoner(active.model, buyerName)
+	end
+	return true
 end
 
 -- Récompenses du Top 3 : Œuf Légendaire et revenus ×3 pendant 5 minutes (CDC §6).
@@ -130,6 +140,10 @@ local function endBoss(isDefeated: boolean)
 	nextMeteorAt = now() + METEOR.INTERVAL_SECONDS
 	setWorld(WorldAttributes.BOSS_HP, 0)
 	setWorld(WorldAttributes.METEOR_AT, nextMeteorAt)
+	local nextBuyer = table.remove(pendingSummons, 1)
+	if nextBuyer then
+		EventService.summonMeteor(nextBuyer)
+	end
 end
 
 -- Chaque engin (ou joueur à pied) assez proche fauche le boss avec la puissance de son outil.

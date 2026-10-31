@@ -21,6 +21,7 @@ local Profile = require(ReplicatedStorage.Shared.domain.Profile)
 local Rebirth = require(ReplicatedStorage.Shared.domain.Rebirth)
 local Tycoon = require(ReplicatedStorage.Shared.domain.Tycoon)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Format = require(ReplicatedStorage.Shared.util.Format)
 local MapService = require(script.Parent.MapService)
@@ -71,6 +72,7 @@ local function bonusOf(player: Player, entry: Entry): Tycoon.IncomeBonus
 		Rebirth.incomeBonus(entry.progress, if isBoosted then EventConfig.METEOR.REWARD_INCOME_MULTIPLIER else 1)
 	local equipped = Pets.decodeEquipped(player:GetAttribute(PlayerAttributes.EQUIPPED_PETS))
 	bonus.petBonuses = Pets.bonuses({ owned = {}, equipped = equipped })
+	bonus.hasIncomeX2 = Perks.hasPass(player, "IncomeX2") -- Gamepass Revenus ×2 (CDC §9)
 	return bonus
 end
 local incomeElapsed, padElapsed = 0, 0
@@ -119,7 +121,7 @@ local function refreshRebirthPad(entry: Entry, pad: Part)
 end
 
 local function refreshPads(player: Player, entry: Entry)
-	local tier = VehicleService.tierOf(player).id
+	local tier = VehicleService.purchasedTierOf(player)
 	for buttonId, pad in entry.pads do
 		if buttonId == REBIRTH then
 			refreshRebirthPad(entry, pad)
@@ -267,7 +269,7 @@ local function tryPurchase(player: Player, entry: Entry, buttonId: string)
 	if buttonId == REBIRTH then
 		isDone = tryRebirth(player, entry)
 	else
-		local result = Tycoon.buy(entry.state, buttonId, VehicleService.tierOf(player).id)
+		local result = Tycoon.buy(entry.state, buttonId, VehicleService.purchasedTierOf(player))
 		isDone = result.isPurchased
 		if result.newTier then
 			player:SetAttribute(PlayerAttributes.TIER, result.newTier)
@@ -362,7 +364,7 @@ function TycoonService.snapshot(player: Player): Snapshot?
 	if not entry then
 		return nil
 	end
-	return { tycoon = entry.state, tier = VehicleService.tierOf(player).id, progress = entry.progress }
+	return { tycoon = entry.state, tier = VehicleService.purchasedTierOf(player), progress = entry.progress }
 end
 
 -- Dépense de l'argent (distributeurs d'œufs). Renvoie false si le joueur n'en a pas assez.

@@ -21,18 +21,19 @@ return Freeze.deep({
 	CONVEYOR = {
 		NAME = "Tapis Roulant",
 		BASE_RATE = 2, -- $ bruts consommés par seconde au niveau 1
-		RATE_GROWTH = 1.5,
+		RATE_GROWTH = 1.15, -- A51 : réglé par la simulation d'économie (docs/EQUILIBRAGE.md)
 		BASE_PRICE = 50, -- A7 ; prix du niveau n+1 = 50 × 1,35^(n-1) (CDC §8)
 		MAX_LEVEL = 40,
 	},
 	-- Machines achetées une fois ; leurs multiplicateurs se multiplient (A6, CDC §7 : ×1,5 / ×3 / ×8).
+	-- Prix du Four et de l'Usine relevés par l'équilibrage (A51) : l'Usine ×8 à 40 000 $ bouclait le jeu en 1 h.
 	MACHINES = {
 		{ id = "Mill", name = "Moulin à Farine", price = 250, multiplier = 1.5, color = { 255, 255, 255 } },
-		{ id = "Oven", name = "Four à Pain", price = 2_500, multiplier = 3, color = { 218, 133, 65 } },
+		{ id = "Oven", name = "Four à Pain", price = 20_000, multiplier = 3, color = { 218, 133, 65 } },
 		{
 			id = "Factory",
 			name = "Usine de Céréales Dorées",
-			price = 40_000,
+			price = 400_000,
 			multiplier = 8,
 			color = { 245, 205, 48 },
 		},

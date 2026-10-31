@@ -13,6 +13,7 @@ local RateLimiter = require(ReplicatedStorage.Shared.util.RateLimiter)
 local EventService = require(script.Parent.EventService)
 local InventoryService = require(script.Parent.InventoryService)
 local TycoonService = require(script.Parent.TycoonService)
+local MonetizationService = require(script.Parent.MonetizationService)
 
 local DevCommandsService = {}
 
@@ -41,6 +42,10 @@ local function onCommand(player: Player, kind: any, value: any)
 		EventService.summonMeteor()
 	elseif command.kind == "weather" then
 		EventService.forceWeather((command :: any).weather)
+	elseif command.kind == "pass" then
+		MonetizationService.togglePass(player, (command :: any).key)
+	elseif command.kind == "product" then
+		MonetizationService.grantProduct(player, (command :: any).key) -- achat simulé, sans Robux
 	else
 		grantItems(player)
 	end

@@ -14,9 +14,9 @@ local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local PlantConfig = require(ReplicatedStorage.Shared.config.PlantConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
-local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local Rarity = require(ReplicatedStorage.Shared.domain.Rarity)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local FieldController = require(script.Parent.FieldController)
@@ -96,8 +96,7 @@ local function onCellCut(index: number, slot: number, x: number, z: number)
 	end
 	local text, color = cutText(index)
 	float(x, z, text, color)
-	local tierId = localPlayer:GetAttribute(PlayerAttributes.TIER)
-	local tier = VehicleConfig.TIERS[if typeof(tierId) == "number" then tierId else 1] or VehicleConfig.TIERS[1]
+	local tier = Perks.tierOf(localPlayer)
 	trauma = math.min(1, trauma + JUICE.SHAKE_PER_CUT * tier.hitboxStuds / JUICE.BIGGEST_HITBOX)
 end
 

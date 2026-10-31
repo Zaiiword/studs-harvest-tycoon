@@ -12,8 +12,8 @@ local AssetIds = require(ReplicatedStorage.Shared.config.AssetIds)
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local PlantConfig = require(ReplicatedStorage.Shared.config.PlantConfig)
-local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local FieldController = require(script.Parent.FieldController)
 
@@ -130,7 +130,7 @@ local function predictCuts()
 	if not root or room <= 0 then
 		return
 	end
-	local tier = VehicleConfig.TIERS[numberAttribute(PlayerAttributes.TIER, 1)] or VehicleConfig.TIERS[1]
+	local tier = Perks.tierOf(localPlayer) -- palier effectif (avantages Robux compris)
 	local look, grid = root.CFrame.LookVector, FieldController.grid()
 	local hitbox = { x = root.Position.X, z = root.Position.Z, dirX = look.X, dirZ = look.Z, size = tier.hitboxStuds }
 	for _, index in grid:queryHitbox(hitbox) do

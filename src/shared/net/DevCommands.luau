@@ -2,6 +2,7 @@
 -- Validation des commandes du panneau de test (Studio uniquement). Pure : testée sous Lune.
 -- Même en Studio, le serveur ne fait pas confiance au client : type, bornes et liste blanche.
 local EventConfig = require("../config/EventConfig")
+local MonetizationConfig = require("../config/MonetizationConfig")
 local VehicleConfig = require("../config/VehicleConfig")
 
 export type Command =
@@ -10,12 +11,24 @@ export type Command =
 	| { kind: "meteor" }
 	| { kind: "weather", weather: string }
 	| { kind: "items" }
+	| { kind: "pass", key: string }
+	| { kind: "product", key: string }
 
 local DevCommands = {}
 
 DevCommands.MONEY_GRANT = 10_000 -- montant fixe : le client ne choisit jamais une somme
 DevCommands.ITEMS_GRANT = 3 -- exemplaires de chaque objet de sabotage
 DevCommands.GEMS_GRANT = 50
+
+-- Clé d'un Gamepass ou d'un produit de MonetizationConfig.
+local function isKey(list: { { key: string } }, value: any): boolean
+	for _, entry in list do
+		if entry.key == value then
+			return true
+		end
+	end
+	return false
+end
 
 local function isWeather(value: any): boolean
 	for _, weather in EventConfig.WEATHERS do
@@ -32,6 +45,12 @@ function DevCommands.parse(kind: any, value: any): Command?
 	end
 	if kind == "weather" and isWeather(value) then
 		return { kind = "weather", weather = value }
+	end
+	if kind == "pass" and isKey(MonetizationConfig.GAMEPASSES, value) then
+		return { kind = "pass", key = value }
+	end
+	if kind == "product" and isKey(MonetizationConfig.PRODUCTS, value) then
+		return { kind = "product", key = value }
 	end
 	if kind == "money" or kind == "meteor" or kind == "items" then
 		return { kind = kind } :: any

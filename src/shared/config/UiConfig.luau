@@ -97,6 +97,17 @@ return Freeze.deep({
 		CRITICAL_COLOR = { 255, 176, 0 },
 		RAINBOW_COLOR = { 255, 89, 89 },
 	},
+	-- Boutique Robux et offres contextuelles (CDC §9, §10).
+	SHOP = {
+		WIDTH = 600,
+		HEIGHT = 440,
+		ROW_HEIGHT = 64,
+		BUTTON_WIDTH = 120,
+		ROW_COLOR = { 27, 42, 53 },
+		DETAIL_COLOR = { 200, 200, 200 },
+		BUY_COLOR = { 0, 162, 255 },
+		REVENGE_COLOR = { 196, 40, 28 },
+	},
 	-- Panneau de test (Studio uniquement).
 	DEV_PANEL = {
 		BUTTON_WIDTH = 96,

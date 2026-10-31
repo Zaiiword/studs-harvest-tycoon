@@ -5,6 +5,7 @@ local FakeDataStore = require("../helpers/FakeDataStore")
 local TycoonConfig = require("../../src/shared/config/TycoonConfig")
 local Pets = require("../../src/shared/domain/Pets")
 local Profile = require("../../src/shared/domain/Profile")
+local Purchases = require("../../src/shared/domain/Purchases")
 local Retention = require("../../src/shared/domain/Retention")
 local ProfileStore = require("../../src/shared/domain/ProfileStore")
 local Rebirth = require("../../src/shared/domain/Rebirth")
@@ -86,6 +87,7 @@ describe("Profile", function()
 			items = { Mud = 3 },
 			pets = pets,
 			retention = Retention.newState(),
+			purchases = Purchases.new(),
 		})
 		expect(data.pets.owned["Dragon:Gold"]).toBe(1)
 		expect(data.pets.equipped[1]).toBe("Dragon:Gold")

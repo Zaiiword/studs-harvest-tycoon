@@ -7,6 +7,7 @@ local FakeRng = require("../helpers/FakeRng")
 local RetentionConfig = require("../../src/shared/config/RetentionConfig")
 local Pets = require("../../src/shared/domain/Pets")
 local Profile = require("../../src/shared/domain/Profile")
+local Purchases = require("../../src/shared/domain/Purchases")
 local ProfileStore = require("../../src/shared/domain/ProfileStore")
 local Rebirth = require("../../src/shared/domain/Rebirth")
 local Retention = require("../../src/shared/domain/Retention")
@@ -70,6 +71,7 @@ describe("Journée de jeu", function()
 			items = {},
 			pets = Pets.newCollection(),
 			retention = retention,
+			purchases = Purchases.new(),
 		})
 		store:save("p", data, true)
 		local restored = (store:load("p").data :: Profile.Data).retention

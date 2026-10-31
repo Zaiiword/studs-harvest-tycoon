@@ -27,4 +27,9 @@ return table.freeze({
 	QUEST_PROGRESS = "QuestProgress", -- « Harvest=120,Boss=0 » : avancement des quêtes du jour
 	QUESTS_CLAIMED = "QuestsClaimed", -- « Harvest,Corn » : quêtes du jour déjà réclamées
 	HOME_READY_AT = "HomeReadyAt", -- prochain « Retour Base Instantané » possible (A19)
+	PASS_PREFIX = "Pass_", -- Pass_IncomeX2… : vrai si le joueur possède le Gamepass (MonetizationService)
+	HAS_TURBO_TRACTOR = "HasTurboTractor", -- Mini-Tracteur Turbo du Starter Pack (A12)
+	REVENGE_TARGET = "RevengeTarget", -- nom affiché du dernier agresseur (bouton « Se venger », A14)
+	REVENGE_UNTIL = "RevengeUntil", -- fin d'affichage du bouton « Se venger »
+	STARTER_OFFER_UNTIL = "StarterOfferUntil", -- fin de l'offre Starter Pack (0 : pas d'offre)
 })

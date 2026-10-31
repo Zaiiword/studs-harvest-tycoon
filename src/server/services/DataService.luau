@@ -16,6 +16,7 @@ local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local InventoryService = require(script.Parent.InventoryService)
 local PetService = require(script.Parent.PetService)
 local RetentionService = require(script.Parent.RetentionService)
+local MonetizationService = require(script.Parent.MonetizationService)
 local TycoonService = require(script.Parent.TycoonService)
 
 local DataService = {}
@@ -86,6 +87,7 @@ local function loadPlayer(player: Player)
 	InventoryService.restore(player, data.items)
 	PetService.restore(player, data.pets)
 	RetentionService.restore(player, data.retention)
+	MonetizationService.restore(player, data.purchases)
 	player:SetAttribute(PlayerAttributes.IS_DATA_LOADED, true)
 end
 
@@ -101,19 +103,23 @@ local function capture(player: Player): Profile.Data?
 		items = InventoryService.snapshot(player),
 		pets = PetService.snapshot(player),
 		retention = RetentionService.snapshot(player),
+		purchases = MonetizationService.snapshot(player),
 	})
 end
 
-local function save(player: Player, isRelease: boolean)
+-- Sauvegarde le profil ; renvoie vrai si l'écriture a réussi (MonetizationService en a besoin pour les reçus).
+local function save(player: Player, isRelease: boolean): boolean
 	local data = capture(player)
-	if not data or not loaded[player] then
-		return
+	if not data or not loaded[player] or not store then
+		return false
 	end
 	savesInFlight += 1
-	if not store:save(keyOf(player), data, isRelease) then
+	local isSaved = store:save(keyOf(player), data, isRelease)
+	if not isSaved then
 		warn(`[DataService] sauvegarde refusée ou en échec pour {player.UserId} (verrou perdu ou DataStore en panne)`)
 	end
 	savesInFlight -= 1
+	return isSaved
 end
 
 -- Capture le profil AVANT de libérer l'usine et l'inventaire, puis sauvegarde en libérant le verrou.
@@ -123,6 +129,7 @@ local function onPlayerRemoving(player: Player)
 	InventoryService.release(player)
 	PetService.release(player)
 	RetentionService.release(player)
+	MonetizationService.release(player)
 	local wasLoaded = loaded[player]
 	loaded[player] = nil
 	if data and wasLoaded then
@@ -149,6 +156,12 @@ local function onClose()
 	while savesInFlight > 0 do
 		task.wait()
 	end
+end
+
+function DataService:Init()
+	MonetizationService.setSaver(function(player: Player): boolean
+		return save(player, false)
+	end)
 end
 
 -- Start et non Init : tester l'accès au DataStore fait une requête, donc cède la main.

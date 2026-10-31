@@ -11,6 +11,7 @@ local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Trove = require(ReplicatedStorage.Packages.Trove)
@@ -41,9 +42,9 @@ local ATTR = PlayerAttributes
 local states: { [Player]: PlayerState } = {}
 local elapsed = 0
 
+-- Palier effectif : Garage + avantages Robux (Aimant, Remorque Infinie, Mini-Tracteur Turbo).
 local function tierOf(player: Player): VehicleConfig.TierDef
-	local id = player:GetAttribute(ATTR.TIER)
-	return VehicleConfig.TIERS[if typeof(id) == "number" then id else 1] or VehicleConfig.TIERS[1]
+	return Perks.tierOf(player)
 end
 
 -- Puissance de coupe : celle de l'outil × facteur des Pets équipés (A2, publié par PetService).

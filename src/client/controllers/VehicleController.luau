@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local VehicleMotion = require(ReplicatedStorage.Shared.domain.VehicleMotion)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
 
 local VehicleController = {}
@@ -56,7 +57,7 @@ local function desiredDirection(humanoid: Humanoid?): Vector3
 end
 
 local function motionParams(): VehicleMotion.MotionParams
-	local tier = VehicleConfig.TIERS[numberAttribute(PlayerAttributes.TIER, 1)] or VehicleConfig.TIERS[1]
+	local tier = Perks.tierOf(localPlayer) -- palier effectif (avantages Robux compris)
 	local capacity = numberAttribute(PlayerAttributes.BAG_CAPACITY, math.huge)
 	local isFull = numberAttribute(PlayerAttributes.BAG_COUNT, 0) >= capacity
 	local penalty = if isFull then VehicleConfig.FULL_SPEED_PENALTY else 0 -- CDC §4 : -10 % quand PLEIN

@@ -8,12 +8,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local MonetizationConfig = require(ReplicatedStorage.Shared.config.MonetizationConfig)
 local PetConfig = require(ReplicatedStorage.Shared.config.PetConfig)
 local Formulas = require(ReplicatedStorage.Shared.domain.Formulas)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Pets = require(ReplicatedStorage.Shared.domain.Pets)
 local PetRequests = require(ReplicatedStorage.Shared.net.PetRequests)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
+local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local RateLimiter = require(ReplicatedStorage.Shared.util.RateLimiter)
 local PetModels = require(script.Parent.Parent.builders.PetModels)
@@ -70,23 +72,34 @@ local function pay(player: Player, egg: PetConfig.EggDef): boolean
 	return InventoryService.take(player, egg.id)
 end
 
--- Fait éclore un œuf : on vérifie la place AVANT de faire payer, puis le serveur tire le Pet.
-local function hatch(player: Player, egg: PetConfig.EggDef)
-	local entry = entryOf(player)
-	local now = os.clock()
-	if now - entry.lastHatchAt < PetConfig.HATCH_COOLDOWN or Pets.total(entry.collection) >= PetConfig.MAX_PETS then
-		return
+-- Un œuf : on vérifie la place AVANT de faire payer, puis le serveur tire le Pet.
+local function hatchOne(player: Player, entry: Entry, egg: PetConfig.EggDef): boolean
+	if Pets.total(entry.collection) >= PetConfig.MAX_PETS or not pay(player, egg) then
+		return false
 	end
-	if not pay(player, egg) then
-		return
-	end
-	entry.lastHatchAt = now
 	local key = Pets.roll(egg, nextRoll)
 	Pets.add(entry.collection, key)
 	publish(player)
 	hatchResult:FireClient(player, egg.id, key)
 	if Pets.rarityOf(key).isAnnounced then
 		announce:FireAllClients(player.DisplayName, key) -- CDC §8 : annonce globale (DisplayName, déjà filtré)
+	end
+	return true
+end
+
+-- Gamepass Triple Éclosion (CDC §9) : 3 œufs d'un coup, chacun payé et tiré séparément.
+local function hatch(player: Player, egg: PetConfig.EggDef)
+	local entry = entryOf(player)
+	local now = os.clock()
+	if now - entry.lastHatchAt < PetConfig.HATCH_COOLDOWN then
+		return
+	end
+	entry.lastHatchAt = now
+	local count = if Perks.hasPass(player, "TripleHatch") then MonetizationConfig.TRIPLE_HATCH_COUNT else 1
+	for _ = 1, count do
+		if not hatchOne(player, entry, egg) then
+			return
+		end
 	end
 end
 
@@ -128,12 +141,14 @@ local function dispenserUnder(player: Player): PetConfig.EggDef?
 	return nil
 end
 
--- Un distributeur ne fait éclore qu'à l'arrivée du joueur dessus, comme les boutons de l'usine.
+-- Un distributeur ne fait éclore qu'à l'arrivée du joueur dessus, comme les boutons de l'usine ; avec
+-- l'Auto-Hatch (Gamepass Triple Éclosion), il continue tant que le joueur y reste (au rythme de la recharge).
 local function checkDispensers()
 	for player, entry in entries do
 		local egg = dispenserUnder(player)
 		local eggId = egg and egg.id
-		if egg and eggId ~= entry.currentPad then
+		local isAuto = Perks.hasPass(player, "TripleHatch")
+		if egg and (eggId ~= entry.currentPad or isAuto) then
 			hatch(player, egg)
 		end
 		entry.currentPad = eggId
@@ -161,6 +176,13 @@ local function onOpenEgg(player: Player, rawEggId: any)
 	if egg and requestLimiter:allow(player, os.clock()) then
 		hatch(player, egg)
 	end
+end
+
+-- Donne un Pet précis (Starter Pack, CDC §10). Renvoie faux si la collection est pleine.
+function PetService.grantPet(player: Player, key: string): boolean
+	local isAdded = Pets.add(entryOf(player).collection, key)
+	publish(player)
+	return isAdded
 end
 
 function PetService.snapshot(player: Player): Pets.Collection

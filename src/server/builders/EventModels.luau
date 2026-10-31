@@ -70,6 +70,31 @@ function EventModels.meteor(parent: Instance, x: number, z: number): BossModel
 	return { model = model, hpLabel = label }
 end
 
+-- « Météorite invoquée par … » en lettres géantes au-dessus du boss (CDC §9). Le DisplayName est déjà
+-- filtré par Roblox : aucun texte libre saisi par un joueur n'est affiché (docs/ANALYSE_CDC.md §4).
+function EventModels.showSummoner(boss: BossModel, displayName: string)
+	local core = boss.model.PrimaryPart
+	if not core then
+		return
+	end
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "Summoner"
+	gui.Size = UDim2.fromOffset(600, 90)
+	gui.StudsOffset = Vector3.new(0, METEOR.HEIGHT / 2 + 16, 0)
+	gui.AlwaysOnTop = true
+	gui.MaxDistance = 2000
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = Enum.Font.FredokaOne
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(255, 196, 0)
+	label.TextStrokeTransparency = 0
+	label.Text = `☄️ Météorite Dorée invoquée par {displayName} !`
+	label.Parent = gui
+	gui.Parent = core
+end
+
 -- Balise du hotspot : disque néon au sol et faisceau, pour qu'on le repère de loin (A11).
 function EventModels.hotspot(parent: Instance): Model
 	local spec = EventConfig.HOTSPOT

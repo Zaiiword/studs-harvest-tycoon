@@ -6,6 +6,7 @@ local TycoonConfig = require("../config/TycoonConfig")
 local VehicleConfig = require("../config/VehicleConfig")
 local Inventory = require("./Inventory")
 local Pets = require("./Pets")
+local Purchases = require("./Purchases")
 local Rebirth = require("./Rebirth")
 local Retention = require("./Retention")
 local Tycoon = require("./Tycoon")
@@ -22,6 +23,7 @@ export type Data = {
 	items: Inventory.Inventory, -- v2 : objets de sabotage et récompenses (Sprint 5)
 	pets: Pets.Collection, -- v3 : Pets possédés et équipés (Sprint 6)
 	retention: Retention.State, -- v4 : roue, quêtes du jour et statistiques (Sprint 7)
+	purchases: Purchases.Purchases, -- v5 : reçus Robux traités, Starter Pack (Sprint 8)
 }
 
 -- Ce que les services fournissent pour composer un profil à sauvegarder.
@@ -32,13 +34,14 @@ export type GameParts = {
 	items: Inventory.Inventory,
 	pets: Pets.Collection,
 	retention: Retention.State,
+	purchases: Purchases.Purchases,
 }
 
 local Profile = {}
 
--- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention`. Un champ absent reprend sa valeur par défaut :
+-- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases`. Un champ absent reprend sa valeur par défaut :
 -- la migration est donc faite par `sanitize`, sans code spécifique.
-Profile.VERSION = 4
+Profile.VERSION = 5
 
 local knownMachines: { [string]: boolean } = {}
 for _, machine in TycoonConfig.MACHINES do
@@ -58,6 +61,7 @@ function Profile.default(): Data
 		items = {},
 		pets = Pets.newCollection(),
 		retention = Retention.newState(),
+		purchases = Purchases.new(),
 	}
 end
 
@@ -98,6 +102,7 @@ function Profile.sanitize(raw: any): Data
 		items = Inventory.sanitize(source.items),
 		pets = Pets.sanitize(source.pets),
 		retention = Retention.sanitize(source.retention),
+		purchases = Purchases.sanitize(source.purchases),
 	}
 end
 
@@ -121,6 +126,7 @@ function Profile.fromGame(parts: GameParts): Data
 		items = parts.items,
 		pets = parts.pets,
 		retention = parts.retention,
+		purchases = parts.purchases,
 	})
 end
 
