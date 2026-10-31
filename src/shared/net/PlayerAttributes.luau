@@ -21,4 +21,10 @@ return table.freeze({
 	EQUIPPED_PETS = "EquippedPets", -- « Dragon:Gold,Cow:Normal » (PetService, Pets.encodeEquipped)
 	OWNED_PETS = "OwnedPets", -- « Dragon:Gold=2,Cow:Normal=5 » pour le menu des Pets
 	CUT_POWER_MULTIPLIER = "CutPowerMultiplier", -- facteur des Pets sur la puissance de coupe (A2)
+	SESSION_STARTED_AT = "SessionStartedAt", -- début de la session (cadeaux de temps de jeu)
+	GIFTS_CLAIMED = "GiftsClaimed", -- « 1,2,5 » : cadeaux déjà réclamés dans la session
+	WHEEL_READY_AT = "WheelReadyAt", -- prochain tour de roue possible
+	QUEST_PROGRESS = "QuestProgress", -- « Harvest=120,Boss=0 » : avancement des quêtes du jour
+	QUESTS_CLAIMED = "QuestsClaimed", -- « Harvest,Corn » : quêtes du jour déjà réclamées
+	HOME_READY_AT = "HomeReadyAt", -- prochain « Retour Base Instantané » possible (A19)
 })

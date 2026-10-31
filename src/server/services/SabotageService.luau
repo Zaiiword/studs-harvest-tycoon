@@ -52,15 +52,21 @@ local function contestantById(contestants: { BumperService.Contestant }, id: num
 	return nil
 end
 
--- Éjecte `target` à l'opposé de (fromX, fromZ), assez fort pour parcourir `distance` studs.
-local function ejectAway(target: BumperService.Contestant, fromX: number, fromZ: number, distance: number): boolean
-	local dx, dz = target.body.x - fromX, target.body.z - fromZ
+-- Point d'où part l'éjection, et joueur qui l'a déclenchée.
+type Blast = { x: number, z: number, by: Player }
+
+-- Éjecte `target` à l'opposé du point de `blast`, assez fort pour parcourir `distance` studs.
+local function ejectAway(target: BumperService.Contestant, blast: Blast, distance: number): boolean
+	local dx, dz = target.body.x - blast.x, target.body.z - blast.z
 	local length = math.max(1e-6, math.sqrt(dx * dx + dz * dz))
 	local horizontal, vertical = Sabotage.launchForDistance(distance)
-	return BumperService.eject(
-		target,
-		{ dirX = dx / length, dirZ = dz / length, horizontal = horizontal, vertical = vertical }
-	)
+	return BumperService.eject(target, {
+		dirX = dx / length,
+		dirZ = dz / length,
+		horizontal = horizontal,
+		vertical = vertical,
+		attacker = blast.by,
+	})
 end
 
 local function hasLineOfSight(from: BasePart, to: BasePart): boolean
@@ -104,7 +110,7 @@ local function useGlove(user: BumperService.Contestant, others: { BumperService.
 	if not contestant then
 		return "Aucune cible à portée de gant."
 	end
-	ejectAway(contestant, user.body.x, user.body.z, SabotageConfig.GLOVE.EJECT_DISTANCE)
+	ejectAway(contestant, { x = user.body.x, z = user.body.z, by = user.player }, SabotageConfig.GLOVE.EJECT_DISTANCE)
 	return nil
 end
 
@@ -115,7 +121,7 @@ local function useBazooka(user: BumperService.Contestant, others: { BumperServic
 	if not contestant or not hasLineOfSight(user.root, contestant.root) then
 		return "Aucune cible en ligne de mire."
 	end
-	ejectAway(contestant, user.body.x, user.body.z, SabotageConfig.BAZOOKA.EJECT_DISTANCE)
+	ejectAway(contestant, { x = user.body.x, z = user.body.z, by = user.player }, SabotageConfig.BAZOOKA.EJECT_DISTANCE)
 	return nil
 end
 
@@ -131,7 +137,11 @@ local function useDynamite(user: BumperService.Contestant, others: { BumperServi
 	for _, target in targets do
 		local contestant = contestantById(others, target.id)
 		if contestant then
-			ejectAway(contestant, rainbow.x, rainbow.z, SabotageConfig.DYNAMITE.EJECT_DISTANCE)
+			ejectAway(
+				contestant,
+				{ x = rainbow.x, z = rainbow.z, by = user.player },
+				SabotageConfig.DYNAMITE.EJECT_DISTANCE
+			)
 		end
 	end
 	return nil

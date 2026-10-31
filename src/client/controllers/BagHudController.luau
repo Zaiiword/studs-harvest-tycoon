@@ -1,6 +1,6 @@
 --!strict
--- Jauge du sac en bas au centre et valeur du silo (CDC §4, §10, charte « Studs Pop »).
--- Version minimale du Sprint 1 : le bouton « Retour Base Instantané » et le HUD complet arrivent au Sprint 7.
+-- Jauge du sac en bas au centre (CDC §4, §10, charte « Studs Pop ») : pulse en rouge dès 90 % et propose
+-- alors le bouton « Retour Base Instantané » (A19), vérifié par le serveur.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -8,6 +8,8 @@ local RunService = game:GetService("RunService")
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
+local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
+local Workspace = game:GetService("Workspace")
 
 local BagHudController = {}
 
@@ -19,6 +21,7 @@ local fill: Frame
 local label: TextLabel
 local isAlerting = false
 local screenGui: ScreenGui
+local homeButton: TextButton
 
 local function decorate(frame: GuiObject)
 	local corner = Instance.new("UICorner")
@@ -80,7 +83,14 @@ local function refresh()
 	end
 end
 
+-- Le bouton « Retour Base Instantané » n'apparaît qu'à 90 % et hors recharge (CDC §10, A19).
+local function refreshHomeButton()
+	local isReady = Workspace:GetServerTimeNow() >= numberAttribute(PlayerAttributes.HOME_READY_AT)
+	homeButton.Visible = isAlerting and isReady
+end
+
 local function pulse()
+	refreshHomeButton()
 	if not isAlerting then
 		return
 	end
@@ -88,11 +98,31 @@ local function pulse()
 	fill.BackgroundColor3 = Bricks.rgb(BAR.FILL):Lerp(Bricks.rgb(BAR.ALERT), alpha)
 end
 
+local function buildHomeButton(gui: ScreenGui)
+	homeButton = Instance.new("TextButton")
+	homeButton.Name = "ReturnHome"
+	homeButton.AnchorPoint = Vector2.new(0.5, 1)
+	homeButton.Position = UDim2.new(0.5, 0, 1, -(BAR.BOTTOM_MARGIN + BAR.HEIGHT + 12))
+	homeButton.Size = UDim2.fromOffset(BAR.WIDTH, BAR.HEIGHT * 1.4)
+	homeButton.BackgroundColor3 = Bricks.rgb(BAR.ALERT)
+	homeButton.TextColor3 = Bricks.rgb(BAR.TEXT)
+	homeButton.Font = FONT
+	homeButton.TextScaled = true
+	homeButton.Text = "🏠 Retour Base Instantané"
+	homeButton.Visible = false
+	decorate(homeButton)
+	homeButton.Activated:Connect(function()
+		Remotes.event(Remotes.TELEPORT_HOME):FireServer()
+	end)
+	homeButton.Parent = gui
+end
+
 function BagHudController:Init()
 	screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "HarvestHud"
 	screenGui.ResetOnSpawn = false
 	buildBar(screenGui)
+	buildHomeButton(screenGui)
 end
 
 function BagHudController:Start()

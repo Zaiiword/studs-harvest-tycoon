@@ -6,6 +6,7 @@ local FakeDataStore = require("../helpers/FakeDataStore")
 local TycoonConfig = require("../../src/shared/config/TycoonConfig")
 local Pets = require("../../src/shared/domain/Pets")
 local Profile = require("../../src/shared/domain/Profile")
+local Retention = require("../../src/shared/domain/Retention")
 local ProfileStore = require("../../src/shared/domain/ProfileStore")
 local Rebirth = require("../../src/shared/domain/Rebirth")
 local Tycoon = require("../../src/shared/domain/Tycoon")
@@ -42,6 +43,7 @@ describe("Session joueur", function()
 			progress = progress,
 			items = { LegendaryEgg = 1 },
 			pets = Pets.newCollection(),
+			retention = Retention.newState(),
 		}
 		server:save("player_1", Profile.fromGame(parts), true)
 

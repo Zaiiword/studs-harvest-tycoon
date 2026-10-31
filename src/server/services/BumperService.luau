@@ -21,6 +21,7 @@ local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local RateLimiter = require(ReplicatedStorage.Shared.util.RateLimiter)
 local VehicleService = require(script.Parent.VehicleService)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local BumperService = {}
 
@@ -31,7 +32,10 @@ export type Ejection = {
 	dirZ: number,
 	horizontal: number,
 	vertical: number,
+	attacker: Player?, -- auteur du choc ou de l'objet (statue « Roi du Pare-Chocs », quêtes)
 }
+
+BumperService.Ejected = Signal.new() -- (attaquant, cible) : écouté par la rétention
 
 local pairLimiter = RateLimiter.new(1, 1 / BumperConfig.PAIR_COOLDOWN)
 local elapsed = 0
@@ -160,6 +164,9 @@ function BumperService.eject(target: Contestant, ejection: Ejection): boolean
 	local horizontal = ejection.horizontal * boost
 	root.AssemblyLinearVelocity =
 		Vector3.new(ejection.dirX * horizontal, ejection.vertical * boost, ejection.dirZ * horizontal)
+	if ejection.attacker then
+		BumperService.Ejected:Fire(ejection.attacker, target.player)
+	end
 	return true
 end
 
@@ -183,6 +190,7 @@ local function resolve(target: Contestant, attacker: Contestant, collision: Bump
 		dirZ = collision.dirZ,
 		horizontal = horizontal,
 		vertical = vertical,
+		attacker = attacker.player,
 	})
 end
 

@@ -45,6 +45,8 @@ return Freeze.deep({
 
 	-- Sac / remorque (CDC §4) : l'empilement visible grandit par paliers de 10 %.
 	BAG_FILL_STEP = 0.1,
+	-- « Retour Base Instantané » (CDC §10, A19) : gratuit, dès 90 % de remplissage, 30 s de recharge.
+	RETURN_HOME = { MIN_FILL = 0.9, COOLDOWN_SECONDS = 30 },
 	BACKPACK = {
 		WIDTH = 2,
 		DEPTH = 1.2,

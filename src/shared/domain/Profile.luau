@@ -7,6 +7,7 @@ local VehicleConfig = require("../config/VehicleConfig")
 local Inventory = require("./Inventory")
 local Pets = require("./Pets")
 local Rebirth = require("./Rebirth")
+local Retention = require("./Retention")
 local Tycoon = require("./Tycoon")
 
 export type Data = {
@@ -20,6 +21,7 @@ export type Data = {
 	gems: number,
 	items: Inventory.Inventory, -- v2 : objets de sabotage et récompenses (Sprint 5)
 	pets: Pets.Collection, -- v3 : Pets possédés et équipés (Sprint 6)
+	retention: Retention.State, -- v4 : roue, quêtes du jour et statistiques (Sprint 7)
 }
 
 -- Ce que les services fournissent pour composer un profil à sauvegarder.
@@ -29,13 +31,14 @@ export type GameParts = {
 	progress: Rebirth.Progress,
 	items: Inventory.Inventory,
 	pets: Pets.Collection,
+	retention: Retention.State,
 }
 
 local Profile = {}
 
--- v1 → v2 : ajout de `items` ; v2 → v3 : ajout de `pets`. Un champ absent reprend sa valeur par défaut :
+-- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention`. Un champ absent reprend sa valeur par défaut :
 -- la migration est donc faite par `sanitize`, sans code spécifique.
-Profile.VERSION = 3
+Profile.VERSION = 4
 
 local knownMachines: { [string]: boolean } = {}
 for _, machine in TycoonConfig.MACHINES do
@@ -54,6 +57,7 @@ function Profile.default(): Data
 		gems = 0,
 		items = {},
 		pets = Pets.newCollection(),
+		retention = Retention.newState(),
 	}
 end
 
@@ -93,6 +97,7 @@ function Profile.sanitize(raw: any): Data
 		gems = number(source.gems, 0, math.huge - 1, 0, true),
 		items = Inventory.sanitize(source.items),
 		pets = Pets.sanitize(source.pets),
+		retention = Retention.sanitize(source.retention),
 	}
 end
 
@@ -115,6 +120,7 @@ function Profile.fromGame(parts: GameParts): Data
 		gems = parts.progress.gems,
 		items = parts.items,
 		pets = parts.pets,
+		retention = parts.retention,
 	})
 end
 

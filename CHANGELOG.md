@@ -2,6 +2,20 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Sprint 7 — Rétention, HUD « Studs Pop », effets et audio
+
+### Ajouté
+- `Retention` (pur) : 9 cadeaux de temps de jeu par session, Roue de la Fortune quotidienne, 3 quêtes du jour
+  identiques sur tous les serveurs, statistiques cumulées (A44 à A46).
+- `RetentionService` : récompenses vérifiées côté serveur, statistiques reçues par signaux des autres services.
+- `LeaderboardService` : 3 statues (Top $, Top Récolte, Roi du Pare-Chocs) avec l'avatar du premier,
+  classement global par OrderedDataStore, repli local (A47).
+- « Retour Base Instantané » (A19) : bouton géant dès 90 %, gratuit, 30 s de recharge, vérifié par le serveur.
+- Game feel : textes flottants (+25 🌾, CRITIQUE ×10 !, ARC-EN-CIEL ×100 !!), tremblement de caméra selon la
+  taille de l'outil, secousse et son à l'éjection, rebond élastique et clic sur tous les boutons, notifications.
+- Menu 🎁 (cadeaux, quêtes, roue animée avec chances affichées). Sons par défaut intégrés à Roblox.
+- Profil v4 (rétention et statistiques). Tests : cadeaux, roue, quêtes, sauvegarde, placement des statues.
+
 ## Sprint 6 — Gacha Pets
 
 ### Ajouté

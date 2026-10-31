@@ -27,8 +27,11 @@ local MapService = require(script.Parent.MapService)
 local PlotService = require(script.Parent.PlotService)
 local VehicleService = require(script.Parent.VehicleService)
 local TycoonModels = require(script.Parent.Parent.builders.TycoonModels)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local TycoonService = {}
+
+TycoonService.Earned = Signal.new() -- (player, argent gagné par l'usine) : statue « Top $ »
 
 type Entry = {
 	state: Tycoon.State,
@@ -301,7 +304,10 @@ end
 
 local function payIncome()
 	for player, entry in entries do
-		Tycoon.tick(entry.state, TycoonConfig.INCOME_INTERVAL, bonusOf(player, entry))
+		local earned = Tycoon.tick(entry.state, TycoonConfig.INCOME_INTERVAL, bonusOf(player, entry))
+		if earned > 0 then
+			TycoonService.Earned:Fire(player, earned)
+		end
 		publish(player, entry)
 	end
 end

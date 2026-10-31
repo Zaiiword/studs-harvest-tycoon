@@ -19,8 +19,11 @@ local EventModels = require(script.Parent.Parent.builders.EventModels)
 local FieldService = require(script.Parent.FieldService)
 local InventoryService = require(script.Parent.InventoryService)
 local VehicleService = require(script.Parent.VehicleService)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local EventService = {}
+
+EventService.BossHit = Signal.new() -- (player, dégâts infligés) : écouté par la rétention
 
 type ActiveBoss = { boss: MeteorBoss.Boss, model: EventModels.BossModel, leavesAt: number }
 
@@ -140,7 +143,8 @@ local function hitBoss(active: ActiveBoss)
 		if root and (Vector3.new(root.Position.X - x, 0, root.Position.Z - z)).Magnitude <= reach then
 			local multiplier = player:GetAttribute(PlayerAttributes.CUT_POWER_MULTIPLIER)
 			local petFactor = if typeof(multiplier) == "number" and multiplier >= 1 then multiplier else 1
-			MeteorBoss.hit(active.boss, player.UserId, MeteorBoss.damageFor(tier.cutPower * petFactor))
+			local dealt = MeteorBoss.hit(active.boss, player.UserId, MeteorBoss.damageFor(tier.cutPower * petFactor))
+			EventService.BossHit:Fire(player, dealt)
 		end
 	end
 	refreshBossLabel(active)

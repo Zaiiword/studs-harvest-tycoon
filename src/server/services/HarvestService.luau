@@ -12,13 +12,20 @@ local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local FieldService = require(script.Parent.FieldService)
 local PlotService = require(script.Parent.PlotService)
+local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
+local Workspace = game:GetService("Workspace")
 local TycoonService = require(script.Parent.TycoonService)
 local EventService = require(script.Parent.EventService)
 
 local HarvestService = {}
+
+-- Signaux écoutés par la rétention (quêtes, statistiques) : la récolte ne dépend pas d'elle.
+HarvestService.Harvested = Signal.new() -- (player, FieldGrid.CutResult)
+HarvestService.Unloaded = Signal.new() -- (player, valeur déposée)
 
 type PlayerState = {
 	bag: Bag.Bag,
@@ -97,6 +104,7 @@ local function cutInFront(player: Player, state: PlayerState, root: BasePart, ti
 		if result then
 			-- Pluie Dorée ×2 et hotspot ×3 (CDC §6, A11) s'appliquent à la valeur brute du blé coupé.
 			Bag.add(state.bag, result.value * EventService.valueMultiplierAt(result.x, result.z))
+			HarvestService.Harvested:Fire(player, result)
 		end
 	end
 end
@@ -122,7 +130,7 @@ local function harvestTick(player: Player, state: PlayerState)
 	Bag.setCapacity(state.bag, tier.capacity)
 	if TycoonService.isOnUnloadPad(player, root.Position) then
 		if state.bag.count > 0 then
-			TycoonService.unload(player, state.bag)
+			HarvestService.Unloaded:Fire(player, TycoonService.unload(player, state.bag))
 		end
 	elseif not Bag.isFull(state.bag) then
 		cutInFront(player, state, root, tier)
@@ -162,6 +170,25 @@ local function onHeartbeat(deltaTime: number)
 	for player, state in states do
 		harvestTick(player, state)
 	end
+end
+
+-- « Retour Base Instantané » (A19) : le serveur vérifie lui-même le remplissage du sac et la recharge.
+local function onTeleportHome(player: Player)
+	local state = states[player]
+	local readyAt = player:GetAttribute(ATTR.HOME_READY_AT)
+	local now = Workspace:GetServerTimeNow()
+	if not state or Bag.fillRatio(state.bag) < FieldConfig.RETURN_HOME.MIN_FILL then
+		return
+	end
+	if typeof(readyAt) == "number" and now < readyAt then
+		return
+	end
+	player:SetAttribute(ATTR.HOME_READY_AT, now + FieldConfig.RETURN_HOME.COOLDOWN_SECONDS)
+	PlotService.returnToBase(player)
+end
+
+function HarvestService:Init()
+	Remotes.event(Remotes.TELEPORT_HOME).OnServerEvent:Connect(onTeleportHome)
 end
 
 function HarvestService:Start()

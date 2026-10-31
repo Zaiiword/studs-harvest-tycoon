@@ -4,6 +4,7 @@
 local DecorConfig = require("../config/DecorConfig")
 local FieldConfig = require("../config/FieldConfig")
 local MapConfig = require("../config/MapConfig")
+local RetentionConfig = require("../config/RetentionConfig")
 local TycoonConfig = require("../config/TycoonConfig")
 local MapGeometry = require("./MapGeometry")
 
@@ -55,6 +56,16 @@ function Decor.baseFence(): { Segment }
 	}
 end
 
+-- Les statues de classement (Sprint 7) occupent le devant des bases centrales : pas d'arbre dessus.
+local function isNearStatue(x: number, z: number): boolean
+	for _, statue in RetentionConfig.STATUES do
+		if math.sqrt((statue.x - x) ^ 2 + (statue.z - z) ^ 2) < RetentionConfig.STATUE_CLEARANCE then
+			return true
+		end
+	end
+	return false
+end
+
 -- Arbres sur la barre du T : entre deux bases voisines et aux deux extrémités, devant et derrière.
 function Decor.treeSpots(): { Spot }
 	local bases = MapGeometry.baseCenters()
@@ -66,7 +77,9 @@ function Decor.treeSpots(): { Spot }
 	local spots: { Spot } = {}
 	for _, x in DecorConfig.TREE.ROWS_X do
 		for _, z in zs do
-			table.insert(spots, { x = x, z = z })
+			if not isNearStatue(x, z) then
+				table.insert(spots, { x = x, z = z })
+			end
 		end
 	end
 	return spots

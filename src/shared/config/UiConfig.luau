@@ -69,6 +69,34 @@ return Freeze.deep({
 		SHAKE_DEGREES = 18,
 		REVEAL_SECONDS = 3,
 	},
+	-- Menu de rétention 🎁 (CDC §7.4) : cadeaux de temps de jeu, quêtes du jour, Roue de la Fortune.
+	RETENTION_MENU = {
+		WIDTH = 640,
+		HEIGHT = 440,
+		ROW_HEIGHT = 36,
+		GIFT_SIZE = 96,
+		WHEEL_SIZE = 220,
+		SPIN_SECONDS = 4,
+		SPIN_TURNS = 5,
+		READY_COLOR = { 75, 151, 75 },
+		LOCKED_COLOR = { 99, 95, 98 },
+	},
+	-- Game feel (CDC §2) : textes flottants, tremblement de caméra, rebond des boutons.
+	JUICE = {
+		FLOAT_POOL = 24,
+		FLOAT_RISE = 4,
+		FLOAT_SECONDS = 0.8,
+		SHAKE_PER_CUT = 0.08, -- « trauma » ajouté par coupe, pondéré par la taille de l'outil
+		SHAKE_ON_EJECT = 0.9,
+		SHAKE_DECAY = 2.5, -- par seconde
+		SHAKE_MAX_ANGLE = 0.03, -- radians
+		BIGGEST_HITBOX = 38, -- hitbox du Tier 7 : tremblement maximal par coupe
+		BOUNCE_SCALE = 0.88,
+		BOUNCE_SECONDS = 0.25,
+		TOAST_SECONDS = 2.5,
+		CRITICAL_COLOR = { 255, 176, 0 },
+		RAINBOW_COLOR = { 255, 89, 89 },
+	},
 	-- Panneau de test (Studio uniquement).
 	DEV_PANEL = {
 		BUTTON_WIDTH = 96,
