@@ -2,6 +2,16 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Menu Récompenses — même style que la boutique
+
+### Ajouté
+- Menu 🎁 refait : onglets Cadeaux / Quêtes / Roue dans la fenêtre premium. Cadeaux en cartes colorées
+  selon l'état (à réclamer, en attente, reçu), quêtes avec barre de progression, roue dorée à cases
+  colorées, pointeur rouge et tableau des chances. Les récompenses prêtes « respirent ».
+- Bouton 🎁 du HUD avec pastille « ! » et frétillement dès qu'une récompense attend.
+- Modules partagés `ui/Tabs`, `ui/Grid`, `ui/HudButton` (aussi utilisés par la boutique) et
+  `RewardText` (vrais noms d'objets : « Œuf Légendaire » au lieu de « LegendaryEgg »).
+
 ## Boutique — refonte visuelle
 
 ### Ajouté

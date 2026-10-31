@@ -71,15 +71,54 @@ return Freeze.deep({
 	},
 	-- Menu de rétention 🎁 (CDC §7.4) : cadeaux de temps de jeu, quêtes du jour, Roue de la Fortune.
 	RETENTION_MENU = {
-		WIDTH = 640,
-		HEIGHT = 440,
-		ROW_HEIGHT = 36,
-		GIFT_SIZE = 96,
-		WHEEL_SIZE = 220,
+		GIFT_COLUMNS = 3,
+		GIFT_HEIGHT = 128,
+		QUEST_HEIGHT = 92,
+		PADDING = 12,
 		SPIN_SECONDS = 4,
 		SPIN_TURNS = 5,
-		READY_COLOR = { 75, 151, 75 },
-		LOCKED_COLOR = { 99, 95, 98 },
+		-- Cartes de cadeau selon leur état : à réclamer (or), en attente (bleu), déjà reçu (gris).
+		READY_TOP = { 255, 230, 90 },
+		READY_BOTTOM = { 255, 150, 20 },
+		WAIT_TOP = { 110, 175, 255 },
+		WAIT_BOTTOM = { 50, 105, 215 },
+		DONE_TOP = { 175, 175, 185 },
+		DONE_BOTTOM = { 120, 120, 130 },
+		QUEST_TOP = { 255, 255, 255 }, -- fond clair des lignes de quête
+		QUEST_BOTTOM = { 215, 228, 250 },
+		BAR_BACK = { 40, 50, 80 },
+		BAR_TOP = { 140, 240, 80 },
+		BAR_BOTTOM = { 50, 170, 40 },
+		READY_PULSE = { scale = 0.06, speed = 6 }, -- les récompenses prêtes « respirent »
+		WHEEL_RIM_TOP = { 255, 230, 110 }, -- jante dorée de la roue
+		WHEEL_RIM_BOTTOM = { 220, 140, 20 },
+		WHEEL_FACE = { 255, 250, 235 },
+		WHEEL_RIM = 0.08, -- épaisseur de la jante, en part du diamètre
+		WHEEL_LABEL_RADIUS = 0.3, -- position des cases, en part du diamètre
+		POINTER_COLOR = { 230, 30, 40 },
+		QUEST_ICONS = {
+			Harvest = "🌾",
+			Corn = "🌽",
+			Diamond = "💠",
+			Bumper = "💥",
+			Unload = "🚜",
+			Boss = "☄️",
+		} :: {
+			[string]: string,
+		},
+	},
+	-- Gros boutons ronds du HUD, empilés à gauche : 🛒 boutique, 🎁 récompenses (CDC §10).
+	HUD_BUTTON = {
+		SIZE = 72,
+		LEFT = 16,
+		SHOP_BOTTOM = 180, -- distance au bas de l'écran
+		GIFTS_BOTTOM = 96,
+		WIGGLE = { degrees = 8, period = 4, seconds = 0.6, shakes = 5 }, -- frétillement pour attirer l'œil
+		ALERT_COLOR = { 255, 40, 60 }, -- pastille « ! » quand une récompense attend
+		SHOP_TOP = { 255, 225, 80 },
+		SHOP_BOTTOM_COLOR = { 255, 140, 20 },
+		GIFTS_TOP = { 120, 235, 120 },
+		GIFTS_BOTTOM_COLOR = { 40, 165, 60 },
 	},
 	-- Game feel (CDC §2) : textes flottants, tremblement de caméra, rebond des boutons.
 	JUICE = {
@@ -116,13 +155,6 @@ return Freeze.deep({
 		OWNED_TOP = { 160, 160, 170 },
 		OWNED_BOTTOM = { 110, 110, 120 },
 		BADGE_COLOR = { 255, 60, 90 },
-		TAB_ON_TOP = { 255, 225, 80 },
-		TAB_ON_BOTTOM = { 255, 160, 20 },
-		TAB_OFF_TOP = { 70, 120, 220 },
-		TAB_OFF_BOTTOM = { 40, 80, 170 },
-		TOGGLE_TOP = { 255, 225, 80 }, -- bouton 🛒 du HUD
-		TOGGLE_BOTTOM = { 255, 140, 20 },
-		TOGGLE_WIGGLE = { degrees = 8, period = 4 }, -- petit frétillement pour attirer l'œil
 		-- Habillage de chaque offre : icône, dégradé de la carte, bandeau facultatif.
 		CARDS = {
 			InfiniteTrailer = { icon = "🚛", top = { 90, 200, 255 }, bottom = { 30, 110, 220 }, badge = "MEILLEUR" },
@@ -140,6 +172,11 @@ return Freeze.deep({
 		MAX_SIZE = { 820, 560 },
 		HEADER_HEIGHT = 64,
 		TAB_HEIGHT = 46,
+		TAB_GAP = 12,
+		TAB_ON_TOP = { 255, 225, 80 },
+		TAB_ON_BOTTOM = { 255, 160, 20 },
+		TAB_OFF_TOP = { 70, 120, 220 },
+		TAB_OFF_BOTTOM = { 40, 80, 170 },
 		CORNER = 20,
 		STROKE = 5,
 		TOP = { 80, 160, 255 },
