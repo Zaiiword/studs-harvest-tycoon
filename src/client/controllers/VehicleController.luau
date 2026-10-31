@@ -103,14 +103,14 @@ end
 
 function VehicleController:Start()
 	RunService.Heartbeat:Connect(drive)
-	local ok, result = pcall(function()
-		local playerModule = localPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule", 10)
-		return (require :: any)(playerModule):GetControls()
-	end)
-	if ok then
-		controls = result
-	else
-		warn(`[VehicleController] ControlModule indisponible, seul Humanoid.MoveDirection sera utilisé : {result}`)
+	-- Secours facultatif : Humanoid.MoveDirection suffit (testé en jeu). On ne charge le ControlModule que
+	-- s'il existe vraiment sous forme de ModuleScript, sans bruit dans l'Output sinon.
+	local playerModule = localPlayer:WaitForChild("PlayerScripts"):FindFirstChild("PlayerModule")
+	if playerModule and playerModule:IsA("ModuleScript") then
+		local ok, result = pcall(function()
+			return (require :: any)(playerModule):GetControls()
+		end)
+		controls = if ok then result else nil
 	end
 end
 
