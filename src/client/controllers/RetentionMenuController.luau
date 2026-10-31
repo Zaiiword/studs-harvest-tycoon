@@ -1,6 +1,7 @@
 --!strict
--- Menu de rétention 🎁 (CDC §7.4, §10) : 9 cadeaux de temps de jeu, 3 quêtes du jour, Roue de la Fortune
--- (chances affichées, A45). Le client ne fait que demander ; la roue tourne jusqu'à la case tirée par le serveur.
+-- Menu des récompenses 🎁 (CDC §7.4, §10) dans le style de la boutique : onglets Cadeaux (9 cadeaux de temps
+-- de jeu), Quêtes du jour (barres de progression) et Roue de la Fortune (chances affichées, A45).
+-- Le client ne fait que demander ; la roue tourne jusqu'à la case tirée par le serveur.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -10,253 +11,479 @@ local Workspace = game:GetService("Workspace")
 local RetentionConfig = require(ReplicatedStorage.Shared.config.RetentionConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Retention = require(ReplicatedStorage.Shared.domain.Retention)
+local RewardText = require(ReplicatedStorage.Shared.domain.RewardText)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Format = require(ReplicatedStorage.Shared.util.Format)
+local Grid = require(script.Parent.Parent.ui.Grid)
+local HudButton = require(script.Parent.Parent.ui.HudButton)
+local Style = require(script.Parent.Parent.ui.Style)
+local Tabs = require(script.Parent.Parent.ui.Tabs)
+local RewardPopup = require(script.Parent.Parent.ui.RewardPopup)
 local Window = require(script.Parent.Parent.ui.Window)
 
 local RetentionMenuController = {}
 
+type State = "ready" | "wait" | "done"
+type Tile = { gradient: UIGradient, status: TextLabel, pulse: UIScale, state: State }
+type QuestRow = { icon: TextLabel, title: TextLabel, fill: Frame, count: TextLabel, claim: TextButton, tile: Tile }
+
 local MENU = UiConfig.RETENTION_MENU
-local FONT = (Enum.Font :: any)[UiConfig.FONT] :: Enum.Font
+local WINDOW = UiConfig.WINDOW
+local POPUP = UiConfig.REWARD_POPUP
+local HUD = UiConfig.HUD_BUTTON
+local PAD = MENU.PADDING
 local REFRESH_INTERVAL = 0.5
+local GIFT_MIN_WIDTH = 120
+local CIRCLE = UDim.new(0.5, 0)
+local SPIN_HEIGHT = 64
+local ODDS_ROW_HEIGHT = 30
+local DIVIDER_WIDTH = 3
+local CHIP_SIZE = UDim2.fromScale(0.34, 0.12)
+local HUB_SIZE = 0.2
+local POINTER_SIZE = 0.16
+local DEFAULT_QUEST_ICON = "🎯"
+
+local COLORS: { [State]: { top: { number }, bottom: { number } } } = {
+	ready = { top = MENU.READY_TOP, bottom = MENU.READY_BOTTOM },
+	wait = { top = MENU.WAIT_TOP, bottom = MENU.WAIT_BOTTOM },
+	done = { top = MENU.DONE_TOP, bottom = MENU.DONE_BOTTOM },
+}
 
 local localPlayer = Players.LocalPlayer
 local screenGui: ScreenGui
-local panel: Frame
-local giftButtons: { TextButton } = {}
-local questRows: { { label: TextLabel, button: TextButton } } = {}
-local wheel: Frame
-local spinButton: TextButton
+local window: Window.Window
+local hud: HudButton.HudButton
+local giftTiles: { Tile } = {}
+local questRows: { QuestRow } = {}
+local rotor: Frame
+local pointer: TextLabel
+local lastSegment = 0 -- case sous le pointeur, pour le faire claquer à chaque passage
+local spinTile: Tile
 local remotes: { [string]: RemoteEvent } = {}
 local elapsed = 0
+local clock = 0
 
-local function rounded(gui: GuiObject, radius: UDim?)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = radius or UDim.new(0, UiConfig.CORNER_RADIUS)
-	corner.Parent = gui
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = UiConfig.STROKE_THICKNESS
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stroke.Parent = gui
+local function attribute(name: string): any
+	return localPlayer:GetAttribute(name)
 end
 
-local function newButton(parent: Instance, size: UDim2, position: UDim2): TextButton
-	local button = Instance.new("TextButton")
-	button.Size, button.Position = size, position
-	button.BackgroundColor3 = Bricks.rgb(MENU.LOCKED_COLOR)
-	button.TextColor3 = Color3.new(1, 1, 1)
-	button.Font = FONT
-	button.TextScaled = true
-	rounded(button)
-	button.Parent = parent
+-- (Le rebond des boutons occupe leur UIScale : la respiration se fait sur un enfant.)
+-- Change l'état d'une tuile (couleurs, texte) ; les tuiles prêtes « respirent » (voir animate).
+local function setState(tile: Tile, state: State, text: string)
+	tile.state = state
+	tile.status.Text = text
+	local colors = COLORS[state]
+	tile.gradient.Color = ColorSequence.new(Bricks.rgb(colors.top), Bricks.rgb(colors.bottom))
+end
+
+local function newTile(button: TextButton, pulseTarget: GuiObject, status: TextLabel): Tile
+	local pulse = Instance.new("UIScale")
+	pulse.Parent = pulseTarget
+	return {
+		gradient = button:FindFirstChildOfClass("UIGradient") :: UIGradient,
+		status = status,
+		pulse = pulse,
+		state = "wait",
+	}
+end
+
+local function candy(parent: Instance, state: State): TextButton
+	local colors = COLORS[state]
+	local button = Style.button(parent, { top = colors.top, bottom = colors.bottom, edge = WINDOW.STROKE_COLOR })
+	Style.shine(button)
 	return button
 end
 
-local function newText(parent: Instance, size: UDim2, position: UDim2, text: string): TextLabel
-	local label = Instance.new("TextLabel")
-	label.Size, label.Position = size, position
-	label.BackgroundTransparency = 1
-	label.Font = FONT
-	label.TextScaled = true
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.TextStrokeTransparency = 0
-	label.Text = text
-	label.Parent = parent
-	return label
+-- Cadeaux ----------------------------------------------------------------------------------------------------
+
+local function buildGift(page: ScrollingFrame, index: number, gift: RetentionConfig.Gift)
+	local card = candy(page, "wait")
+	card.LayoutOrder = index
+	local icon = Style.label(card, RewardText.icon(gift.reward), UDim2.fromScale(1, 0.38))
+	icon.Position = UDim2.fromScale(0, 0.04)
+	local reward = Style.label(card, RewardText.label(gift.reward), UDim2.new(1, -12, 0.22, 0))
+	reward.Position = UDim2.new(0, 6, 0.42, 0)
+	local pill = Instance.new("Frame")
+	pill.AnchorPoint = Vector2.new(0.5, 1)
+	pill.Position = UDim2.new(0.5, 0, 1, -8)
+	pill.Size = UDim2.new(1, -16, 0.26, 0)
+	pill.BackgroundColor3 = Bricks.rgb(WINDOW.STROKE_COLOR)
+	pill.BackgroundTransparency = 0.35
+	Style.corner(pill, CIRCLE)
+	pill.Parent = card
+	local status = Style.label(pill, "", UDim2.new(1, -10, 1, -6))
+	status.Position = UDim2.fromOffset(5, 3)
+	card.Activated:Connect(function()
+		remotes.gift:FireServer(index)
+	end)
+	giftTiles[index] = newTile(card, icon, status)
 end
 
-local function rewardText(reward: RetentionConfig.Reward): string
-	if reward.money then
-		return `{Format.money(reward.money)} $`
-	elseif reward.gems then
-		return `{reward.gems} 💎`
+local function buildGifts(): ScrollingFrame
+	local page = Grid.page({
+		minWidth = GIFT_MIN_WIDTH,
+		height = MENU.GIFT_HEIGHT,
+		minColumns = MENU.GIFT_COLUMNS,
+		maxColumns = MENU.GIFT_COLUMNS,
+		padding = PAD,
+	})
+	for index, gift in RetentionConfig.GIFTS do
+		buildGift(page, index, gift)
 	end
-	return `{reward.count or 1} × {reward.item}`
+	return page
 end
 
-local function buildGifts()
-	local size = MENU.GIFT_SIZE
-	for index in RetentionConfig.GIFTS do
-		local column, row = (index - 1) % 3, (index - 1) // 3
-		local position = UDim2.fromOffset(12 + column * (size + 6), 48 + row * (size * 0.6 + 6))
-		local button = newButton(panel, UDim2.fromOffset(size, size * 0.6), position)
-		button.Activated:Connect(function()
-			remotes.gift:FireServer(index)
-		end)
-		giftButtons[index] = button
+-- Quêtes -----------------------------------------------------------------------------------------------------
+
+local function buildProgressBar(row: Frame): (Frame, TextLabel)
+	local bar = Instance.new("Frame")
+	bar.Position = UDim2.new(0, MENU.QUEST_HEIGHT, 0.55, 0)
+	bar.Size = UDim2.new(0.62, -MENU.QUEST_HEIGHT, 0.3, 0)
+	bar.BackgroundColor3 = Bricks.rgb(MENU.BAR_BACK)
+	Style.corner(bar, CIRCLE)
+	Style.stroke(bar, WINDOW.STROKE_COLOR, 2)
+	bar.Parent = row
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.fromScale(0, 1)
+	Style.corner(fill, CIRCLE)
+	Style.gradient(fill, MENU.BAR_TOP, MENU.BAR_BOTTOM)
+	fill.Parent = bar
+	local count = Style.label(bar, "", UDim2.new(1, 0, 1, -4))
+	count.Position = UDim2.fromOffset(0, 2)
+	count.ZIndex = 2
+	return fill, count
+end
+
+local function buildQuestRow(page: ScrollingFrame, order: number)
+	local row = Instance.new("Frame")
+	row.LayoutOrder = order
+	row.Size = UDim2.new(1, 0, 0, MENU.QUEST_HEIGHT)
+	Style.corner(row, UDim.new(0, UiConfig.CORNER_RADIUS + 4))
+	Style.gradient(row, MENU.QUEST_TOP, MENU.QUEST_BOTTOM)
+	Style.stroke(row, WINDOW.STROKE_COLOR, UiConfig.STROKE_THICKNESS)
+	row.Parent = page
+	local icon = Style.label(row, DEFAULT_QUEST_ICON, UDim2.new(0, MENU.QUEST_HEIGHT - PAD, 1, -PAD))
+	icon.Position = UDim2.fromOffset(PAD / 2, PAD / 2)
+	local title = Style.label(row, "", UDim2.new(0.62, -MENU.QUEST_HEIGHT, 0.4, 0))
+	title.Position = UDim2.new(0, MENU.QUEST_HEIGHT, 0.1, 0)
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	local fill, count = buildProgressBar(row)
+	local claim = candy(row, "wait")
+	claim.AnchorPoint = Vector2.new(1, 0.5)
+	claim.Position = UDim2.new(1, -PAD, 0.5, 0)
+	claim.Size = UDim2.new(0.36, -PAD, 1, -2 * PAD)
+	local status = Style.label(claim, "", UDim2.new(1, -12, 1, -10))
+	status.Position = UDim2.fromOffset(6, 5)
+	local questRow: QuestRow =
+		{ icon = icon, title = title, fill = fill, count = count, claim = claim, tile = newTile(claim, status, status) }
+	claim.Activated:Connect(function()
+		remotes.quest:FireServer(claim:GetAttribute("QuestId"))
+	end)
+	table.insert(questRows, questRow)
+end
+
+local function buildQuests(): ScrollingFrame
+	local page = Instance.new("ScrollingFrame")
+	page.BackgroundTransparency = 1
+	page.BorderSizePixel = 0
+	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	page.CanvasSize = UDim2.new()
+	page.ScrollBarThickness = 8
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft, padding.PaddingRight = UDim.new(0, PAD), UDim.new(0, PAD)
+	padding.PaddingTop = UDim.new(0, 4)
+	padding.Parent = page
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, PAD)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = page
+	for order = 1, RetentionConfig.QUESTS_PER_DAY do
+		buildQuestRow(page, order)
 	end
+	return page
 end
 
-local function buildQuests()
-	local top = 48 + 3 * (MENU.GIFT_SIZE * 0.6 + 6) + 12
-	for k = 1, RetentionConfig.QUESTS_PER_DAY do
-		local y = top + (k - 1) * (MENU.ROW_HEIGHT + 6)
-		local label = newText(panel, UDim2.fromOffset(250, MENU.ROW_HEIGHT), UDim2.fromOffset(12, y), "")
-		label.TextXAlignment = Enum.TextXAlignment.Left
-		local button = newButton(panel, UDim2.fromOffset(60, MENU.ROW_HEIGHT), UDim2.fromOffset(266, y))
-		table.insert(questRows, { label = label, button = button })
-	end
+-- Roue -------------------------------------------------------------------------------------------------------
+
+local function circle(parent: Instance, scale: number): Frame
+	local disc = Instance.new("Frame")
+	disc.AnchorPoint = Vector2.new(0.5, 0.5)
+	disc.Position = UDim2.fromScale(0.5, 0.5)
+	disc.Size = UDim2.fromScale(scale, scale)
+	Style.corner(disc, CIRCLE)
+	disc.Parent = parent
+	return disc
 end
 
-local function buildWheel()
-	local size = MENU.WHEEL_SIZE
-	local x = MENU.WIDTH - size - 24
-	newText(panel, UDim2.fromOffset(size, 24), UDim2.fromOffset(x, 40), "▼")
-	wheel = Instance.new("Frame")
-	wheel.Size, wheel.Position = UDim2.fromOffset(size, size), UDim2.fromOffset(x, 64)
-	wheel.BackgroundColor3 = Bricks.rgb(UiConfig.BAG_BAR.BACKGROUND)
-	rounded(wheel, UDim.new(0.5, 0))
-	wheel.Parent = panel
+-- Cases de la roue : séparateurs depuis le centre et pastille colorée au milieu de chaque case.
+local function buildSegments(face: Frame)
+	rotor = Instance.new("Frame")
+	rotor.BackgroundTransparency = 1
+	rotor.Size = UDim2.fromScale(1, 1)
+	rotor.Parent = face
 	local count = #RetentionConfig.WHEEL
+	local step = 360 / count
 	for index, segment in RetentionConfig.WHEEL do
-		local angle = math.rad((index - 0.5) * 360 / count)
-		local label = newText(wheel, UDim2.fromOffset(70, 22), UDim2.new(0.5, 0, 0.5, 0), segment.label)
-		label.AnchorPoint = Vector2.new(0.5, 0.5)
-		label.Position = UDim2.new(0.5 + 0.36 * math.sin(angle), 0, 0.5 - 0.36 * math.cos(angle), 0)
-		label.Rotation = math.deg(angle)
-		label.TextColor3 = Bricks.rgb(segment.color)
+		-- Roblox fait tourner un cadre autour de SON centre (pas de son AnchorPoint) : le séparateur est donc
+		-- posé sur un bras transparent de la taille de la roue, et c'est le bras qui tourne autour du centre.
+		local arm = Instance.new("Frame")
+		arm.BackgroundTransparency = 1
+		arm.Size = UDim2.fromScale(1, 1)
+		arm.Rotation = (index - 1) * step
+		arm.Parent = rotor
+		local divider = Instance.new("Frame")
+		divider.AnchorPoint = Vector2.new(0.5, 0)
+		divider.Position = UDim2.fromScale(0.5, 0)
+		divider.Size = UDim2.new(0, DIVIDER_WIDTH, 0.5, 0)
+		divider.BackgroundColor3 = Bricks.rgb(WINDOW.STROKE_COLOR)
+		divider.BorderSizePixel = 0
+		divider.Parent = arm
+		local angle = math.rad((index - 0.5) * step)
+		local chip = Instance.new("Frame")
+		chip.AnchorPoint = Vector2.new(0.5, 0.5)
+		chip.Position = UDim2.fromScale(
+			0.5 + MENU.WHEEL_LABEL_RADIUS * math.sin(angle),
+			0.5 - MENU.WHEEL_LABEL_RADIUS * math.cos(angle)
+		)
+		chip.Size = CHIP_SIZE
+		chip.Rotation = math.deg(angle) - 90 -- lisible depuis le centre, comme sur une vraie roue
+		chip.BackgroundColor3 = Bricks.rgb(segment.color)
+		Style.corner(chip, CIRCLE)
+		Style.stroke(chip, WINDOW.STROKE_COLOR, 2)
+		Style.label(chip, segment.label, UDim2.new(1, -6, 1, -4)).Position = UDim2.fromOffset(3, 2)
+		chip.Parent = rotor
 	end
-	spinButton = newButton(panel, UDim2.fromOffset(size, 36), UDim2.fromOffset(x, 64 + size + 8))
-	spinButton.Activated:Connect(function()
+end
+
+local function buildWheelDisc(page: Frame)
+	local holder = Instance.new("Frame")
+	holder.BackgroundTransparency = 1
+	holder.Position = UDim2.fromOffset(PAD, PAD * 2)
+	holder.Size = UDim2.new(0.55, -PAD, 1, -PAD * 3)
+	holder.Parent = page
+	local rim = circle(holder, 1)
+	local square = Instance.new("UIAspectRatioConstraint")
+	square.Parent = rim
+	Style.gradient(rim, MENU.WHEEL_RIM_TOP, MENU.WHEEL_RIM_BOTTOM)
+	Style.stroke(rim, WINDOW.STROKE_COLOR, UiConfig.STROKE_THICKNESS + 1)
+	local face = circle(rim, 1 - 2 * MENU.WHEEL_RIM)
+	face.BackgroundColor3 = Bricks.rgb(MENU.WHEEL_FACE)
+	Style.stroke(face, WINDOW.STROKE_COLOR, 2)
+	buildSegments(face)
+	local hub = circle(face, HUB_SIZE)
+	Style.gradient(hub, MENU.WHEEL_RIM_TOP, MENU.WHEEL_RIM_BOTTOM)
+	Style.stroke(hub, WINDOW.STROKE_COLOR, 2)
+	Style.label(hub, "⭐", UDim2.fromScale(0.7, 0.7)).Position = UDim2.fromScale(0.15, 0.15)
+	pointer = Style.label(rim, "▼", UDim2.fromScale(POINTER_SIZE, POINTER_SIZE))
+	pointer.AnchorPoint = Vector2.new(0.5, 0.6)
+	pointer.Position = UDim2.fromScale(0.5, 0)
+	pointer.TextColor3 = Bricks.rgb(MENU.POINTER_COLOR)
+	pointer.ZIndex = 5
+end
+
+local function buildOdds(page: Frame)
+	local list = Instance.new("Frame")
+	list.BackgroundTransparency = 1
+	list.Position = UDim2.new(0.55, PAD, 0, PAD)
+	list.Size = UDim2.new(0.45, -2 * PAD, 1, -(SPIN_HEIGHT + 3 * PAD))
+	list.Parent = page
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 4)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = list
+	Style.label(list, "CHANCES", UDim2.new(1, 0, 0, ODDS_ROW_HEIGHT))
+	local odds = RewardText.wheelOdds()
+	for index, segment in RetentionConfig.WHEEL do
+		local row = Instance.new("Frame")
+		row.LayoutOrder = index
+		row.Size = UDim2.new(1, 0, 0, ODDS_ROW_HEIGHT)
+		row.BackgroundColor3 = Bricks.rgb(segment.color)
+		Style.corner(row, CIRCLE)
+		Style.stroke(row, WINDOW.STROKE_COLOR, 2)
+		local name = Style.label(row, segment.label, UDim2.new(0.68, -8, 1, -6))
+		name.Position = UDim2.fromOffset(10, 3)
+		name.TextXAlignment = Enum.TextXAlignment.Left
+		local chance = Style.label(row, `{odds[index]} %`, UDim2.new(0.32, -10, 1, -6))
+		chance.Position = UDim2.new(0.68, 0, 0, 3)
+		chance.TextXAlignment = Enum.TextXAlignment.Right
+		row.Parent = list
+	end
+end
+
+local function buildWheel(): Frame
+	local page = Instance.new("Frame")
+	page.BackgroundTransparency = 1
+	buildWheelDisc(page)
+	buildOdds(page)
+	local spin = candy(page, "ready")
+	spin.AnchorPoint = Vector2.new(0, 1)
+	spin.Position = UDim2.new(0.55, PAD, 1, -PAD)
+	spin.Size = UDim2.new(0.45, -2 * PAD, 0, SPIN_HEIGHT)
+	local status = Style.label(spin, "", UDim2.new(1, -12, 1, -12))
+	status.Position = UDim2.fromOffset(6, 6)
+	spin.Activated:Connect(function()
 		remotes.spin:FireServer()
 	end)
-	local total = 0
-	for _, segment in RetentionConfig.WHEEL do
-		total += segment.weight
-	end
-	local odds = {}
-	for _, segment in RetentionConfig.WHEEL do
-		table.insert(odds, `{segment.label} {math.floor(segment.weight / total * 1000 + 0.5) / 10} %`)
-	end
-	local oddsLabel =
-		newText(panel, UDim2.fromOffset(size, 70), UDim2.fromOffset(x, 64 + size + 50), table.concat(odds, " · "))
-	oddsLabel.TextWrapped = true
+	spinTile = newTile(spin, status, status)
+	return page
 end
 
 -- Fait tourner la roue pour que la case tirée par le serveur s'arrête sous le pointeur.
 local function spinTo(index: number)
 	local count = #RetentionConfig.WHEEL
 	local target = 360 * MENU.SPIN_TURNS - (index - 0.5) * 360 / count
-	wheel.Rotation = 0
+	rotor.Rotation = 0
 	local info = TweenInfo.new(MENU.SPIN_SECONDS, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-	TweenService:Create(wheel, info, { Rotation = target }):Play()
+	local spin = TweenService:Create(rotor, info, { Rotation = target })
+	spin.Completed:Once(function()
+		local reward = RetentionConfig.WHEEL[index].reward
+		RewardPopup.show(RewardText.icon(reward), RewardText.label(reward))
+	end)
+	spin:Play()
 end
 
-local function attribute(name: string): any
-	return localPlayer:GetAttribute(name)
+-- Le pointeur claque à chaque case qui passe dessous, comme une vraie roue de fête foraine.
+local function flickPointer()
+	local step = 360 / #RetentionConfig.WHEEL
+	local segment = math.floor(rotor.Rotation / step)
+	if segment == lastSegment then
+		return
+	end
+	lastSegment = segment
+	pointer.Rotation = -POPUP.POINTER_FLICK_DEGREES
+	local info = TweenInfo.new(POPUP.POINTER_FLICK_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(pointer, info, { Rotation = 0 }):Play()
 end
 
-local function setState(button: TextButton, text: string, isReady: boolean)
-	button.Text = text
-	button.BackgroundColor3 = Bricks.rgb(if isReady then MENU.READY_COLOR else MENU.LOCKED_COLOR)
-end
+-- Rafraîchissement ---------------------------------------------------------------------------------------------
 
-local function refreshGifts(now: number)
+local function refreshGifts(now: number): boolean
 	local started = attribute(PlayerAttributes.SESSION_STARTED_AT)
 	local session = if typeof(started) == "number" then now - started else 0
 	local claimed: { [number]: boolean } = {}
 	for index in string.gmatch(tostring(attribute(PlayerAttributes.GIFTS_CLAIMED) or ""), "%d+") do
 		claimed[tonumber(index) :: number] = true
 	end
+	local hasReady = false
 	for index, gift in RetentionConfig.GIFTS do
-		local reward = rewardText(gift.reward)
+		local tile = giftTiles[index]
 		if claimed[index] then
-			setState(giftButtons[index], `✔ {reward}`, false)
+			setState(tile, "done", "✔ REÇU")
 		elseif Retention.isGiftClaimable(index, session, claimed) then
-			setState(giftButtons[index], `Réclamer\n{reward}`, true)
+			setState(tile, "ready", "RÉCLAMER !")
+			hasReady = true
 		else
-			setState(giftButtons[index], `{Format.duration(gift.minutes * 60 - session)}\n{reward}`, false)
+			setState(tile, "wait", `⏱ {Format.duration(gift.minutes * 60 - session)}`)
 		end
 	end
+	return hasReady
 end
 
-local function refreshQuests(now: number)
+local function refreshQuests(now: number): boolean
 	local progress: { [string]: number } = {}
 	for id, value in string.gmatch(tostring(attribute(PlayerAttributes.QUEST_PROGRESS) or ""), "(%w+)=(%d+)") do
 		progress[id] = tonumber(value) :: number
 	end
 	local claimed = tostring(attribute(PlayerAttributes.QUESTS_CLAIMED) or "")
+	local hasReady = false
 	for k, quest in Retention.questsForDay(Retention.dayOf(now)) do
 		local row = questRows[k]
 		local done = math.min(progress[quest.id] or 0, quest.target)
-		row.label.Text = `{quest.label} ({done}/{quest.target}) → {rewardText(quest.reward)}`
+		row.icon.Text = MENU.QUEST_ICONS[quest.id] or DEFAULT_QUEST_ICON
+		row.title.Text = quest.label
+		row.fill.Size = UDim2.fromScale(done / quest.target, 1)
+		row.count.Text = `{done} / {quest.target}`
 		local isClaimed = string.find("," .. claimed .. ",", "," .. quest.id .. ",", 1, true) ~= nil
-		setState(row.button, if isClaimed then "✔" else "OK", not isClaimed and done >= quest.target)
-		row.button:SetAttribute("QuestId", quest.id)
+		local reward = RewardText.label(quest.reward)
+		if isClaimed then
+			setState(row.tile, "done", "✔ REÇU")
+		elseif done >= quest.target then
+			setState(row.tile, "ready", `RÉCLAMER\n{reward}`)
+			hasReady = true
+		else
+			setState(row.tile, "wait", `🎁 {reward}`)
+		end
+		row.claim:SetAttribute("QuestId", quest.id)
 	end
+	return hasReady
 end
 
-local function refreshWheel(now: number)
+local function refreshWheel(now: number): boolean
 	local readyAt = attribute(PlayerAttributes.WHEEL_READY_AT)
 	local wait = if typeof(readyAt) == "number" then readyAt - now else 0
-	setState(spinButton, if wait > 0 then `Prochain tour : {Format.duration(wait)}` else "🎡 Tourner !", wait <= 0)
+	if wait > 0 then
+		setState(spinTile, "done", `⏱ {Format.duration(wait)}`)
+	else
+		setState(spinTile, "ready", "🎡 TOURNER !")
+	end
+	return wait <= 0
 end
 
 local function refresh()
 	local now = Workspace:GetServerTimeNow()
-	refreshGifts(now)
-	refreshQuests(now)
-	refreshWheel(now)
+	local giftReady = refreshGifts(now)
+	local questReady = refreshQuests(now)
+	local wheelReady = refreshWheel(now)
+	HudButton.setAlert(hud, giftReady or questReady or wheelReady)
 end
 
-local function buildToggle()
-	local toggle = newButton(screenGui, UDim2.fromOffset(64, 64), UDim2.new(0, 16, 1, -160))
-	toggle.Text = "🎁"
-	toggle.BackgroundColor3 = Bricks.rgb(MENU.READY_COLOR)
-	toggle.Activated:Connect(function()
-		panel.Visible = not panel.Visible
-		if panel.Visible then
-			refresh()
-		end
-	end)
+-- Les récompenses prêtes « respirent » pour attirer l'œil.
+local function animate(deltaTime: number)
+	clock += deltaTime
+	if not window.isOpen then
+		return
+	end
+	local scale = 1 + math.sin(clock * MENU.READY_PULSE.speed) * MENU.READY_PULSE.scale
+	for _, tile in giftTiles do
+		tile.pulse.Scale = if tile.state == "ready" then scale else 1
+	end
+	for _, row in questRows do
+		row.tile.pulse.Scale = if row.tile.state == "ready" then scale else 1
+	end
+	spinTile.pulse.Scale = if spinTile.state == "ready" then scale else 1
+	flickPointer()
 end
 
 function RetentionMenuController:Init()
 	screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "RetentionMenu"
 	screenGui.ResetOnSpawn = false
-	panel = Instance.new("Frame")
-	panel.AnchorPoint = Vector2.new(0.5, 0.5)
-	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromOffset(MENU.WIDTH, MENU.HEIGHT)
-	panel.BackgroundColor3 = Bricks.rgb(UiConfig.BAG_BAR.BACKGROUND)
-	panel.Visible = false
-	rounded(panel)
-	panel.Parent = screenGui
-	Window.closeButton(panel, function()
-		panel.Visible = false
+	screenGui.IgnoreGuiInset = true -- le fond assombri couvre tout l'écran
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	window = Window.new(screenGui, "Rewards", "🎁 RÉCOMPENSES")
+	window.onOpen = refresh
+	local tabs = Tabs.new(window.body)
+	tabs:add("🎁 CADEAUX", buildGifts())
+	tabs:add("📜 QUÊTES", buildQuests())
+	tabs:add("🎡 ROUE", buildWheel())
+	tabs:select(1)
+	hud = HudButton.new(screenGui, {
+		icon = "🎁",
+		caption = "CADEAUX",
+		top = HUD.GIFTS_TOP,
+		bottom = HUD.GIFTS_BOTTOM_COLOR,
+		fromBottom = HUD.GIFTS_BOTTOM,
+	})
+	hud.button.Activated:Connect(function()
+		window:toggle()
 	end)
-	newText(
-		panel,
-		UDim2.new(1, -24, 0, 32),
-		UDim2.fromOffset(12, 6),
-		"🎁 Cadeaux · 📜 Quêtes du jour · 🎡 Roue"
-	)
-	buildGifts()
-	buildQuests()
-	buildWheel()
-	buildToggle()
 end
 
 function RetentionMenuController:Start()
 	remotes.gift = Remotes.event(Remotes.CLAIM_GIFT)
 	remotes.spin = Remotes.event(Remotes.SPIN_WHEEL)
 	remotes.quest = Remotes.event(Remotes.CLAIM_QUEST)
-	for _, row in questRows do
-		row.button.Activated:Connect(function()
-			remotes.quest:FireServer(row.button:GetAttribute("QuestId"))
-		end)
-	end
 	Remotes.event(Remotes.WHEEL_RESULT).OnClientEvent:Connect(spinTo)
 	RunService.Heartbeat:Connect(function(deltaTime: number)
 		elapsed += deltaTime
-		if panel.Visible and elapsed >= REFRESH_INTERVAL then
+		if elapsed >= REFRESH_INTERVAL then
 			elapsed = 0
-			refresh()
+			refresh() -- même fermé : la pastille « ! » du bouton doit apparaître dès qu'un cadeau est prêt
 		end
 	end)
+	RunService.RenderStepped:Connect(animate)
 	screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 end
 

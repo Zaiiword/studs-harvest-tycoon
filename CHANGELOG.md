@@ -2,6 +2,30 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Menu Pets et pop-up de la roue
+
+### Ajouté
+- Menu 🐾 refait dans le style de la boutique : inventaire en grille avec chaque Pet en 3D (ViewportFrame),
+  cartes aux couleurs de la rareté (Or : contour doré, Arc-en-ciel : dégradé arc-en-ciel), pastilles ×N et
+  ✔ équipé, fiche détaillée avec le Pet qui tourne, Équiper / Retirer / Fusionner 5 ; onglet Œufs avec les
+  chances par rareté et l'ouverture des Œufs Légendaires.
+- Pop-up « GAGNÉ ! » après un tour de roue : halo de rayons, confettis, icône du lot, son ; le pointeur
+  claque à chaque case.
+- Bouton 🐾 du HUD au même style que 🛒 et 🎁.
+
+### Corrigé
+- Les séparateurs de la roue tournaient autour de leur propre centre (traits décentrés).
+
+## Menu Récompenses — même style que la boutique
+
+### Ajouté
+- Menu 🎁 refait : onglets Cadeaux / Quêtes / Roue dans la fenêtre premium. Cadeaux en cartes colorées
+  selon l'état (à réclamer, en attente, reçu), quêtes avec barre de progression, roue dorée à cases
+  colorées, pointeur rouge et tableau des chances. Les récompenses prêtes « respirent ».
+- Bouton 🎁 du HUD avec pastille « ! » et frétillement dès qu'une récompense attend.
+- Modules partagés `ui/Tabs`, `ui/Grid`, `ui/HudButton` (aussi utilisés par la boutique) et
+  `RewardText` (vrais noms d'objets : « Œuf Légendaire » au lieu de « LegendaryEgg »).
+
 ## Boutique — refonte visuelle
 
 ### Ajouté

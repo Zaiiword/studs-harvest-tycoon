@@ -12,6 +12,7 @@ Style.FONT = (Enum.Font :: any)[UiConfig.FONT] :: Enum.Font
 
 local WHITE = Color3.new(1, 1, 1)
 local VERTICAL = 90 -- rotation d'un UIGradient du haut vers le bas
+local SHINE_TRANSPARENCY = NumberSequence.new(0.6, 1)
 
 function Style.corner(gui: GuiObject, radius: UDim)
 	local corner = Instance.new("UICorner")
@@ -69,6 +70,20 @@ function Style.button(parent: Instance, colors: { top: { number }, bottom: { num
 	Style.stroke(button, colors.edge, UiConfig.STROKE_THICKNESS)
 	button.Parent = parent
 	return button
+end
+
+-- Reflet clair sur la moitié haute d'un bouton ou d'une carte : l'effet « bonbon » des boutiques Roblox.
+function Style.shine(parent: GuiObject)
+	local shine = Instance.new("Frame")
+	shine.Size = UDim2.fromScale(1, 0.5)
+	shine.BackgroundColor3 = WHITE
+	shine.BorderSizePixel = 0
+	Style.corner(shine, UDim.new(0, UiConfig.CORNER_RADIUS))
+	local fade = Instance.new("UIGradient")
+	fade.Rotation = VERTICAL
+	fade.Transparency = SHINE_TRANSPARENCY
+	fade.Parent = shine
+	shine.Parent = parent
 end
 
 -- Taille max d'un texte « TextScaled », pour garder des tailles homogènes sur une même carte.
