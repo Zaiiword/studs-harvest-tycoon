@@ -11,6 +11,8 @@ export type State = {
 	silo: number,
 	conveyorLevel: number,
 	machines: { [string]: boolean },
+	siloLevel: number, -- agrandissements du silo achetés (A53)
+	decor: { [string]: boolean }, -- décorations achetées (A53)
 }
 
 -- Bonus extérieurs à l'usine (Pets au Sprint 6, Rebirths au Sprint 4, Gamepass au Sprint 8).
@@ -35,15 +37,27 @@ export type PurchaseResult = {
 local Tycoon = {}
 
 local CONVEYOR = TycoonConfig.CONVEYOR
+local SILO_UPGRADE = TycoonConfig.SILO_UPGRADE
 local machinesById: { [string]: TycoonConfig.MachineDef } = {}
 for _, machine in TycoonConfig.MACHINES do
 	machinesById[machine.id] = machine
+end
+local decorById: { [string]: TycoonConfig.DecorDef } = {}
+for _, decor in TycoonConfig.DECORATIONS do
+	decorById[decor.id] = decor
 end
 
 Tycoon.NO_BONUS = table.freeze({ petBonuses = {}, rebirths = 0, hasIncomeX2 = false }) :: IncomeBonus
 
 function Tycoon.new(): State
-	return { money = TycoonConfig.STARTING_MONEY, silo = 0, conveyorLevel = 1, machines = {} }
+	return {
+		money = TycoonConfig.STARTING_MONEY,
+		silo = 0,
+		conveyorLevel = 1,
+		machines = {},
+		siloLevel = 0,
+		decor = {},
+	}
 end
 
 function Tycoon.conveyorRate(state: State): number
@@ -61,9 +75,21 @@ function Tycoon.machineMultiplier(state: State): number
 	return multiplier
 end
 
+-- Capacité du silo à un niveau d'agrandissement donné (A53) : ×2 par niveau.
+function Tycoon.siloCapacityAt(level: number): number
+	return TycoonConfig.SILO_CAPACITY * SILO_UPGRADE.CAPACITY_GROWTH ^ level
+end
+
+function Tycoon.siloCapacity(state: State): number
+	return Tycoon.siloCapacityAt(state.siloLevel)
+end
+
+-- Capacité maximale atteignable : borne de la sauvegarde.
+Tycoon.MAX_SILO_CAPACITY = Tycoon.siloCapacityAt(#SILO_UPGRADE.PRICES)
+
 -- Verse une valeur brute dans le silo, dans la limite de sa capacité. Renvoie la part acceptée.
 function Tycoon.deposit(state: State, value: number): number
-	local accepted = math.clamp(value, 0, TycoonConfig.SILO_CAPACITY - state.silo)
+	local accepted = math.clamp(value, 0, Tycoon.siloCapacity(state) - state.silo)
 	state.silo += accepted
 	return accepted
 end
@@ -110,6 +136,12 @@ local function conveyorOffer(state: State): Offer
 	}
 end
 
+local function siloOffer(state: State): Offer
+	local price = SILO_UPGRADE.PRICES[state.siloLevel + 1]
+	local label = if price then `{SILO_UPGRADE.NAME} niv. {state.siloLevel + 1}` else `{SILO_UPGRADE.NAME} max`
+	return { id = SILO_UPGRADE.ID, label = label, price = price }
+end
+
 local function garageOffer(tier: number): Offer
 	local nextTier = VehicleConfig.TIERS[tier + 1]
 	if not nextTier then
@@ -125,6 +157,13 @@ function Tycoon.offer(state: State, buttonId: string, tier: number): Offer
 	end
 	if buttonId == TycoonConfig.GARAGE_NAME then
 		return garageOffer(tier)
+	end
+	if buttonId == SILO_UPGRADE.ID then
+		return siloOffer(state)
+	end
+	local decor = decorById[buttonId]
+	if decor then
+		return { id = decor.id, label = decor.name, price = if state.decor[decor.id] then nil else decor.price }
 	end
 	local machine = machinesById[buttonId]
 	assert(machine, `bouton inconnu : {buttonId}`)
@@ -143,6 +182,10 @@ function Tycoon.buy(state: State, buttonId: string, tier: number): PurchaseResul
 		state.conveyorLevel += 1
 	elseif buttonId == TycoonConfig.GARAGE_NAME then
 		return { isPurchased = true, newTier = tier + 1 }
+	elseif buttonId == SILO_UPGRADE.ID then
+		state.siloLevel += 1
+	elseif decorById[buttonId] then
+		state.decor[buttonId] = true
 	else
 		state.machines[buttonId] = true
 	end

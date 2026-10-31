@@ -24,6 +24,8 @@ export type Data = {
 	pets: Pets.Collection, -- v3 : Pets possédés et équipés (Sprint 6)
 	retention: Retention.State, -- v4 : roue, quêtes du jour et statistiques (Sprint 7)
 	purchases: Purchases.Purchases, -- v5 : reçus Robux traités, Starter Pack (Sprint 8)
+	siloLevel: number, -- v6 : agrandissements du silo (A53)
+	decor: { string }, -- v6 : décorations achetées (A53)
 }
 
 -- Ce que les services fournissent pour composer un profil à sauvegarder.
@@ -39,13 +41,17 @@ export type GameParts = {
 
 local Profile = {}
 
--- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases`. Un champ absent reprend sa valeur par défaut :
+-- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases` ; v5 → v6 : `siloLevel`, `decor`. Un champ absent reprend sa valeur par défaut :
 -- la migration est donc faite par `sanitize`, sans code spécifique.
-Profile.VERSION = 5
+Profile.VERSION = 6
 
 local knownMachines: { [string]: boolean } = {}
 for _, machine in TycoonConfig.MACHINES do
 	knownMachines[machine.id] = true
+end
+local knownDecor: { [string]: boolean } = {}
+for _, decor in TycoonConfig.DECORATIONS do
+	knownDecor[decor.id] = true
 end
 
 function Profile.default(): Data
@@ -62,6 +68,8 @@ function Profile.default(): Data
 		pets = Pets.newCollection(),
 		retention = Retention.newState(),
 		purchases = Purchases.new(),
+		siloLevel = 0,
+		decor = {},
 	}
 end
 
@@ -74,17 +82,29 @@ local function number(value: any, min: number, max: number, fallback: number, is
 	return if isInteger then math.floor(clamped) else clamped
 end
 
-local function machinesOf(value: any): { string }
-	local machines: { string } = {}
+-- Liste d'ids connus, sans doublon (machines, décorations).
+local function idsOf(value: any, known: { [string]: boolean }): { string }
+	local ids: { string } = {}
 	if typeof(value) ~= "table" then
-		return machines
+		return ids
 	end
 	for _, id in value do
-		if typeof(id) == "string" and knownMachines[id] and not table.find(machines, id) then
-			table.insert(machines, id)
+		if typeof(id) == "string" and known[id] and not table.find(ids, id) then
+			table.insert(ids, id)
 		end
 	end
-	return machines
+	return ids
+end
+
+local function sortedKeys(set: { [string]: boolean }): { string }
+	local ids: { string } = {}
+	for id, isOwned in set do
+		if isOwned then
+			table.insert(ids, id)
+		end
+	end
+	table.sort(ids)
+	return ids
 end
 
 function Profile.sanitize(raw: any): Data
@@ -93,9 +113,9 @@ function Profile.sanitize(raw: any): Data
 	return {
 		version = Profile.VERSION,
 		money = number(source.money, 0, math.huge - 1, defaults.money, false),
-		silo = number(source.silo, 0, TycoonConfig.SILO_CAPACITY, defaults.silo, false),
+		silo = number(source.silo, 0, Tycoon.MAX_SILO_CAPACITY, defaults.silo, false),
 		conveyorLevel = number(source.conveyorLevel, 1, TycoonConfig.CONVEYOR.MAX_LEVEL, 1, true),
-		machines = machinesOf(source.machines),
+		machines = idsOf(source.machines, knownMachines),
 		tier = number(source.tier, 1, #VehicleConfig.TIERS, defaults.tier, true),
 		rebirths = number(source.rebirths, 0, math.huge - 1, 0, true),
 		gems = number(source.gems, 0, math.huge - 1, 0, true),
@@ -103,23 +123,18 @@ function Profile.sanitize(raw: any): Data
 		pets = Pets.sanitize(source.pets),
 		retention = Retention.sanitize(source.retention),
 		purchases = Purchases.sanitize(source.purchases),
+		siloLevel = number(source.siloLevel, 0, #TycoonConfig.SILO_UPGRADE.PRICES, 0, true),
+		decor = idsOf(source.decor, knownDecor),
 	}
 end
 
 function Profile.fromGame(parts: GameParts): Data
 	local state = parts.tycoon
-	local machines: { string } = {}
-	for id, isOwned in state.machines do
-		if isOwned then
-			table.insert(machines, id)
-		end
-	end
-	table.sort(machines)
 	return Profile.sanitize({
 		money = state.money,
 		silo = state.silo,
 		conveyorLevel = state.conveyorLevel,
-		machines = machines,
+		machines = sortedKeys(state.machines),
 		tier = parts.tier,
 		rebirths = parts.progress.rebirths,
 		gems = parts.progress.gems,
@@ -127,6 +142,8 @@ function Profile.fromGame(parts: GameParts): Data
 		pets = parts.pets,
 		retention = parts.retention,
 		purchases = parts.purchases,
+		siloLevel = state.siloLevel,
+		decor = sortedKeys(state.decor),
 	})
 end
 
@@ -135,6 +152,10 @@ function Profile.toTycoon(data: Data): Tycoon.State
 	state.money, state.silo, state.conveyorLevel = data.money, data.silo, data.conveyorLevel
 	for _, id in data.machines do
 		state.machines[id] = true
+	end
+	state.siloLevel = data.siloLevel
+	for _, id in data.decor do
+		state.decor[id] = true
 	end
 	return state
 end

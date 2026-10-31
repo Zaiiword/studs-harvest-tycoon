@@ -5,6 +5,7 @@
 -- Dépendances : Tycoon / Rebirth / Profile (règles pures), MapService / PlotService (base),
 -- VehicleService (palier). DataService restaure le profil (restore), le capture (snapshot) et libère l'usine
 -- au départ du joueur (release) : c'est lui qui décide quand, pour sauvegarder avant de détruire.
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,7 +14,6 @@ local Workspace = game:GetService("Workspace")
 local EventConfig = require(ReplicatedStorage.Shared.config.EventConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
-local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
 local Pets = require(ReplicatedStorage.Shared.domain.Pets)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
@@ -27,6 +27,8 @@ local Format = require(ReplicatedStorage.Shared.util.Format)
 local MapService = require(script.Parent.MapService)
 local PlotService = require(script.Parent.PlotService)
 local VehicleService = require(script.Parent.VehicleService)
+local TycoonButtons = require(script.Parent.Parent.builders.TycoonButtons)
+local TycoonDecor = require(script.Parent.Parent.builders.TycoonDecor)
 local TycoonModels = require(script.Parent.Parent.builders.TycoonModels)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
@@ -40,7 +42,8 @@ type Entry = {
 	base: MapGeometry.Placement,
 	folder: Folder,
 	machines: { [string]: Model },
-	pads: { [string]: Part },
+	decor: { [string]: Model },
+	pads: { [string]: TycoonButtons.Pad },
 	silo: Part,
 	siloRoof: Part,
 	currentPad: string?, -- un bouton n'achète qu'à l'arrivée dessus, pas en boucle
@@ -56,8 +59,9 @@ type BlockSpec = {
 
 local LAYOUT = TycoonConfig.LAYOUT
 local COLORS = TycoonConfig.COLORS
-local LABEL = TycoonConfig.LABEL
 local REBIRTH = TycoonConfig.REBIRTH_NAME
+local PAD_STYLE = TycoonConfig.PAD_STYLE
+local MACHINE_LABEL_GAP = 4 -- panneau des machines, au-dessus de leur pièce principale
 
 local entries: { [Player]: Entry } = {}
 local pendingProfiles: { [Player]: Profile.Data } = {} -- profil chargé avant que la base soit attribuée
@@ -77,97 +81,127 @@ local function bonusOf(player: Player, entry: Entry): Tycoon.IncomeBonus
 end
 local incomeElapsed, padElapsed = 0, 0
 
-local function attachLabel(part: BasePart, text: string)
-	local gui = part:FindFirstChildOfClass("BillboardGui") or Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(LABEL.WIDTH, LABEL.HEIGHT)
-	gui.StudsOffset = Vector3.new(0, LABEL.HEIGHT_ABOVE, 0)
-	gui.MaxDistance = LABEL.MAX_DISTANCE
-	local label = gui:FindFirstChildOfClass("TextLabel") or Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.fromScale(1, 1)
-	label.Font = (Enum.Font :: any)[UiConfig.FONT]
-	label.TextScaled = true
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.TextStrokeTransparency = 0
-	label.Text = text
-	label.Parent = gui
-	gui.Parent = part
+-- Repère d'un point de la base : centre au niveau du pont, orienté comme la base (+X vers le champ).
+local function originAt(entry: Entry, spot: TycoonConfig.Spot): CFrame
+	local x, z = MapGeometry.baseToWorld(entry.base, spot.x, spot.z)
+	return CFrame.new(x, MapConfig.DECK_TOP, z) * CFrame.Angles(0, -entry.base.angle, 0)
 end
 
 -- Brique ancrée posée sur la base, centrée sur le point local de `spec.spot`.
 local function placeBlock(entry: Entry, spec: BlockSpec): Part
-	local x, z = MapGeometry.baseToWorld(entry.base, spec.spot.x, spec.spot.z)
 	local part = Instance.new("Part")
 	part.Name = spec.name
 	part.Anchored = true
 	part.Size = spec.size
-	part.CFrame = CFrame.new(x, MapConfig.DECK_TOP + spec.size.Y / 2, z) * CFrame.Angles(0, -entry.base.angle, 0)
+	part.CFrame = originAt(entry, spec.spot) * CFrame.new(0, spec.size.Y / 2, 0)
 	Bricks.style(part, spec.color)
 	part.Parent = entry.folder
 	return part
 end
 
-local function refreshRebirthPad(entry: Entry, pad: Part)
-	local nextRebirth = entry.progress.rebirths + 1
+-- Les modèles construits pendant la partie (pas à la restauration) sont horodatés AVANT d'être placés dans la
+-- base : le client reçoit l'attribut avec le modèle et anime l'arrivée de ses briques (BuildFxController).
+local function place(model: Model, entry: Entry, isPurchase: boolean)
+	if isPurchase then
+		model:SetAttribute(TycoonConfig.BUILD_ANIM_ATTRIBUTE, Workspace:GetServerTimeNow())
+	end
+	model.Parent = entry.folder
+end
+
+local function rebirthView(entry: Entry): TycoonButtons.View
+	local title = `Rebirth n°{entry.progress.rebirths + 1}`
 	if not Rebirth.isTycoonComplete(entry.state) then
-		pad.Color = Bricks.rgb(COLORS.PAD_SOLD_OUT)
-		attachLabel(pad, `Rebirth n°{nextRebirth}\nAchète toutes les machines`)
-		return
+		return { state = "locked", title = title, price = "Achète toutes les machines" }
 	end
 	local cost = Rebirth.cost(entry.progress)
-	local isReady = Rebirth.canRebirth(entry.state, entry.progress)
-	pad.Color = Bricks.rgb(if isReady then COLORS.PAD_REBIRTH else COLORS.PAD_TOO_EXPENSIVE)
-	attachLabel(pad, `Rebirth n°{nextRebirth}\n{Format.money(cost)} $ · +{Rebirth.gemsFor(entry.progress)} 💎`)
+	return {
+		state = if Rebirth.canRebirth(entry.state, entry.progress) then "rebirth" else "expensive",
+		title = title,
+		price = `{Format.money(cost)} $ · +{Rebirth.gemsFor(entry.progress)} 💎`,
+	}
+end
+
+local function offerView(entry: Entry, offer: Tycoon.Offer): TycoonButtons.View
+	local price = offer.price
+	if not price then
+		return { state = "soldout", title = offer.label }
+	end
+	local state: TycoonButtons.State = if entry.state.money >= price then "affordable" else "expensive"
+	return { state = state, title = offer.label, price = `{Format.money(price)} $` }
 end
 
 local function refreshPads(player: Player, entry: Entry)
 	local tier = VehicleService.purchasedTierOf(player)
 	for buttonId, pad in entry.pads do
+		local price: number? = nil
+		local view: TycoonButtons.View
 		if buttonId == REBIRTH then
-			refreshRebirthPad(entry, pad)
-			continue
+			view = rebirthView(entry)
+			price = if view.state == "rebirth" then Rebirth.cost(entry.progress) else nil -- guidé quand il est prêt
+		else
+			local offer = Tycoon.offer(entry.state, buttonId, tier)
+			price = offer.price
+			view = offerView(entry, offer)
 		end
-		local offer = Tycoon.offer(entry.state, buttonId, tier)
-		local price = offer.price
-		local color = if not price
-			then COLORS.PAD_SOLD_OUT
-			elseif entry.state.money >= price then COLORS.PAD_AFFORDABLE
-			else COLORS.PAD_TOO_EXPENSIVE
-		pad.Color = Bricks.rgb(color)
-		attachLabel(pad, if price then `{offer.label}\n{Format.money(price)} $` else `{offer.label}\n✔`)
+		TycoonButtons.update(pad, view)
+		-- Lus par les flèches de guidage du client (GuideController).
+		pad.top:SetAttribute("Price", price)
+		pad.top:SetAttribute("State", view.state)
 	end
 end
 
--- Hauteur « vertigineuse » du silo selon son remplissage (CDC §2 : la richesse se voit de loin).
+-- Hauteur « vertigineuse » du silo selon son remplissage (CDC §2 : la richesse se voit de loin) ; chaque
+-- agrandissement (A53) le rend aussi plus haut une fois plein.
 local function refreshSilo(entry: Entry)
 	local spec = LAYOUT.SILO
-	local fill = entry.state.silo / TycoonConfig.SILO_CAPACITY
-	local height = spec.minHeight + (spec.maxHeight - spec.minHeight) * math.sqrt(fill)
+	local fill = entry.state.silo / Tycoon.siloCapacity(entry.state)
+	local maxHeight = spec.maxHeight + spec.levelHeight * entry.state.siloLevel
+	local height = spec.minHeight + (maxHeight - spec.minHeight) * math.sqrt(fill)
 	local x, z = MapGeometry.baseToWorld(entry.base, spec.x, spec.z)
 	entry.silo.Size = Vector3.new(height, spec.radius * 2, spec.radius * 2)
 	entry.silo.CFrame = CFrame.new(x, MapConfig.DECK_TOP + height / 2, z) * CFrame.Angles(0, 0, math.pi / 2)
 	entry.siloRoof.CFrame = CFrame.new(x, MapConfig.DECK_TOP + height, z)
 end
 
-local function buildMachine(entry: Entry, machine: TycoonConfig.MachineDef)
-	local spot = LAYOUT.MACHINES[machine.id]
-	local x, z = MapGeometry.baseToWorld(entry.base, spot.x, spot.z)
-	local origin = CFrame.new(x, MapConfig.DECK_TOP, z) * CFrame.Angles(0, -entry.base.angle, 0)
-	local main = TycoonModels.machine(entry.folder, machine, origin)
-	attachLabel(main, `{machine.name}\n×{machine.multiplier}`)
-	entry.machines[machine.id] = main.Parent :: Model
+local function buildMachine(entry: Entry, machine: TycoonConfig.MachineDef, isPurchase: boolean)
+	local main = TycoonModels.machine(nil, machine, originAt(entry, LAYOUT.MACHINES[machine.id]))
+	local label = TycoonButtons.label(main, PAD_STYLE.ICONS[machine.id] or "⭐", main.Size.Y / 2 + MACHINE_LABEL_GAP)
+	TycoonButtons.paint(label, "info", machine.name, `Revenus ×{machine.multiplier}`)
+	local model = main.Parent :: Model
+	place(model, entry, isPurchase)
+	entry.machines[machine.id] = model
 end
 
 -- Fait correspondre les modèles de machines à l'état (achat, Rebirth, restauration d'un profil).
-local function syncMachines(entry: Entry)
+local function syncMachines(entry: Entry, isPurchase: boolean)
 	for _, machine in TycoonConfig.MACHINES do
 		local model = entry.machines[machine.id]
 		local isOwned = entry.state.machines[machine.id] == true
 		if isOwned and not model then
-			buildMachine(entry, machine)
+			buildMachine(entry, machine, isPurchase)
 		elseif not isOwned and model then
 			model:Destroy()
 			entry.machines[machine.id] = nil
+		end
+	end
+end
+
+-- Même chose pour les décorations (A53), conservées au Rebirth.
+local function syncDecor(player: Player, entry: Entry, isPurchase: boolean)
+	for _, decor in TycoonConfig.DECORATIONS do
+		local model = entry.decor[decor.id]
+		local isOwned = entry.state.decor[decor.id] == true
+		if isOwned and not model then
+			local origins = {}
+			for _, spot in decor.spots do
+				table.insert(origins, originAt(entry, spot))
+			end
+			local built = TycoonDecor.build(nil, decor, origins, player.DisplayName)
+			place(built, entry, isPurchase)
+			entry.decor[decor.id] = built
+		elseif not isOwned and model then
+			model:Destroy()
+			entry.decor[decor.id] = nil
 		end
 	end
 end
@@ -177,7 +211,7 @@ local function publish(player: Player, entry: Entry)
 	player:SetAttribute(PlayerAttributes.MONEY, math.floor(state.money))
 	player:SetAttribute(PlayerAttributes.INCOME_PER_SECOND, Tycoon.incomePerSecond(state, bonusOf(player, entry)))
 	player:SetAttribute(PlayerAttributes.SILO_VALUE, math.floor(state.silo))
-	player:SetAttribute(PlayerAttributes.SILO_CAPACITY, TycoonConfig.SILO_CAPACITY)
+	player:SetAttribute(PlayerAttributes.SILO_CAPACITY, Tycoon.siloCapacity(state))
 	player:SetAttribute(PlayerAttributes.CONVEYOR_RATE, Tycoon.conveyorRate(state))
 	player:SetAttribute(PlayerAttributes.REBIRTHS, entry.progress.rebirths)
 	player:SetAttribute(PlayerAttributes.GEMS, entry.progress.gems)
@@ -185,12 +219,7 @@ local function publish(player: Player, entry: Entry)
 	refreshSilo(entry)
 end
 
-local function buildFactory(entry: Entry)
-	local padSize = Vector3.new(LAYOUT.PAD_SIZE, LAYOUT.PAD_THICKNESS, LAYOUT.PAD_SIZE)
-	for buttonId, spot in LAYOUT.PADS do
-		entry.pads[buttonId] =
-			placeBlock(entry, { name = `Pad{buttonId}`, spot = spot, size = padSize, color = COLORS.PAD_TOO_EXPENSIVE })
-	end
+local function buildUnloadPad(player: Player, entry: Entry)
 	local unload = LAYOUT.UNLOAD_PAD
 	local unloadPad = placeBlock(entry, {
 		name = "UnloadPad",
@@ -198,7 +227,21 @@ local function buildFactory(entry: Entry)
 		size = Vector3.new(unload.size, LAYOUT.PAD_THICKNESS, unload.size),
 		color = COLORS.UNLOAD_PAD,
 	})
-	attachLabel(unloadPad, "DÉCHARGER ICI")
+	unloadPad:SetAttribute("OwnerId", player.UserId)
+	CollectionService:AddTag(unloadPad, TycoonConfig.UNLOAD_TAG)
+	local label = TycoonButtons.label(unloadPad, "📥", PAD_STYLE.LABEL_HEIGHT_ABOVE)
+	TycoonButtons.paint(label, "unload", "DÉCHARGER ICI", "Vide ton sac au silo")
+end
+
+local function buildFactory(player: Player, entry: Entry)
+	for buttonId, spot in LAYOUT.PADS do
+		local pad = TycoonButtons.build(entry.folder, buttonId, originAt(entry, spot))
+		pad.top:SetAttribute("ButtonId", buttonId)
+		pad.top:SetAttribute("OwnerId", player.UserId)
+		CollectionService:AddTag(pad.top, TycoonConfig.PAD_TAG)
+		entry.pads[buttonId] = pad
+	end
+	buildUnloadPad(player, entry)
 	local conveyor = LAYOUT.CONVEYOR
 	placeBlock(entry, {
 		name = "Conveyor",
@@ -214,7 +257,8 @@ end
 local function applyProfile(player: Player, entry: Entry, data: Profile.Data)
 	entry.state = Profile.toTycoon(data)
 	entry.progress = Profile.toProgress(data)
-	syncMachines(entry)
+	syncMachines(entry, false)
+	syncDecor(player, entry, false)
 	player:SetAttribute(PlayerAttributes.TIER, data.tier)
 	publish(player, entry)
 end
@@ -235,12 +279,13 @@ local function claimFactory(player: Player)
 		base = base,
 		folder = folder,
 		machines = {},
+		decor = {},
 		pads = {},
 		silo = nil :: any, -- posés par buildFactory
 		siloRoof = nil :: any,
 		lastPurchaseAt = -math.huge,
 	}
-	buildFactory(entry)
+	buildFactory(player, entry)
 	entries[player] = entry
 	local pending = pendingProfiles[player]
 	pendingProfiles[player] = nil
@@ -256,7 +301,7 @@ local function tryRebirth(player: Player, entry: Entry): boolean
 		return false
 	end
 	player:SetAttribute(PlayerAttributes.TIER, Rebirth.STARTING_TIER) -- le véhicule est réinitialisé (CDC §7.3)
-	syncMachines(entry)
+	syncMachines(entry, false)
 	return true
 end
 
@@ -274,7 +319,8 @@ local function tryPurchase(player: Player, entry: Entry, buttonId: string)
 		if result.newTier then
 			player:SetAttribute(PlayerAttributes.TIER, result.newTier)
 		end
-		syncMachines(entry)
+		syncMachines(entry, true)
+		syncDecor(player, entry, true)
 	end
 	if isDone then
 		entry.lastPurchaseAt = now
@@ -331,7 +377,7 @@ function TycoonService.unload(player: Player, bag: Bag.Bag): number
 	if not entry then
 		return 0
 	end
-	local _, value = Bag.withdraw(bag, TycoonConfig.SILO_CAPACITY - entry.state.silo)
+	local _, value = Bag.withdraw(bag, Tycoon.siloCapacity(entry.state) - entry.state.silo)
 	local accepted = Tycoon.deposit(entry.state, value)
 	publish(player, entry)
 	return accepted

@@ -2,6 +2,23 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Usine — plus d'options, boutons et flèches de guidage (A53)
+
+### Ajouté
+- **Silo Géant** : 4 agrandissements (capacité ×2 chacun), le silo grandit aussi en hauteur.
+- **7 décorations** à acheter : Lampadaires, Parterres Fleuris, Fontaine (jet d'eau), Drapeau Géant et Arche
+  Néon au nom du joueur, Statue Dorée, Éolienne Géante (ailes animées). Conservées au Rebirth.
+- **Boutons au sol** façon grands tycoons : socle, plaque et anneau néon selon l'état (vert abordable,
+  rouge trop cher, violet Rebirth prêt, gris verrouillé), panneau icône + nom + prix ; un bouton épuisé
+  disparaît. Panneaux assortis pour les machines et la grille de déchargement.
+- **Arrivée animée** : les briques d'une machine ou d'une décoration achetée tombent du ciel en rebondissant,
+  avec étincelles et son.
+- **Flèches de guidage au sol** : chevrons lumineux qui défilent vers le bouton abordable le moins cher (ou
+  le silo, en jaune, quand le sac est plein), en passant par les ponts ; grosse flèche au-dessus de la cible.
+  Bouton ➡️ du HUD pour les activer / masquer.
+- Profil v6 (niveau du silo, décorations) ; tests : achats, Rebirth, sauvegarde, plan de la base sans
+  chevauchement, choix de la cible et trajet des flèches.
+
 ## Menu Pets et pop-up de la roue
 
 ### Ajouté

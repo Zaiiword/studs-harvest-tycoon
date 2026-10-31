@@ -144,6 +144,33 @@ return Freeze.deep({
 		POINTER_FLICK_DEGREES = 25, -- le pointeur de la roue claque à chaque case
 		POINTER_FLICK_SECONDS = 0.12,
 	},
+	-- Flèches de guidage au sol (A53) : chevrons lumineux qui défilent vers le prochain objectif.
+	GUIDE = {
+		SPACING = 4, -- studs entre deux chevrons
+		START = 6, -- distance laissée devant le joueur (son engin le masquerait)
+		MAX_LENGTH = 90, -- longueur dessinée du trajet
+		SPEED = 9, -- studs/s : les chevrons avancent vers la cible
+		POOL = 24,
+		REFRESH_SECONDS = 0.25, -- choix de la cible
+		ARRIVED_DISTANCE = 7, -- plus de flèches une fois sur place
+		LIFT = 0.25, -- hauteur au-dessus du sol
+		RAY_HEIGHT = 12, -- recherche du sol sous chaque chevron
+		CHEVRON = { length = 2.4, width = 0.55, thickness = 0.15, angle = 0.75 },
+		BUTTON_COLOR = { 120, 255, 120 },
+		UNLOAD_COLOR = { 255, 220, 60 },
+		MARKER_HEIGHT = 9, -- grosse flèche au-dessus de la cible
+		MARKER_SIZE = 90, -- pixels
+		MARKER_BOB = { height = 1.2, speed = 4 },
+	},
+	-- Arrivée des briques d'une machine ou d'une décoration achetée (A53).
+	BUILD_FX = {
+		DROP = 14, -- studs : les briques tombent du ciel
+		SECONDS = 0.55,
+		STAGGER = 0.012, -- décalage entre deux briques
+		MAX_STAGGER = 0.8,
+		FRESH_SECONDS = 3, -- au-delà, le modèle n'est plus « neuf » (joueur arrivé après l'achat)
+		SPARKLES = 45,
+	},
 	-- Gros boutons ronds du HUD, empilés à gauche : 🛒 boutique, 🎁 récompenses, 🐾 Pets (CDC §10).
 	HUD_BUTTON = {
 		SIZE = 72,
@@ -151,6 +178,7 @@ return Freeze.deep({
 		SHOP_BOTTOM = 184, -- distance au bas de l'écran
 		GIFTS_BOTTOM = 100,
 		PETS_BOTTOM = 16,
+		GUIDE_BOTTOM = 268,
 		WIGGLE = { degrees = 8, period = 4, seconds = 0.6, shakes = 5 }, -- frétillement pour attirer l'œil
 		ALERT_COLOR = { 255, 40, 60 }, -- pastille « ! » quand une récompense attend
 		SHOP_TOP = { 255, 225, 80 },
@@ -159,6 +187,8 @@ return Freeze.deep({
 		GIFTS_BOTTOM_COLOR = { 40, 165, 60 },
 		PETS_TOP = { 210, 130, 255 },
 		PETS_BOTTOM_COLOR = { 120, 50, 210 },
+		GUIDE_ON_TOP = { 90, 230, 255 },
+		GUIDE_ON_BOTTOM = { 20, 140, 220 },
 	},
 	-- Game feel (CDC §2) : textes flottants, tremblement de caméra, rebond des boutons.
 	JUICE = {
