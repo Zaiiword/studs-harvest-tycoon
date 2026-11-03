@@ -58,8 +58,22 @@ local function isInField(point: Point): boolean
 	return point.x >= MOAT.maxX
 end
 
--- Trajet en ligne brisée : tout droit, ou par le pont le plus commode quand il faut franchir le fossé.
-function Guide.route(from: Point, to: Point): { Point }
+-- Porte d'une base (ouverte côté champ, DecorConfig.FENCE) : la clôture interdit de couper tout droit.
+local function doorOf(base: MapGeometry.Placement): Point
+	return { x = base.x + MapConfig.BASE_SIZE / 2, z = base.z }
+end
+
+local function baseAt(point: Point): MapGeometry.Placement?
+	for _, base in MapGeometry.baseCenters() do
+		if MapGeometry.isInsideBase(base, point.x, point.z) then
+			return base
+		end
+	end
+	return nil
+end
+
+-- Partie du trajet hors des bases : tout droit, ou par le pont le plus commode pour franchir le fossé.
+local function outdoorRoute(from: Point, to: Point): { Point }
 	if isInField(from) == isInField(to) then
 		return { from, to }
 	end
@@ -77,6 +91,24 @@ function Guide.route(from: Point, to: Point): { Point }
 		return { from, fieldEnd, plazaEnd, to }
 	end
 	return { from, plazaEnd, fieldEnd, to }
+end
+
+-- Trajet complet en ligne brisée : passe par les portes des bases quitte ou rejointe, puis par les ponts.
+function Guide.route(from: Point, to: Point): { Point }
+	local fromBase, toBase = baseAt(from), baseAt(to)
+	if fromBase and toBase and fromBase.index == toBase.index then
+		return { from, to }
+	end
+	local start = if fromBase then doorOf(fromBase) else from
+	local finish = if toBase then doorOf(toBase) else to
+	local route: { Point } = if fromBase then { from } else {}
+	for _, point in outdoorRoute(start, finish) do
+		table.insert(route, point)
+	end
+	if toBase then
+		table.insert(route, to)
+	end
+	return route
 end
 
 -- Chevrons régulièrement espacés le long du trajet, orientés vers la cible, sans dépasser `maxLength`

@@ -4,6 +4,8 @@
 -- VehicleVisualController (A52) : le serveur ne gère que la physique. Le client pilote ces contraintes
 -- (VehicleController) car il possède physiquement son personnage ; le serveur construit l'engin, surveille
 -- la vitesse (anti-triche) et reprend la main pendant une éjection (BumperService).
+-- A54 : l'engin n'existe que dans le champ. On le reçoit en entrant, on le quitte après avoir retraversé le pont
+-- (Movement.shouldRide) ; dans la base et sur le boulevard, on est à pied.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -11,6 +13,7 @@ local Workspace = game:GetService("Workspace")
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local WorldAttributes = require(ReplicatedStorage.Shared.net.WorldAttributes)
+local Movement = require(ReplicatedStorage.Shared.domain.Movement)
 local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Trove = require(ReplicatedStorage.Packages.Trove)
@@ -111,15 +114,27 @@ local function mountVehicle(character: Model, def: VehicleConfig.BodyDef)
 	end
 end
 
+-- Vrai si le joueur doit être en engin à l'endroit où il se trouve : il en possède un et il est dans le champ.
+local function wantsRide(player: Player, character: Model): boolean
+	local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local tier = VehicleService.tierOf(player)
+	if not root or not tier.isVehicle or not VehicleConfig.BODIES[tier.id] then
+		return false
+	end
+	local isRiding = character:FindFirstChild(VehicleService.BODY_NAME) ~= nil
+	return Movement.shouldRide(root.Position.X, root.Position.Z, isRiding)
+end
+
 local function refreshVehicle(player: Player)
 	local character = player.Character
 	if not character then
 		return
 	end
+	local isWanted = wantsRide(player, character) -- à lire avant de retirer l'engin actuel
 	removeVehicle(character)
 	local tier = VehicleService.tierOf(player)
 	local def = VehicleConfig.BODIES[tier.id]
-	if tier.isVehicle and def then
+	if isWanted then
 		local ok, err = pcall(mountVehicle, character, def)
 		if not ok then
 			warn(`[VehicleService] échec du montage du palier {tier.id} : {err}`)
@@ -153,6 +168,22 @@ local function onPlayerRemoving(player: Player)
 	end
 end
 
+-- Monte ou descend selon la position. Jamais pendant un tournis : le serveur simule alors le personnage.
+local function checkRides()
+	local now = Workspace:GetServerTimeNow()
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		local dizzyUntil = player:GetAttribute(PlayerAttributes.DIZZY_UNTIL)
+		local isDizzy = typeof(dizzyUntil) == "number" and now < dizzyUntil
+		if character and not isDizzy then
+			local isRiding = VehicleService.bodyOf(player) ~= nil
+			if wantsRide(player, character) ~= isRiding then
+				refreshVehicle(player)
+			end
+		end
+	end
+end
+
 -- Anti-triche minimal : le client pilote son engin, le serveur vérifie qu'il ne dépasse pas sa vitesse.
 -- Pour l'instant on journalise seulement (sanction au Sprint 8, une fois les seuils mesurés en jeu).
 local function checkSpeeds()
@@ -181,6 +212,12 @@ function VehicleService:Start()
 			onPlayerAdded(player)
 		end
 	end
+	task.spawn(function()
+		while true do
+			task.wait(VehicleConfig.RIDE_CHECK_INTERVAL)
+			checkRides()
+		end
+	end)
 	task.spawn(function()
 		while true do
 			task.wait(SPEED_CHECK_INTERVAL)

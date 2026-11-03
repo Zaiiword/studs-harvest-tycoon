@@ -6,6 +6,7 @@ return table.freeze({
 	TIER = "Tier", -- palier d'outil/véhicule (1 par défaut ; acheté au Garage)
 	BAG_COUNT = "BagCount", -- blés dans le sac (HarvestService)
 	BAG_CAPACITY = "BagCapacity",
+	ON_ROAD = "OnRoad", -- sur le boulevard ou un pont : vitesse ×3 (A54)
 	DIZZY_UNTIL = "DizzyUntil", -- fin du tournis après une éjection (BumperService)
 	IMMUNE_UNTIL = "ImmuneUntil", -- fin de la bulle d'immunité aux chocs
 	MONEY = "Money", -- trésorerie en $ (TycoonService)

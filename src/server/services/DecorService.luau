@@ -1,6 +1,6 @@
 --!strict
 -- Décor du monde (CDC §2, passe visuelle 1) : murs de la tige, portiques de zone, clôtures et enseignes
--- des bases, arbres de la barre, rambardes des ponts. Placement calculé par Decor (pur, testé).
+-- des bases, arbres de la barre, boulevard (A54), rambardes des ponts. Placement calculé par Decor (pur, testé).
 -- Construit dans Start : la carte de MapService existe déjà (tous les Init passent avant les Start).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,6 +12,7 @@ local Decor = require(ReplicatedStorage.Shared.domain.Decor)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Build = require(script.Parent.Parent.builders.Build)
+local RoadModels = require(script.Parent.Parent.builders.RoadModels)
 local MapService = require(script.Parent.MapService)
 
 local DecorService = {}
@@ -202,6 +203,7 @@ function DecorService:Start()
 	buildBases()
 	buildTrees()
 	buildBridgeRails()
+	RoadModels.build(folder("Road"))
 	Players.PlayerAdded:Connect(watch)
 	Players.PlayerRemoving:Connect(function(player)
 		refreshSign(player, true)

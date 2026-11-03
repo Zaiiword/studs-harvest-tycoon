@@ -10,6 +10,8 @@ local RunService = game:GetService("RunService")
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
+local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
+local Movement = require(ReplicatedStorage.Shared.domain.Movement)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -114,10 +116,11 @@ local function refresh(player: Player, state: PlayerState, humanoid: Humanoid, t
 	setIfChanged(player, ATTR.BAG_COUNT, state.bag.count)
 	setIfChanged(player, ATTR.BAG_CAPACITY, state.bag.capacity)
 	resizeBackpack(state)
-	if not tier.isVehicle then -- la vitesse des véhicules sera gérée par VehicleService (Sprint 2)
-		local penalty = if Bag.isFull(state.bag) then VehicleConfig.FULL_SPEED_PENALTY else 0
-		humanoid.WalkSpeed = tier.speed * (1 - penalty)
-	end
+	-- À pied (sans effet en engin : PlatformStand). Sur le boulevard et les ponts, on court ×3 (A54).
+	local root = humanoid.RootPart
+	local isOnRoad = root ~= nil and MapGeometry.isOnRoad(root.Position.X, root.Position.Z)
+	setIfChanged(player, ATTR.ON_ROAD, isOnRoad)
+	humanoid.WalkSpeed = Movement.walkSpeed(tier, Bag.isFull(state.bag), isOnRoad)
 end
 
 local function harvestTick(player: Player, state: PlayerState)

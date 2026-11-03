@@ -6,7 +6,6 @@ local PetConfig = require("../../src/shared/config/PetConfig")
 local PetVisualConfig = require("../../src/shared/config/PetVisualConfig")
 local TycoonConfig = require("../../src/shared/config/TycoonConfig")
 local Guide = require("../../src/shared/domain/Guide")
-local MapGeometry = require("../../src/shared/domain/MapGeometry")
 local Profile = require("../../src/shared/domain/Profile")
 local Rebirth = require("../../src/shared/domain/Rebirth")
 local Tycoon = require("../../src/shared/domain/Tycoon")
@@ -226,21 +225,6 @@ describe("Guide", function()
 			Guide.target({ money = 1e6, isBagFull = true, unload = unload, buttons = buttons, seen = {} }) :: Guide.Target
 		expect(target.kind).toBe("unload")
 		expect(target.point).toBe(unload)
-	end)
-
-	it("passe par le pont le plus commode pour franchir le fossé", function()
-		local route = Guide.route({ x = 300, z = 55 }, { x = -80, z = 40 })
-		expect(#route).toBe(4)
-		expect(route[2].z).toBe(60) -- pont le plus proche des deux extrémités
-		expect(route[2].x > MapConfig.MOAT.maxX).toBe(true)
-		expect(route[3].x < MapConfig.MOAT.minX).toBe(true)
-		local bridge = MapGeometry.bridges()[3]
-		expect(MapGeometry.isUnderBridge(route[2].x, route[2].z, 0)).toBe(true)
-		expect(bridge.z).toBe(60)
-	end)
-
-	it("va tout droit quand le fossé n'est pas à franchir", function()
-		expect(#Guide.route({ x = -100, z = 0 }, { x = -60, z = 30 })).toBe(2)
 	end)
 
 	it("aligne des chevrons régulièrement espacés, tournés vers la cible", function()

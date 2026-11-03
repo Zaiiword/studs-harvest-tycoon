@@ -1,6 +1,6 @@
 --!strict
--- Carte en T (décision A21) : les 8 bases sont alignées sur la barre du T (« Plaza »), un fossé franchi par
--- 4 ponts étroits les sépare du champ, et le champ forme la tige du T. Plus on s'éloigne des bases, plus le blé
+-- Carte en T (décision A21) : les 8 bases sont alignées sur la barre du T (« Plaza »), un boulevard rapide les
+-- longe (A54), un fossé franchi par 4 ponts les sépare du champ, et le champ forme la tige du T. Plus on s'éloigne des bases, plus le blé
 -- est rare et plus la tige se rétrécit : c'est l'« entonnoir » du CDC §3 (rentabilité ↑, surface ↓,
 -- compétition ↑). L'arène du boss (« Core ») termine la tige. Zones raccourcies à la demande du porteur de
 -- projet (Blé Vert ÷ 3) : on atteint vite le Maïs Doré, le bout du champ se perd toujours dans la brume.
@@ -25,7 +25,7 @@ return Freeze.deep({
 	CELL_SIZE = 8,
 
 	-- Barre du T : bases et circulation. Fossé : bande vide franchie par les ponts. Tige : champ.
-	PLAZA = { minX = -160, maxX = 0, halfWidth = 600 },
+	PLAZA = { minX = -192, maxX = 0, halfWidth = 600 },
 	MOAT = { minX = 0, maxX = 24 },
 	STEM = { minX = 24, maxX = 1304, startHalfWidth = 240, endHalfWidth = 120 },
 
@@ -40,18 +40,22 @@ return Freeze.deep({
 	VOID_ZONES = { Moat = true } :: { [string]: boolean },
 
 	-- Réseau de toute la carte (sol) et réseau du champ (FieldGrid). Ils sont alignés : mêmes cellules.
-	MAP_LATTICE = { minX = -160, minZ = -600, cols = 183, rows = 150 } :: Lattice,
+	MAP_LATTICE = { minX = -192, minZ = -600, cols = 187, rows = 150 } :: Lattice,
 	FIELD_LATTICE = { minX = 24, minZ = -240, cols = 160, rows = 60 } :: Lattice,
 
 	-- Bases Tycoon : alignées sur la barre, tournées vers le champ (CDC §3, A22).
 	BASE_COUNT = 8,
 	BASE_SIZE = 120,
 	BASE_PITCH = 145, -- distance entre deux centres de bases
-	BASE_CENTER_X = -80,
+	BASE_CENTER_X = -110, -- reculées de 30 studs pour laisser la place au boulevard
 
-	-- Ponts étroits qui franchissent le fossé (CDC §3, A23), répartis sur la largeur du début de la tige.
-	BRIDGE_Z = { -180, -60, 60, 180 } :: { number },
-	BRIDGE_WIDTH = 14,
+	-- Boulevard entre les bases et le fossé (A54) : on y court ×3, ce qui rend les bases du bout raisonnables.
+	ROAD = { minX = -50, maxX = -20, halfLength = 568, SPEED_MULTIPLIER = 3 },
+
+	-- Ponts qui franchissent le fossé (CDC §3, A23) : face aux 4 bases centrales pour un trajet direct, et assez
+	-- larges (A54) pour qu'un engin y passe sans frotter, tout en restant des points de passage disputés.
+	BRIDGE_Z = { -217.5, -72.5, 72.5, 217.5 } :: { number },
+	BRIDGE_WIDTH = 22,
 	BRIDGE_OVERLAP = 10,
 
 	-- Altitudes des faces supérieures et épaisseur des briques de sol.

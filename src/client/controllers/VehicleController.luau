@@ -22,6 +22,7 @@ local PARTS = VehicleConfig.PARTS
 local localPlayer = Players.LocalPlayer
 local controls: any = nil
 local heading: number? = nil -- nil : à resynchroniser sur l'orientation réelle de l'engin
+local wasDriving = false
 
 local function numberAttribute(name: string, default: number): number
 	local value = localPlayer:GetAttribute(name)
@@ -70,11 +71,24 @@ local function motionParams(): VehicleMotion.MotionParams
 	}
 end
 
+-- L'engin vient de disparaître (retour sur la barre, A54) : le pilote se remet debout et remarche tout de suite.
+local function standUp(character: Model?)
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.PlatformStand = false
+		humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+	end
+end
+
 local function drive(deltaTime: number)
 	local character = localPlayer.Character
 	local body = character and character:FindFirstChild(PARTS.BODY)
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local mover = body and body:FindFirstChild(PARTS.MOVER) :: LinearVelocity?
+	if wasDriving and not body then
+		standUp(character)
+	end
+	wasDriving = body ~= nil
 	local aligner = body and body:FindFirstChild(PARTS.ALIGNER) :: AlignOrientation?
 	if not root or not mover or not aligner or isDizzy() then
 		heading = nil
