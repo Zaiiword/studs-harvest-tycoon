@@ -32,6 +32,7 @@ HarvestService.Unloaded = Signal.new() -- (player, valeur déposée)
 
 type PlayerState = {
 	bag: Bag.Bag,
+	blockedPlaces: number, -- places du dernier blé qui ne tenait pas dans le sac (A55)
 	trove: any,
 	backpack: Part?,
 	weld: Weld?,
@@ -100,13 +101,17 @@ local function cutInFront(player: Player, state: PlayerState, root: BasePart, ti
 	local slot = PlotService.baseIndexOf(player) or 0
 	local hitbox = { x = position.X, z = position.Z, dirX = look.X, dirZ = look.Z, size = tier.hitboxStuds }
 	for _, index in FieldService.query(hitbox) do
-		if Bag.isFull(state.bag) then
-			return
+		local cell = FieldService.cell(index)
+		local places = if cell then Bag.placesOf(cell.zone) else 1
+		local result = nil
+		if Bag.canFit(state.bag, places) then
+			result = FieldService.damage(index, HarvestService.cutPowerOf(player, tier), slot)
+		else
+			state.blockedPlaces = places -- ce blé ne tient pas : le HUD explique pourquoi on ne coupe plus (A55)
 		end
-		local result = FieldService.damage(index, HarvestService.cutPowerOf(player, tier), slot)
 		if result then
 			-- Pluie Dorée ×2 et hotspot ×3 (CDC §6, A11) s'appliquent à la valeur brute du blé coupé.
-			Bag.add(state.bag, result.value * EventService.valueMultiplierAt(result.x, result.z))
+			Bag.add(state.bag, result.value * EventService.valueMultiplierAt(result.x, result.z), places)
 			HarvestService.Harvested:Fire(player, result)
 		end
 	end
@@ -115,6 +120,7 @@ end
 local function refresh(player: Player, state: PlayerState, humanoid: Humanoid, tier: VehicleConfig.TierDef)
 	setIfChanged(player, ATTR.BAG_COUNT, state.bag.count)
 	setIfChanged(player, ATTR.BAG_CAPACITY, state.bag.capacity)
+	setIfChanged(player, ATTR.BAG_BLOCKED, state.blockedPlaces)
 	resizeBackpack(state)
 	-- À pied (sans effet en engin : PlatformStand). Sur le boulevard et les ponts, on court ×3 (A54).
 	local root = humanoid.RootPart
@@ -132,6 +138,7 @@ local function harvestTick(player: Player, state: PlayerState)
 	end
 	local tier = tierOf(player)
 	Bag.setCapacity(state.bag, tier.capacity)
+	state.blockedPlaces = 0
 	if TycoonService.isOnUnloadPad(player, root.Position) then
 		if state.bag.count > 0 then
 			HarvestService.Unloaded:Fire(player, TycoonService.unload(player, state.bag))
@@ -145,6 +152,7 @@ end
 local function onPlayerAdded(player: Player)
 	local state: PlayerState = {
 		bag = Bag.new(tierOf(player).capacity),
+		blockedPlaces = 0,
 		trove = Trove.new(),
 		shownStep = -1,
 	}
@@ -181,7 +189,8 @@ local function onTeleportHome(player: Player)
 	local state = states[player]
 	local readyAt = player:GetAttribute(ATTR.HOME_READY_AT)
 	local now = Workspace:GetServerTimeNow()
-	if not state or Bag.fillRatio(state.bag) < FieldConfig.RETURN_HOME.MIN_FILL then
+	local isStuck = state ~= nil and state.blockedPlaces > 0 and state.bag.count > 0 -- plus de place pour ce blé
+	if not state or (Bag.fillRatio(state.bag) < FieldConfig.RETURN_HOME.MIN_FILL and not isStuck) then
 		return
 	end
 	if typeof(readyAt) == "number" and now < readyAt then

@@ -62,6 +62,10 @@ function FieldService.query(hitbox: FieldGrid.Hitbox): { number }
 end
 
 -- Inflige des dégâts au nom de la base `harvesterSlot`. Si le brin tombe, la coupe part dans le prochain lot.
+function FieldService.cell(index: number): FieldGrid.Cell?
+	return grid:cell(index)
+end
+
 function FieldService.damage(index: number, power: number, harvesterSlot: number): FieldGrid.CutResult?
 	local result = grid:damage(index, power, os.clock())
 	if result then

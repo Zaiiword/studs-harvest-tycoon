@@ -41,6 +41,31 @@ Les prix des paliers sont fixés par le CDC (§5) et n'ont pas été modifiés. 
 
 Le prix du tapis suit toujours `50 × 1,35^n` (CDC §8). Avec un débit qui ne croît que de 15 % par niveau, le tapis devient le principal « puits » d'argent de la fin de partie.
 
+## Sac à places et ferme (A55, A56)
+
+Depuis A55, un blé prend autant de places qu'il vaut : un trajet rapporte au plus la capacité du sac, quelle que soit la zone. Cela seul accélérait la fin de partie (T7 à 2 h 37), parce que le joueur gaspillait moins d'argent en tapis.
+
+La simulation achète aussi la ferme (A56) : l'élément suivant du plan dès qu'il pèse moins de 15 % de la trésorerie, et les machines de l'étage dès que possible. Cette dépense compense l'accélération, sans toucher à aucun prix :
+
+| Étape | Temps simulé | Cible |
+|---|---|---|
+| Faux (T2) | 2.6 min | < 6 min |
+| Tondeuse (T3) | 12.6 min | 8-15 min |
+| Mur du Fond | 24.0 min | 10-40 min |
+| Tracteur (T4) | 50.6 min | 40-60 min |
+| Façade de la Grange | 75.3 min | 50-100 min |
+| Double Faucheuse (T5) | 102.4 min | 1 h 30 - 2 h |
+| Moissonneuse XL (T6) | 164.8 min | 2 h 30 - 3 h |
+| 1er Rebirth possible | 180.9 min | 2 h 30 - 3 h 10 |
+| Cyber-Laser (T7) | 187.2 min | 2 h 45 - 3 h 30 |
+| Toit de la Grange | 206.7 min | 3 h - 3 h 50 |
+
+Ce joueur simulé reste prudent et ne fait jamais de Rebirth : un joueur qui préfère bâtir aura sa grange bien plus tôt. La chaîne de l'étage (×9 au total) est volontairement chère (1,5 M, 6 M et 20 M $) : c'est l'objectif de l'après-T7, et elle repart de zéro à chaque Rebirth.
+
+### Prix du plan
+
+Les 34 éléments vont de 100 $ à 10 M $, soit environ 33 M $ au total, dont 2,3 M $ jusqu'au toit. Pour raccourcir ou allonger le chemin vers l'étage, modifier les prix de `TycoonConfig.DECORATIONS`, et vérifier la courbe avec `tests/regression/EconomyCurve.spec.luau`.
+
 ## À surveiller en jeu
 
 Ces points ne sont pas modélisés par la simulation :

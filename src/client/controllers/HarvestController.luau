@@ -12,6 +12,7 @@ local AssetIds = require(ReplicatedStorage.Shared.config.AssetIds)
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local PlantConfig = require(ReplicatedStorage.Shared.config.PlantConfig)
+local Bag = require(ReplicatedStorage.Shared.domain.Bag)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -126,7 +127,7 @@ end
 local function predictCuts()
 	local root = rootOf(localPlayer)
 	local capacity = numberAttribute(PlayerAttributes.BAG_CAPACITY, 0)
-	local room = capacity - numberAttribute(PlayerAttributes.BAG_COUNT, 0) - FieldController.predictedCount()
+	local room = capacity - numberAttribute(PlayerAttributes.BAG_COUNT, 0) - FieldController.predictedPlaces()
 	if not root or room <= 0 then
 		return
 	end
@@ -135,12 +136,10 @@ local function predictCuts()
 	local hitbox = { x = root.Position.X, z = root.Position.Z, dirX = look.X, dirZ = look.Z, size = tier.hitboxStuds }
 	for _, index in grid:queryHitbox(hitbox) do
 		local cell = grid:cell(index)
-		if room <= 0 then
-			return
-		end
 		local cutPower = tier.cutPower * numberAttribute(PlayerAttributes.CUT_POWER_MULTIPLIER, 1) -- Pets (A2)
-		if cell and cell.hp <= cutPower and FieldController.predictCut(index) then
-			room -= 1
+		local places = if cell then Bag.placesOf(cell.zone) else 1
+		if cell and places <= room and cell.hp <= cutPower and FieldController.predictCut(index) then
+			room -= places
 			launchBricks(cell.x, cell.z, root)
 			playPop()
 		end

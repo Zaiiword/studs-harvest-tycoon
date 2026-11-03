@@ -68,6 +68,15 @@ function Pets.egg(id: any): PetConfig.EggDef?
 	return if typeof(id) == "string" then eggsById[id] else nil
 end
 
+-- Distributeur visible ? Il suffit d'atteindre l'un des seuils de PetConfig.EGG_UNLOCKS (A56).
+function Pets.isEggVisible(eggId: string, tier: number, rebirths: number): boolean
+	local unlock = PetConfig.EGG_UNLOCKS[eggId]
+	if not unlock then
+		return true
+	end
+	return tier >= (unlock.minTier or math.huge) or rebirths >= (unlock.minRebirths or math.huge)
+end
+
 -- Tire un Pet (variante normale) selon la table de chances de l'œuf. Le générateur est injecté.
 function Pets.roll(egg: PetConfig.EggDef, rng: () -> number): string
 	local total = 0

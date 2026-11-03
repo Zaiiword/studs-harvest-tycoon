@@ -1,7 +1,7 @@
 --!strict
 -- Boutons au sol de l'usine façon grands tycoons (CDC §7.1, §10 ; A53) : socle sombre, plaque colorée, anneau
--- néon qui brille quand on peut payer, et panneau flottant (icône, nom, prix) en dégradé. Un bouton épuisé
--- disparaît. Les panneaux d'information (machines, déchargement) reprennent le même style.
+-- néon qui brille quand on peut payer, et panneau flottant (icône, nom, prix) en dégradé. Les boutons sont créés
+-- quand ils sont débloqués et détruits une fois épuisés (A56). Les panneaux d'information (machines, déchargement) reprennent le même style.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
@@ -11,13 +11,12 @@ local Build = require(script.Parent.Build)
 
 local TycoonButtons = {}
 
-export type State = "affordable" | "expensive" | "rebirth" | "locked" | "soldout"
+export type State = "affordable" | "expensive" | "rebirth" | "soldout" -- soldout : pas de bouton
 export type View = { state: State, title: string, price: string? }
 export type Pad = {
+	model: Model,
 	top: Part, -- plaque sur laquelle on marche (porte les attributs lus par les flèches)
-	parts: { BasePart },
 	ring: { BasePart },
-	gui: BillboardGui,
 	gradient: UIGradient,
 	title: TextLabel,
 	price: TextLabel,
@@ -103,12 +102,13 @@ local function buildRing(model: Model, origin: CFrame, top: number): { BasePart 
 	return ring
 end
 
--- `origin` : centre du bouton au niveau du pont de la base, orienté comme la base.
-function TycoonButtons.build(parent: Instance, buttonId: string, origin: CFrame): Pad
+-- `origin` : centre du bouton au niveau de son plancher, orienté comme la base. Le modèle n'a pas encore de parent :
+-- l'appelant le place après l'avoir horodaté.
+function TycoonButtons.build(buttonId: string, origin: CFrame): Pad
 	local model = Instance.new("Model")
 	model.Name = `Pad{buttonId}`
 	local rimSize = LAYOUT.PAD_SIZE + STYLE.RIM_MARGIN
-	local rim = Build.block(model, {
+	Build.block(model, {
 		name = "Rim",
 		cframe = origin * CFrame.new(0, STYLE.RIM_HEIGHT / 2, 0),
 		size = Vector3.new(rimSize, STYLE.RIM_HEIGHT, rimSize),
@@ -122,39 +122,22 @@ function TycoonButtons.build(parent: Instance, buttonId: string, origin: CFrame)
 	})
 	local ring = buildRing(model, origin, STYLE.RIM_HEIGHT + LAYOUT.PAD_THICKNESS + 0.05)
 	model.PrimaryPart = top
-	model.Parent = parent
 	local label = TycoonButtons.label(top, STYLE.ICONS[buttonId] or "⭐", STYLE.LABEL_HEIGHT_ABOVE)
-	local parts: { BasePart } = { rim, top }
-	for _, bar in ring do
-		table.insert(parts, bar)
-	end
 	return {
+		model = model,
 		top = top,
-		parts = parts,
 		ring = ring,
-		gui = top:FindFirstChildOfClass("BillboardGui") :: BillboardGui,
 		gradient = label.gradient,
 		title = label.title,
 		price = label.price,
 	}
 end
 
--- Met le bouton à jour ; un bouton épuisé disparaît (et ne bloque plus le passage).
 function TycoonButtons.update(pad: Pad, view: View)
-	local isVisible = view.state ~= "soldout"
-	for _, part in pad.parts do
-		part.Transparency = if isVisible then 0 else 1
-		part.CanCollide = isVisible and not table.find(pad.ring, part)
-	end
-	pad.gui.Enabled = isVisible
-	if not isVisible then
-		return
-	end
 	local colors = STYLE.STATES[view.state]
 	pad.top.Color = Bricks.rgb(colors.bottom)
 	for _, bar in pad.ring do
 		bar.Color = Bricks.rgb(colors.ring)
-		bar.Material = if view.state == "locked" then Enum.Material.SmoothPlastic else Enum.Material.Neon
 	end
 	TycoonButtons.paint(
 		{ gradient = pad.gradient, title = pad.title, price = pad.price },

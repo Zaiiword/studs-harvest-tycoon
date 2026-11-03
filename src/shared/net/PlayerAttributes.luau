@@ -4,8 +4,9 @@
 return table.freeze({
 	BASE_INDEX = "BaseIndex", -- n° de base Tycoon (PlotService)
 	TIER = "Tier", -- palier d'outil/véhicule (1 par défaut ; acheté au Garage)
-	BAG_COUNT = "BagCount", -- blés dans le sac (HarvestService)
+	BAG_COUNT = "BagCount", -- places occupées dans le sac (HarvestService)
 	BAG_CAPACITY = "BagCapacity",
+	BAG_BLOCKED = "BagBlocked", -- places demandées par un blé qui ne tient pas dans le sac, 0 sinon (A55)
 	ON_ROAD = "OnRoad", -- sur le boulevard ou un pont : vitesse ×3 (A54)
 	DIZZY_UNTIL = "DizzyUntil", -- fin du tournis après une éjection (BumperService)
 	IMMUNE_UNTIL = "ImmuneUntil", -- fin de la bulle d'immunité aux chocs

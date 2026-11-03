@@ -40,12 +40,22 @@ local Tycoon = {}
 local CONVEYOR = TycoonConfig.CONVEYOR
 local SILO_UPGRADE = TycoonConfig.SILO_UPGRADE
 local machinesById: { [string]: TycoonConfig.MachineDef } = {}
-for _, machine in TycoonConfig.MACHINES do
-	machinesById[machine.id] = machine
+local previousMachine: { [string]: string } = {} -- machine à posséder pour voir celle-ci
+for _, list in { TycoonConfig.MACHINES, TycoonConfig.UPPER_MACHINES } do
+	for index, machine in list do
+		machinesById[machine.id] = machine
+		previousMachine[machine.id] = if index > 1 then list[index - 1].id else nil
+	end
+end
+local isUpperMachine: { [string]: boolean } = {}
+for _, machine in TycoonConfig.UPPER_MACHINES do
+	isUpperMachine[machine.id] = true
 end
 local decorById: { [string]: TycoonConfig.DecorDef } = {}
-for _, decor in TycoonConfig.DECORATIONS do
+local previousDecor: { [string]: string } = {} -- élément du plan à posséder pour voir celui-ci
+for index, decor in TycoonConfig.DECORATIONS do
 	decorById[decor.id] = decor
+	previousDecor[decor.id] = if index > 1 then TycoonConfig.DECORATIONS[index - 1].id else nil
 end
 
 Tycoon.NO_BONUS = table.freeze({ petBonuses = {}, rebirths = 0, hasIncomeX2 = false }) :: IncomeBonus
@@ -152,8 +162,39 @@ local function garageOffer(tier: number): Offer
 	return { id = TycoonConfig.GARAGE_NAME, label = nextTier.name, price = nextTier.price }
 end
 
--- Ce que propose chaque bouton au sol de la base, compte tenu de l'état et du palier actuel.
+-- Étage où se trouve un joueur (0 ou 1), d'après sa hauteur au-dessus du pont de la base.
+function Tycoon.levelAt(height: number): number
+	return if height >= TycoonConfig.LAYOUT.LOFT_TOP then 1 else 0
+end
+
+-- Un bouton n'apparaît que lorsque ce qui le précède est acquis (A56) : le plan de construction se dévoile
+-- pièce par pièce, les machines l'une après l'autre, et la chaîne de l'étage une fois le toit posé.
+function Tycoon.isUnlocked(state: State, buttonId: string): boolean
+	if buttonId == SILO_UPGRADE.ID then
+		return state.machines[SILO_UPGRADE.REQUIRES] == true or state.siloLevel > 0
+	end
+	if decorById[buttonId] then
+		local previous = previousDecor[buttonId]
+		return previous == nil or state.decor[previous] == true
+	end
+	if machinesById[buttonId] then
+		local previous = previousMachine[buttonId]
+		local isReached = previous == nil or state.machines[previous] == true
+		if isUpperMachine[buttonId] then
+			local gate = TycoonConfig.UPPER_REQUIRES
+			isReached = isReached and state.machines[gate.machine] == true and state.decor[gate.decor] == true
+		end
+		return isReached
+	end
+	return true -- tapis et Garage : toujours là
+end
+
+-- Ce que propose chaque bouton au sol de la base, compte tenu de l'état et du palier actuel. Le prix est nil
+-- quand il n'y a rien à acheter : déjà possédé, niveau maximal, ou pas encore débloqué.
 function Tycoon.offer(state: State, buttonId: string, tier: number): Offer
+	if not Tycoon.isUnlocked(state, buttonId) then
+		return { id = buttonId, label = "" }
+	end
 	if buttonId == "Conveyor" then
 		return conveyorOffer(state)
 	end

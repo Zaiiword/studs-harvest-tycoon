@@ -27,7 +27,7 @@ local function priceText(egg: PetConfig.EggDef): string
 	return `{Format.money(egg.price)} {if egg.currency == "gems" then "💎" else "$"}`
 end
 
-function PetModels.dispenser(parent: Instance, egg: PetConfig.EggDef, placement: Placement): Model
+function PetModels.dispenser(parent: Instance?, egg: PetConfig.EggDef, placement: Placement): Model
 	local model = Instance.new("Model")
 	model.Name = egg.id
 	local lift = Vector3.new(0, MapConfig.DECK_TOP, 0)

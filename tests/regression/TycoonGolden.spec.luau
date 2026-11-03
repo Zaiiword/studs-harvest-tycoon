@@ -1,6 +1,7 @@
 --!strict
 -- Valeurs figées de l'usine (CDC §8, A7, A33) : un changement d'équilibrage doit être intentionnel.
 local TestKit = require("../TestKit")
+local TycoonConfig = require("../../src/shared/config/TycoonConfig")
 local Tycoon = require("../../src/shared/domain/Tycoon")
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
@@ -23,7 +24,7 @@ describe("Usine (golden)", function()
 	it("prix des machines", function()
 		local state = Tycoon.new()
 		expect(Tycoon.offer(state, "Mill", 1).price).toBe(250)
-		expect(Tycoon.offer(state, "Oven", 1).price).toBe(20000)
-		expect(Tycoon.offer(state, "Factory", 1).price).toBe(400000)
+		expect(TycoonConfig.MACHINES[2].price).toBe(20000)
+		expect(TycoonConfig.MACHINES[3].price).toBe(400000)
 	end)
 end)

@@ -47,8 +47,10 @@ local Profile = {}
 Profile.VERSION = 6
 
 local knownMachines: { [string]: boolean } = {}
-for _, machine in TycoonConfig.MACHINES do
-	knownMachines[machine.id] = true
+for _, list in { TycoonConfig.MACHINES, TycoonConfig.UPPER_MACHINES } do
+	for _, machine in list do
+		knownMachines[machine.id] = true
+	end
 end
 local knownDecor: { [string]: boolean } = {}
 for _, decor in TycoonConfig.DECORATIONS do

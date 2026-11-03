@@ -168,8 +168,8 @@ return Freeze.deep({
 	BUILD_FX = {
 		DROP = 14, -- studs : les briques tombent du ciel
 		SECONDS = 0.55,
-		STAGGER = 0.012, -- décalage entre deux briques
-		MAX_STAGGER = 0.8,
+		STAGGER = 0.014, -- décalage entre deux briques
+		MAX_STAGGER = 1.8, -- les murs montent rangée par rangée
 		FRESH_SECONDS = 3, -- au-delà, le modèle n'est plus « neuf » (joueur arrivé après l'achat)
 		SPARKLES = 45,
 	},

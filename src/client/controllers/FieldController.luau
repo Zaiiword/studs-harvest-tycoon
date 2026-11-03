@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local PlantConfig = require(ReplicatedStorage.Shared.config.PlantConfig)
+local Bag = require(ReplicatedStorage.Shared.domain.Bag)
 local FieldChunks = require(ReplicatedStorage.Shared.domain.FieldChunks)
 local FieldGrid = require(ReplicatedStorage.Shared.domain.FieldGrid)
 local Rarity = require(ReplicatedStorage.Shared.domain.Rarity)
@@ -42,7 +43,7 @@ local plants: { [number]: PlantRenderer.Plant } = {} -- index → plante affich�
 local shownChunks: { [number]: ShownChunk } = {}
 local beams: { [number]: Part } = {}
 local predicted: { [number]: number } = {} -- index → instant de la prédiction
-local predictedCount = 0
+local predictedPlaces = 0 -- places que prendront ces coupes dans le sac (A55)
 local isSnapshotApplied = false
 local queuedBatches: { buffer } = {}
 local hue = 0
@@ -149,7 +150,8 @@ local function clearPrediction(index: number): boolean
 		return false
 	end
 	predicted[index] = nil
-	predictedCount -= 1
+	local cell = grid:cell(index)
+	predictedPlaces -= if cell then Bag.placesOf(cell.zone) else 1
 	return true
 end
 
@@ -233,8 +235,8 @@ function FieldController.isPredicted(index: number): boolean
 	return predicted[index] ~= nil
 end
 
-function FieldController.predictedCount(): number
-	return predictedCount
+function FieldController.predictedPlaces(): number
+	return predictedPlaces
 end
 
 -- Masque tout de suite une plante que le joueur local va couper (« zéro latence », CDC §4).
@@ -244,7 +246,7 @@ function FieldController.predictCut(index: number): boolean
 		return false
 	end
 	predicted[index] = os.clock()
-	predictedCount += 1
+	predictedPlaces += Bag.placesOf(cell.zone)
 	renderPlant(index)
 	return true
 end
