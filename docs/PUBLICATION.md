@@ -5,7 +5,7 @@
 ## 1. Publier l'expérience
 
 1. Fusionne la dernière branche de sprint dans `main`, puis lance `.\scripts\dev.ps1` et connecte Rojo dans Studio.
-2. Dans Studio, choisis File, puis Publish to Roblox, et crée l'expérience « Studs Harvest Tycoon ».
+2. Dans Studio, choisis File, puis Publish to Roblox, sur l'expérience existante « Tractor Harvest Tycoon » (textes, traductions et réglages dans docs/FICHE_ROBLOX.md).
 3. Dans Game Settings :
    - **Security** : active *Enable Studio Access to API Services* (sauvegarde et classements).
    - **Places**, puis **Max Players** : **8**, soit une base par joueur (A20).
@@ -54,7 +54,7 @@ Dans `src/shared/config/AssetIds.luau` :
 
 ## 7. Conformité Roblox (docs/ANALYSE_CDC.md §4)
 
-- **Aucun objet aléatoire n'est vendu en Robux.** Les œufs s'achètent en $ ou en gemmes, et le Gamepass Triple Éclosion ne donne pas de Pet. La politique « paid random items » ne s'applique donc pas. Les chances sont malgré tout affichées partout (distributeurs, menu des Pets, roue). Si un jour un œuf est vendu en Robux, il faudra vérifier `PolicyService:GetPolicyInfoForPlayerAsync().ArePaidRandomItemsRestricted`.
+- **Éléments aléatoires payants : à trancher (docs/FICHE_ROBLOX.md, section 3).** Aucun œuf n'est vendu directement en Robux, mais le Starter Pack donne 10 000 $, et ces $ paient des œufs. D'après l'exemple du questionnaire Roblox, c'est bien un élément aléatoire payant, et `ArePaidRandomItemsRestricted` n'est pas géré. Les chances sont affichées partout (distributeurs, menu des Pets, roue).
 - **`ProcessReceipt`** est idempotent et ne confirme un achat qu'après une sauvegarde réussie.
 - **Les noms affichés** (Météorite, statues, annonces) utilisent `DisplayName`, déjà filtré par Roblox. Aucun texte libre n'est saisi par les joueurs.
 - **Le sabotage payant** respecte l'immunité de 15 s : on ne peut pas acheter le droit d'éjecter en boucle un même joueur.

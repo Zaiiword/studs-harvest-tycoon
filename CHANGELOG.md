@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Fiche Roblox
+
+### Ajouté
+- `docs/FICHE_ROBLOX.md` : nom et description en 18 langues, réponses au questionnaire de maturité, brief des
+  miniatures et de la vidéo, textes d'événement, liste de ce qu'il manque avant et après le lancement.
+
+### Corrigé
+- `docs/PUBLICATION.md` : le Starter Pack relève bien des éléments aléatoires payants, car ses 10 000 $ paient des œufs.
+
 ## Classements, tête du joueur et lisibilité (A58)
 
 ### Ajouté
