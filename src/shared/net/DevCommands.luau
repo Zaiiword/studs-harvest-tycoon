@@ -7,7 +7,7 @@ local VehicleConfig = require("../config/VehicleConfig")
 
 export type Command =
 	{ kind: "tier", tier: number }
-	| { kind: "money" }
+	| { kind: "money", amount: number }
 	| { kind: "meteor" }
 	| { kind: "weather", weather: string }
 	| { kind: "items" }
@@ -16,7 +16,7 @@ export type Command =
 
 local DevCommands = {}
 
-DevCommands.MONEY_GRANT = 10_000 -- montant fixe : le client ne choisit jamais une somme
+DevCommands.MONEY_GRANTS = { 10_000, 100_000 } -- liste fixe : le client ne choisit jamais une somme libre
 DevCommands.ITEMS_GRANT = 3 -- exemplaires de chaque objet de sabotage
 DevCommands.GEMS_GRANT = 50
 
@@ -52,7 +52,10 @@ function DevCommands.parse(kind: any, value: any): Command?
 	if kind == "product" and isKey(MonetizationConfig.PRODUCTS, value) then
 		return { kind = "product", key = value }
 	end
-	if kind == "money" or kind == "meteor" or kind == "items" then
+	if kind == "money" and table.find(DevCommands.MONEY_GRANTS, value) then
+		return { kind = "money", amount = value }
+	end
+	if kind == "meteor" or kind == "items" then
 		return { kind = kind } :: any
 	end
 	return nil

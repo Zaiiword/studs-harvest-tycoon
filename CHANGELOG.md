@@ -2,6 +2,17 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Couvoir et lumières (A57)
+
+### Ajouté
+- **Couvoir** : terrasse dallée le long de la clôture sud, haie et enseigne ; les œufs s'y alignent, dans des caisses
+  de paille, chacun derrière son bouton.
+- Panneau de test : bouton +100 K $, en plus de +10 K $.
+
+### Modifié
+- Lumières de la ferme moins fortes et moins étendues, néons assombris, bloom réduit : plus rien n'éblouit.
+- Potager avancé pour laisser la place au couvoir.
+
 ## Grande ferme Lego et sac à places (A55, A56)
 
 ### Ajouté

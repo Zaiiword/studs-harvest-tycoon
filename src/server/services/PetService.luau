@@ -120,6 +120,10 @@ local function buildDispensers(player: Player)
 	folder.Name = "EggDispensers"
 	folder.Parent = floor
 	entry.dispensers = folder
+	if isFirstBuild then -- dans le dossier : le couvoir disparaît avec le joueur
+		local centerX, centerZ = MapGeometry.baseToWorld(base, 0, 0)
+		PetModels.hatchery(folder, CFrame.new(centerX, 0, centerZ))
+	end
 	local tier = player:GetAttribute(PlayerAttributes.TIER)
 	local rebirths = player:GetAttribute(PlayerAttributes.REBIRTHS)
 	for eggId, spot in PetConfig.DISPENSERS do
@@ -131,7 +135,7 @@ local function buildDispensers(player: Player)
 		if isVisible and not entry.visibleEggs[eggId] then
 			entry.visibleEggs[eggId] = true
 			local padX, padZ = MapGeometry.baseToWorld(base, spot.x, spot.z)
-			local eggX, eggZ = MapGeometry.baseToWorld(base, spot.x + PetConfig.EGG_OFFSET_X, spot.z)
+			local eggX, eggZ = MapGeometry.baseToWorld(base, spot.x, spot.z + PetConfig.EGG_OFFSET_Z)
 			local model = PetModels.dispenser(nil, Pets.egg(eggId) :: PetConfig.EggDef, {
 				padCFrame = CFrame.new(padX, 0, padZ),
 				eggCFrame = CFrame.new(eggX, 0, eggZ),

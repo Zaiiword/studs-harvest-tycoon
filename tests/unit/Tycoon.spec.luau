@@ -150,4 +150,12 @@ describe("DevCommands", function()
 		expect(DevCommands.parse("tier", "4")).toBe(nil)
 		expect(DevCommands.parse("hack", 1)).toBe(nil)
 	end)
+	it("n'accorde que les montants prévus, jamais une somme libre", function()
+		for _, amount in DevCommands.MONEY_GRANTS do
+			expect((DevCommands.parse("money", amount) :: any).amount).toBe(amount)
+		end
+		expect(table.find(DevCommands.MONEY_GRANTS, 100_000) ~= nil).toBe(true)
+		expect(DevCommands.parse("money", 999_999_999)).toBe(nil)
+		expect(DevCommands.parse("money", nil)).toBe(nil)
+	end)
 end)

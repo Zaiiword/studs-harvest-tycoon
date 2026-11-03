@@ -37,7 +37,7 @@ local function onCommand(player: Player, kind: any, value: any)
 	if command.kind == "tier" then
 		player:SetAttribute(PlayerAttributes.TIER, (command :: any).tier)
 	elseif command.kind == "money" then
-		TycoonService.grant(player, DevCommands.MONEY_GRANT)
+		TycoonService.grant(player, (command :: any).amount)
 	elseif command.kind == "meteor" then
 		EventService.summonMeteor()
 	elseif command.kind == "weather" then

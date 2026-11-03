@@ -254,12 +254,12 @@ return Freeze.deep({
 		} :: { [string]: string },
 		-- Dégradé du panneau et couleur de l'anneau selon l'état du bouton.
 		STATES = {
-			affordable = { top = { 120, 230, 60 }, bottom = { 40, 165, 30 }, ring = { 120, 255, 120 } },
-			expensive = { top = { 255, 110, 100 }, bottom = { 200, 30, 40 }, ring = { 255, 70, 70 } },
-			rebirth = { top = { 210, 130, 255 }, bottom = { 120, 50, 210 }, ring = { 200, 120, 255 } },
-			info = { top = { 110, 175, 255 }, bottom = { 40, 95, 215 }, ring = { 110, 175, 255 } },
-			unload = { top = { 255, 230, 90 }, bottom = { 255, 150, 20 }, ring = { 255, 220, 60 } },
-			egg = { top = { 255, 140, 200 }, bottom = { 170, 60, 210 }, ring = { 255, 140, 200 } },
+			affordable = { top = { 120, 230, 60 }, bottom = { 40, 165, 30 }, ring = { 70, 190, 70 } },
+			expensive = { top = { 255, 110, 100 }, bottom = { 200, 30, 40 }, ring = { 195, 50, 50 } },
+			rebirth = { top = { 210, 130, 255 }, bottom = { 120, 50, 210 }, ring = { 140, 85, 195 } },
+			info = { top = { 110, 175, 255 }, bottom = { 40, 95, 215 }, ring = { 80, 130, 200 } },
+			unload = { top = { 255, 230, 90 }, bottom = { 255, 150, 20 }, ring = { 210, 170, 50 } },
+			egg = { top = { 255, 140, 200 }, bottom = { 170, 60, 210 }, ring = { 200, 100, 155 } },
 		} :: { [string]: { top: { number }, bottom: { number }, ring: { number } } },
 	},
 	BUILD_ANIM_ATTRIBUTE = "BuiltAt", -- heure serveur de construction : le client anime l'arrivée des briques

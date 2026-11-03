@@ -402,10 +402,10 @@ end
 local function lanterns()
 	for _, side in { -1, 1 } do
 		add(PALETTE.DARK, { 1.4, 0.3, 0.3 }, { BARN.FRONT_X + 0.7, 18.6, side * 15 })
-		lantern({ BARN.FRONT_X + 1.2, 17.3, side * 15 }, 22)
+		lantern({ BARN.FRONT_X + 1.2, 17.3, side * 15 }, 9)
 		for _, x in { -14, -4 } do
 			add(PALETTE.DARK, { 0.2, 2.2, 0.2 }, { x, GROUND_TOP - 1.1, side * 14 })
-			lantern({ x, GROUND_TOP - 3.2, side * 14 }, 26)
+			lantern({ x, GROUND_TOP - 3.2, side * 14 }, 14)
 		end
 	end
 end
@@ -438,7 +438,7 @@ local function lamps()
 			add(PALETTE.DARK, { 0.6, height, 0.6 }, { x, height / 2, z })
 			add(PALETTE.DARK, { 1.6, 0.4, 1.6 }, { x, 0.2, z })
 			add(PALETTE.DARK, { 0.4, 0.4, 1.6 }, { x, height, z - side * 0.6 })
-			neon(PALETTE.WARM_LIGHT, { 1, 1.2, 1 }, { x, height - 0.7, z - side * 1.2 }, 18)
+			neon(PALETTE.WARM_LIGHT, { 1, 1.2, 1 }, { x, height - 0.7, z - side * 1.2 }, 9)
 		end
 	end
 end
@@ -506,7 +506,7 @@ local function fountain()
 	pillar(PALETTE.WATER, { 0.12, 10.4 }, { x, 1.62, z }, { isSmooth = true, transparency = 0.15, reflectance = 0.2 })
 	pillar(PALETTE.STONE, { 4, 1.6 }, { x, 3, z })
 	pillar(PALETTE.STONE, { 0.8, 5 }, { x, 5.2, z })
-	local spout = neon(PALETTE.WATER, { 0.8, 0.8, 0.8 }, { x, 6, z }, 14)
+	local spout = neon(PALETTE.WATER, { 0.8, 0.8, 0.8 }, { x, 6, z }, 8)
 	spout.hasSpray = true
 end
 
@@ -560,7 +560,7 @@ local function bench()
 end
 
 local function garden()
-	local x, z = 34, -30
+	local x, z = 34, -26
 	for row = -1, 1 do
 		local rowZ = z + row * 4
 		add(shade(PALETTE.SOIL, row + 3), { 11, 0.8, 2.6 }, { x, 0.4, rowZ })
@@ -927,7 +927,7 @@ local function arch()
 	local x, height, half = 58.5, 16, 20 -- encadre la porte de la clôture
 	for _, side in { -1, 1 } do
 		add(PALETTE.DARK, { 2, height, 2 }, { x, height / 2, side * half })
-		neon(PALETTE.NEON_CYAN, { 0.2, height - 1, 0.6 }, { x + 1.05, height / 2, side * half }, 12)
+		neon(PALETTE.NEON_CYAN, { 0.2, height - 1, 0.6 }, { x + 1.05, height / 2, side * half }, 8)
 	end
 	local beam = add(
 		PALETTE.DARK,
@@ -939,7 +939,7 @@ local function arch()
 		{ face = "Front", text = "🌾 FERME DE {owner} 🌾" },
 		{ face = "Back", text = "🌾 FERME DE {owner} 🌾" },
 	}
-	neon(PALETTE.NEON_PINK, { 2.2, 0.3, half * 2 + 2 }, { x, height, 0 }, 14)
+	neon(PALETTE.NEON_PINK, { 2.2, 0.3, half * 2 + 2 }, { x, height, 0 }, 8)
 end
 
 local function windmill()

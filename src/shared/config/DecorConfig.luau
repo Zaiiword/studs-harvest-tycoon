@@ -61,7 +61,7 @@ return Freeze.deep({
 		LINE_COLOR = { 255, 215, 60 },
 		DASH = { spacing = 16, length = 8, width = 1 },
 		CURB = { length = 16, width = 1.4, height = 0.35, colors = { { 230, 40, 40 }, { 248, 248, 248 } } },
-		NEON = { inset = 2.4, width = 0.5, color = { 0, 220, 255 } },
+		NEON = { inset = 2.4, width = 0.5, color = { 0, 170, 210 } },
 		FLAG = {
 			x = -16,
 			spacing = 48,
@@ -74,7 +74,7 @@ return Freeze.deep({
 			height = 15,
 			beamHeight = 4,
 			color = { 27, 42, 53 },
-			neon = { 255, 200, 40 },
+			neon = { 215, 160, 35 },
 			toField = "🌾 VERS LE CHAMP 🌾",
 			toBases = "🏠 VERS LES BASES",
 		},
@@ -91,9 +91,9 @@ return Freeze.deep({
 	POST = {
 		SATURATION = 0.2,
 		CONTRAST = 0.08,
-		BLOOM_INTENSITY = 0.35,
+		BLOOM_INTENSITY = 0.2,
 		BLOOM_SIZE = 24,
-		BLOOM_THRESHOLD = 1.6,
+		BLOOM_THRESHOLD = 2,
 		SUN_RAYS_INTENSITY = 0.06,
 	},
 
