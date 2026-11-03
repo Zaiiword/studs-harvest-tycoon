@@ -13,12 +13,13 @@ local PlotService = {}
 
 local owners: { [number]: Player } = {}
 local placements = MapGeometry.baseCenters()
+local claimOrder = MapGeometry.baseClaimOrder()
 
 local function claimBase(player: Player)
 	if PlotService.baseIndexOf(player) then
 		return -- déjà servi (PlayerAdded et la boucle de Start peuvent se recouper)
 	end
-	for index = 1, MapConfig.BASE_COUNT do
+	for _, index in claimOrder do
 		if not owners[index] then
 			owners[index] = player
 			player:SetAttribute(PlayerAttributes.BASE_INDEX, index)

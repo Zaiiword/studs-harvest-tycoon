@@ -163,6 +163,8 @@ return Freeze.deep({
 	TIERS = TIERS,
 	BODIES = BODIES,
 	FULL_SPEED_PENALTY = 0.10, -- CDC §4 : -10 % de vitesse quand le sac est plein
+	FOOT_SPEED = 18, -- A54 : vitesse à pied d'un joueur qui possède un engin, hors du champ
+	RIDE_CHECK_INTERVAL = 0.25, -- A54 : secondes entre deux vérifications « dans le champ ? »
 	REBIRTH_MASS_BONUS = 0.15, -- CDC §5/§7 (appliqué une seule fois, cf. ANALYSE A15)
 	TITAN_MASS_MULTIPLIER = 2.5, -- CDC §9
 

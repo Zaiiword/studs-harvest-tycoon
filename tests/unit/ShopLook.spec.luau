@@ -46,10 +46,10 @@ describe("Boutique", function()
 end)
 
 describe("Boutons du HUD", function()
-	it("empile 🐾, 🎁 et 🛒 sans chevauchement (légende comprise)", function()
+	it("empile 🐾, 🎁, 🛒 et ➡️ sans chevauchement (légende comprise)", function()
 		local hud = UiConfig.HUD_BUTTON
 		local captionOverflow = hud.SIZE * 0.08 -- la légende déborde un peu sous le bouton
-		local bottoms = { hud.PETS_BOTTOM, hud.GIFTS_BOTTOM, hud.SHOP_BOTTOM }
+		local bottoms = { hud.PETS_BOTTOM, hud.GIFTS_BOTTOM, hud.SHOP_BOTTOM, hud.GUIDE_BOTTOM }
 		for index = 2, #bottoms do
 			expect(bottoms[index] - captionOverflow >= bottoms[index - 1] + hud.SIZE).toBe(true)
 		end

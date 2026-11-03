@@ -32,7 +32,7 @@ return Freeze.deep({
 		LEAF_HEIGHT = 3,
 		TRUNK_COLOR = { 105, 64, 40 },
 		LEAF_COLOR = { 40, 127, 71 },
-		ROWS_X = { -150, -10 } :: { number }, -- devant et derrière les bases, sur la barre
+		ROWS_X = { -180, -10 } :: { number }, -- derrière les bases, et le long du boulevard côté fossé
 	},
 
 	-- Portique à chaque frontière de bande (et à l'entrée de l'arène) avec le nom de la zone.
@@ -53,6 +53,31 @@ return Freeze.deep({
 			DiamondWheat = { 98, 37, 209 },
 			Core = { 196, 40, 28 },
 		} :: { [string]: { number } },
+	},
+
+	-- Boulevard (A54) : asphalte, ligne centrale, bordures de course, néons, drapeaux et arches vers le champ.
+	ROAD = {
+		COLOR = { 58, 62, 74 },
+		LINE_COLOR = { 255, 215, 60 },
+		DASH = { spacing = 16, length = 8, width = 1 },
+		CURB = { length = 16, width = 1.4, height = 0.35, colors = { { 230, 40, 40 }, { 248, 248, 248 } } },
+		NEON = { inset = 2.4, width = 0.5, color = { 0, 220, 255 } },
+		FLAG = {
+			x = -16,
+			spacing = 48,
+			clearance = 16, -- distance minimale à un pont ou à une statue
+			height = 14,
+			colors = { { 255, 60, 90 }, { 255, 205, 48 }, { 60, 200, 255 }, { 120, 220, 80 } },
+		},
+		ARCH = {
+			x = -15,
+			height = 15,
+			beamHeight = 4,
+			color = { 27, 42, 53 },
+			neon = { 255, 200, 40 },
+			toField = "🌾 VERS LE CHAMP 🌾",
+			toBases = "🏠 VERS LES BASES",
+		},
 	},
 
 	BRIDGE_RAIL = { HEIGHT = 3, THICKNESS = 1, COLOR = { 248, 248, 248 } },

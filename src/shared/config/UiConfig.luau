@@ -144,6 +144,8 @@ return Freeze.deep({
 		POINTER_FLICK_DEGREES = 25, -- le pointeur de la roue claque à chaque case
 		POINTER_FLICK_SECONDS = 0.12,
 	},
+	-- Sensation de vitesse sur le boulevard (A54) : la caméra s'élargit.
+	ROAD_FX = { FOV_BOOST = 12, SECONDS = 0.35 },
 	-- Flèches de guidage au sol (A53) : chevrons lumineux qui défilent vers le prochain objectif.
 	GUIDE = {
 		SPACING = 4, -- studs entre deux chevrons
@@ -270,7 +272,7 @@ return Freeze.deep({
 		BUTTON_WIDTH = 96,
 		BUTTON_HEIGHT = 32,
 		PADDING = 6,
-		LEFT_MARGIN = 12,
+		LEFT_MARGIN = 100, -- à droite de la colonne des boutons du HUD
 		COLOR = { 98, 37, 209 },
 	},
 })

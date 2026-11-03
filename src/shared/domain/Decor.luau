@@ -11,6 +11,7 @@ local MapGeometry = require("./MapGeometry")
 export type Segment = { x1: number, z1: number, x2: number, z2: number }
 export type Spot = { x: number, z: number }
 export type Gate = { id: string, x: number, halfWidth: number }
+export type Curb = { x: number, z: number, colorIndex: number }
 export type StalkVariation = { heightScale: number, yaw: number, shade: number, lean: number }
 
 local Decor = {}
@@ -81,6 +82,76 @@ function Decor.treeSpots(): { Spot }
 				table.insert(spots, { x = x, z = z })
 			end
 		end
+	end
+	return spots
+end
+
+-- Tronçons de bordure du boulevard (A54), en alternance de couleur, interrompus devant les ouvertures : les
+-- portes des bases côté bases, les ponts côté fossé.
+function Decor.roadCurbs(): { Curb }
+	local road, curb = MapConfig.ROAD, DecorConfig.ROAD.CURB
+	local curbs: { Curb } = {}
+	local function addSide(x: number, openings: { number }, halfOpening: number)
+		local index = 0
+		local z = -road.halfLength
+		while z + curb.length <= road.halfLength do
+			local fromZ, toZ = z, z + curb.length
+			local isBlocked = false
+			for _, center in openings do
+				isBlocked = isBlocked or (toZ > center - halfOpening and fromZ < center + halfOpening)
+			end
+			index += 1
+			if not isBlocked then
+				table.insert(curbs, { x = x, z = (fromZ + toZ) / 2, colorIndex = index % #curb.colors + 1 })
+			end
+			z = toZ
+		end
+	end
+	local doors: { number } = {}
+	for _, base in MapGeometry.baseCenters() do
+		table.insert(doors, base.z)
+	end
+	addSide(road.minX + curb.width / 2, doors, DecorConfig.FENCE.GATE_WIDTH / 2)
+	addSide(road.maxX - curb.width / 2, MapConfig.BRIDGE_Z, MapConfig.BRIDGE_WIDTH / 2)
+	return curbs
+end
+
+-- Pointillés de la ligne centrale, tout le long du boulevard.
+function Decor.roadDashes(): { number }
+	local dash = DecorConfig.ROAD.DASH
+	local dashes: { number } = {}
+	local z = -MapConfig.ROAD.halfLength + dash.spacing / 2
+	while z <= MapConfig.ROAD.halfLength - dash.length / 2 do
+		table.insert(dashes, z)
+		z += dash.spacing
+	end
+	return dashes
+end
+
+-- Drapeaux côté fossé, à distance des ponts, des statues et des arbres.
+function Decor.roadFlags(): { Spot }
+	local flag = DecorConfig.ROAD.FLAG
+	local obstacles: { Spot } = {}
+	for _, statue in RetentionConfig.STATUES do
+		table.insert(obstacles, { x = statue.x, z = statue.z })
+	end
+	for _, bridgeZ in MapConfig.BRIDGE_Z do
+		table.insert(obstacles, { x = flag.x, z = bridgeZ })
+	end
+	for _, tree in Decor.treeSpots() do
+		table.insert(obstacles, tree)
+	end
+	local spots: { Spot } = {}
+	local z = -MapConfig.ROAD.halfLength + flag.spacing / 2
+	while z <= MapConfig.ROAD.halfLength do
+		local isFree = true
+		for _, obstacle in obstacles do
+			isFree = isFree and math.sqrt((obstacle.x - flag.x) ^ 2 + (obstacle.z - z) ^ 2) >= flag.clearance
+		end
+		if isFree then
+			table.insert(spots, { x = flag.x, z = z })
+		end
+		z += flag.spacing
 	end
 	return spots
 end

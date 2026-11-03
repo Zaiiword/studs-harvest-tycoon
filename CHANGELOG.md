@@ -2,6 +2,22 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Boulevard vers le champ et engin réservé au champ (A54)
+
+### Ajouté
+- Boulevard de 30 studs le long des bases : asphalte, ligne centrale, bordures de course, néons, drapeaux et
+  arches « VERS LE CHAMP ». On y court ×3, ponts compris, avec une caméra qui s'élargit.
+
+### Modifié
+- L'engin n'apparaît qu'en entrant dans le champ ; il disparaît au retour, une fois le pont retraversé.
+- Ponts face aux 4 bases centrales, élargis de 14 à 22 studs ; bases reculées de 30 studs.
+- Flèches de guidage : passent par la porte de la base au lieu de traverser la clôture.
+- Panneau de test décalé à droite des boutons du HUD, qu'il chevauchait.
+
+### Corrigé
+- Le premier joueur recevait la base la plus éloignée du champ : les bases sont attribuées du centre vers
+  les bords.
+
 ## Usine — plus d'options, boutons et flèches de guidage (A53)
 
 ### Corrigé

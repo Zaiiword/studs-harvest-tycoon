@@ -142,6 +142,38 @@ function MapGeometry.isUnderBridge(x: number, z: number, margin: number): boolea
 	return false
 end
 
+-- Vrai sur le boulevard, son raccord vers chaque pont, et le pont lui-même : on y court ×3 (A54).
+function MapGeometry.isOnRoad(x: number, z: number): boolean
+	local road = MapConfig.ROAD
+	if x >= road.minX and x <= road.maxX and math.abs(z) <= road.halfLength then
+		return true
+	end
+	if x < road.maxX or x > MOAT.maxX + MapConfig.BRIDGE_OVERLAP then
+		return false
+	end
+	for _, bridgeZ in MapConfig.BRIDGE_Z do
+		if math.abs(z - bridgeZ) <= MapConfig.BRIDGE_WIDTH / 2 then
+			return true
+		end
+	end
+	return false
+end
+
+-- Ordre d'attribution des bases : les plus proches du champ d'abord (A54). Le premier joueur d'un serveur ne
+-- doit pas hériter de la base du bout de la barre, à 390 studs du premier blé.
+function MapGeometry.baseClaimOrder(): { number }
+	local order: { number } = {}
+	local bases = MapGeometry.baseCenters()
+	for _, base in bases do
+		table.insert(order, base.index)
+	end
+	table.sort(order, function(a, b)
+		local distanceA, distanceB = math.abs(bases[a].z), math.abs(bases[b].z)
+		return if distanceA ~= distanceB then distanceA < distanceB else a < b
+	end)
+	return order
+end
+
 -- Les rangées suivent l'axe Z : une colonne i du réseau devient quelques briques (une par zone traversée).
 local function closeRun(runs: { FloorRun }, zone: string, i: number, firstJ: number, lastJ: number)
 	local lattice = MapConfig.MAP_LATTICE
