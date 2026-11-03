@@ -9,12 +9,21 @@ export type Purchases = {
 	hasStarterPack: boolean, -- Starter Pack acheté (une fois par compte)
 	starterOfferedAt: number, -- 0 : offre jamais déclenchée ; sinon instant de début de l'offre
 	hasTurboTractor: boolean, -- Mini-Tracteur Turbo (A12)
+	robuxSpent: number, -- Robux dépensés dans le jeu : classement des mécènes (A58)
+	countedPasses: { string }, -- Gamepasses déjà comptés dans robuxSpent
 }
 
 local Purchases = {}
 
 function Purchases.new(): Purchases
-	return { receipts = {}, hasStarterPack = false, starterOfferedAt = 0, hasTurboTractor = false }
+	return {
+		receipts = {},
+		hasStarterPack = false,
+		starterOfferedAt = 0,
+		hasTurboTractor = false,
+		robuxSpent = 0,
+		countedPasses = {},
+	}
 end
 
 function Purchases.hasReceipt(purchases: Purchases, receiptId: string): boolean
@@ -28,6 +37,20 @@ function Purchases.recordReceipt(purchases: Purchases, receiptId: string)
 	table.insert(purchases.receipts, receiptId)
 	while #purchases.receipts > MonetizationConfig.RECEIPT_HISTORY do
 		table.remove(purchases.receipts, 1)
+	end
+end
+
+function Purchases.addSpent(purchases: Purchases, amount: number)
+	if amount > 0 and amount < math.huge then
+		purchases.robuxSpent += amount
+	end
+end
+
+-- Un Gamepass n'est compté qu'une fois, même revu à chaque connexion.
+function Purchases.countPass(purchases: Purchases, key: string, price: number)
+	if not table.find(purchases.countedPasses, key) then
+		table.insert(purchases.countedPasses, key)
+		Purchases.addSpent(purchases, price)
 	end
 end
 
@@ -58,6 +81,16 @@ function Purchases.sanitize(raw: any): Purchases
 	end
 	purchases.hasStarterPack = source.hasStarterPack == true
 	purchases.hasTurboTractor = source.hasTurboTractor == true
+	if typeof(source.robuxSpent) == "number" and source.robuxSpent == source.robuxSpent then
+		Purchases.addSpent(purchases, source.robuxSpent)
+	end
+	if typeof(source.countedPasses) == "table" then
+		for _, key in source.countedPasses do
+			if typeof(key) == "string" and #key <= 64 and not table.find(purchases.countedPasses, key) then
+				table.insert(purchases.countedPasses, key)
+			end
+		end
+	end
 	local offeredAt = source.starterOfferedAt
 	purchases.starterOfferedAt = if typeof(offeredAt) == "number"
 			and offeredAt == offeredAt

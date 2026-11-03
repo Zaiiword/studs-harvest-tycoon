@@ -188,6 +188,9 @@ return Freeze.deep({
 		SILO = { x = -46, z = -46, radius = 9, minHeight = 8, maxHeight = 80, levelHeight = 15 },
 		CONVEYOR = { x = -46, fromZ = -37, toZ = 26, width = 6, height = 1 },
 		MACHINE_SIZE = 10,
+		-- Panneau d'une machine : devant elle (ailes comprises) et sous le plancher de l'étage. Au-dessus, il serait
+		-- caché par la machine elle-même ou par le plancher.
+		MACHINE_LABEL = { FRONT = 2.5, HEIGHT = 11 },
 		MACHINES = {
 			Mill = { x = -33, z = -20 },
 			Oven = { x = -33, z = -2 },
@@ -254,12 +257,12 @@ return Freeze.deep({
 		} :: { [string]: string },
 		-- Dégradé du panneau et couleur de l'anneau selon l'état du bouton.
 		STATES = {
-			affordable = { top = { 120, 230, 60 }, bottom = { 40, 165, 30 }, ring = { 120, 255, 120 } },
-			expensive = { top = { 255, 110, 100 }, bottom = { 200, 30, 40 }, ring = { 255, 70, 70 } },
-			rebirth = { top = { 210, 130, 255 }, bottom = { 120, 50, 210 }, ring = { 200, 120, 255 } },
-			info = { top = { 110, 175, 255 }, bottom = { 40, 95, 215 }, ring = { 110, 175, 255 } },
-			unload = { top = { 255, 230, 90 }, bottom = { 255, 150, 20 }, ring = { 255, 220, 60 } },
-			egg = { top = { 255, 140, 200 }, bottom = { 170, 60, 210 }, ring = { 255, 140, 200 } },
+			affordable = { top = { 120, 230, 60 }, bottom = { 40, 165, 30 }, ring = { 70, 190, 70 } },
+			expensive = { top = { 255, 110, 100 }, bottom = { 200, 30, 40 }, ring = { 195, 50, 50 } },
+			rebirth = { top = { 210, 130, 255 }, bottom = { 120, 50, 210 }, ring = { 140, 85, 195 } },
+			info = { top = { 110, 175, 255 }, bottom = { 40, 95, 215 }, ring = { 80, 130, 200 } },
+			unload = { top = { 255, 230, 90 }, bottom = { 255, 150, 20 }, ring = { 210, 170, 50 } },
+			egg = { top = { 255, 140, 200 }, bottom = { 170, 60, 210 }, ring = { 200, 100, 155 } },
 		} :: { [string]: { top: { number }, bottom: { number }, ring: { number } } },
 	},
 	BUILD_ANIM_ATTRIBUTE = "BuiltAt", -- heure serveur de construction : le client anime l'arrivée des briques

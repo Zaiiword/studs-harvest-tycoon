@@ -2,6 +2,33 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Classements, tête du joueur et lisibilité (A58)
+
+### Ajouté
+- **Cinq tableaux de scores** le long du boulevard, lisibles des deux côtés : plus haut niveau, plus riches, mécènes
+  Robux, rois de la récolte et du pare-chocs. Top 10 avec portrait, global (ou du serveur sans DataStore).
+- Colonnes **Niveau, Argent et Rebirths** dans le menu des joueurs.
+- **Tête du joueur** en grand au-dessus de sa grange, avec son nom.
+- Suivi des Robux dépensés dans le profil.
+
+### Modifié
+- Panneau de test : +10 M $ remplace +100 K $.
+
+### Corrigé
+- Panneaux des machines masqués par la machine elle-même : ils passent devant, avec un contour de texte plus fin.
+- Contour des boutons d'œufs qui scintillait avec les dalles du couvoir.
+
+## Couvoir et lumières (A57)
+
+### Ajouté
+- **Couvoir** : terrasse dallée le long de la clôture sud, haie et enseigne ; les œufs s'y alignent, dans des caisses
+  de paille, chacun derrière son bouton.
+- Panneau de test : bouton +100 K $, en plus de +10 K $.
+
+### Modifié
+- Lumières de la ferme moins fortes et moins étendues, néons assombris, bloom réduit : plus rien n'éblouit.
+- Potager avancé pour laisser la place au couvoir.
+
 ## Grande ferme Lego et sac à places (A55, A56)
 
 ### Ajouté

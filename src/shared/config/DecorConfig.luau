@@ -61,7 +61,7 @@ return Freeze.deep({
 		LINE_COLOR = { 255, 215, 60 },
 		DASH = { spacing = 16, length = 8, width = 1 },
 		CURB = { length = 16, width = 1.4, height = 0.35, colors = { { 230, 40, 40 }, { 248, 248, 248 } } },
-		NEON = { inset = 2.4, width = 0.5, color = { 0, 220, 255 } },
+		NEON = { inset = 2.4, width = 0.5, color = { 0, 170, 210 } },
 		FLAG = {
 			x = -16,
 			spacing = 48,
@@ -74,10 +74,26 @@ return Freeze.deep({
 			height = 15,
 			beamHeight = 4,
 			color = { 27, 42, 53 },
-			neon = { 255, 200, 40 },
+			neon = { 215, 160, 35 },
 			toField = "🌾 VERS LE CHAMP 🌾",
 			toBases = "🏠 VERS LES BASES",
 		},
+	},
+
+	-- Tableaux de scores (A58).
+	SCOREBOARD = {
+		X = -3,
+		WIDTH = 22,
+		HEIGHT = 24,
+		LIFT = 13, -- au-dessus des statues, qui sont devant
+		PIXELS_PER_STUD = 22,
+		TOP = { 40, 80, 170 },
+		BOTTOM = { 18, 35, 90 },
+		TITLE_COLOR = { 255, 215, 70 },
+		SCORE_COLOR = { 150, 240, 120 },
+		PORTRAIT_COLOR = { 245, 243, 235 },
+		FRAME_COLOR = { 27, 42, 53 },
+		CAP_COLOR = { 215, 160, 35 },
 	},
 
 	BRIDGE_RAIL = { HEIGHT = 3, THICKNESS = 1, COLOR = { 248, 248, 248 } },
@@ -91,9 +107,9 @@ return Freeze.deep({
 	POST = {
 		SATURATION = 0.2,
 		CONTRAST = 0.08,
-		BLOOM_INTENSITY = 0.35,
+		BLOOM_INTENSITY = 0.2,
 		BLOOM_SIZE = 24,
-		BLOOM_THRESHOLD = 1.6,
+		BLOOM_THRESHOLD = 2,
 		SUN_RAYS_INTENSITY = 0.06,
 	},
 

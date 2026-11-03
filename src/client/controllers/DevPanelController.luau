@@ -59,9 +59,11 @@ local function buildPanel(remote: RemoteEvent): ScreenGui
 			remote:FireServer("tier", tier)
 		end)
 	end
-	newButton(tiers, `+{Format.money(DevCommands.MONEY_GRANT)} $`, function()
-		remote:FireServer("money")
-	end)
+	for _, amount in DevCommands.MONEY_GRANTS do
+		newButton(tiers, `+{Format.money(amount)} $`, function()
+			remote:FireServer("money", amount)
+		end)
+	end
 	local events = newColumn(gui, PANEL.LEFT_MARGIN + PANEL.BUTTON_WIDTH + PANEL.PADDING)
 	newButton(events, "☄️ Boss", function()
 		remote:FireServer("meteor")

@@ -21,7 +21,7 @@ export type Pad = {
 	title: TextLabel,
 	price: TextLabel,
 }
-export type Label = { gradient: UIGradient, title: TextLabel, price: TextLabel }
+export type Label = { gui: BillboardGui?, gradient: UIGradient, title: TextLabel, price: TextLabel }
 
 local STYLE = TycoonConfig.PAD_STYLE
 local LAYOUT = TycoonConfig.LAYOUT
@@ -29,6 +29,7 @@ local FONT = (Enum.Font :: any)[UiConfig.FONT] :: Enum.Font
 local RIM_COLOR = UiConfig.WINDOW.STROKE_COLOR
 local ICON_SHARE = 0.3 -- part du panneau occupée par l'icône
 local PANEL_STROKE = 4
+local TEXT_STROKE = 2 -- un contour plus épais mange les petites lettres
 
 local function text(parent: Instance, size: UDim2, position: UDim2): TextLabel
 	local label = Instance.new("TextLabel")
@@ -38,7 +39,7 @@ local function text(parent: Instance, size: UDim2, position: UDim2): TextLabel
 	label.TextScaled = true
 	label.TextColor3 = Color3.new(1, 1, 1)
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = UiConfig.STROKE_THICKNESS
+	stroke.Thickness = TEXT_STROKE
 	stroke.Parent = label
 	label.Parent = parent
 	return label
@@ -70,7 +71,7 @@ function TycoonButtons.label(part: BasePart, icon: string, heightAbove: number):
 	local title = text(panel, UDim2.fromScale(1 - ICON_SHARE - 0.05, 0.48), UDim2.fromScale(ICON_SHARE, 0.06))
 	local price = text(panel, UDim2.fromScale(1 - ICON_SHARE - 0.05, 0.4), UDim2.fromScale(ICON_SHARE, 0.54))
 	gui.Parent = part
-	return { gradient = gradient, title = title, price = price }
+	return { gui = gui, gradient = gradient, title = title, price = price }
 end
 
 function TycoonButtons.paint(label: Label, styleName: string, title: string, price: string)

@@ -88,8 +88,28 @@ return Freeze.deep({
 
 	-- Distributeur d'œufs : socle, œuf géant, étiquette avec prix et chances (A42).
 	DISPENSER = {
-		BASE_SIZE = { 8, 1.5, 8 },
+		BASE_SIZE = { 8, 1.5, 8 }, -- caisse en bois garnie de paille
 		EGG_SIZE = { 5, 6.5, 5 },
-		BASE_COLOR = { 27, 42, 53 },
+		BASE_COLOR = { 122, 82, 52 },
+		STRAW_COLOR = { 236, 196, 84 },
+		RIM_COLOR = { 15, 35, 90 },
+		RIM_HEIGHT = 0.3, -- au-dessus des dalles du couvoir : deux faces au même niveau scintillent
+	},
+	-- Couvoir : terrasse dallée le long de la clôture sud, haie à l'arrière et enseigne (A57). Coordonnées locales.
+	HATCHERY = {
+		MIN_X = 8,
+		MAX_X = 48,
+		MIN_Z = -54.5,
+		MAX_Z = -33,
+		ROW_DEPTH = 5, -- rangées de dalles
+		TILE_HEIGHT = 0.2,
+		COLORS = { { 255, 205, 225 }, { 250, 238, 222 } },
+		BORDER_COLOR = { 236, 233, 225 },
+		HEDGE_COLOR = { 62, 140, 66 },
+		HEDGE_HEIGHT = 3,
+		SIGN_TEXT = "🥚 COUVOIR 🥚",
+		SIGN_SIZE = { 16, 3 },
+		SIGN_POST_HEIGHT = 12,
+		SIGN_COLOR = { 122, 82, 52 },
 	},
 })

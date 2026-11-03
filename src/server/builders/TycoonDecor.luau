@@ -4,6 +4,7 @@
 -- (ailes de l'éolienne) sont animés par TycoonAnimController.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local FarmConfig = require(ReplicatedStorage.Shared.config.FarmConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local FarmBlueprint = require(ReplicatedStorage.Shared.domain.FarmBlueprint)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -68,6 +69,7 @@ local function dress(part: Part, piece: FarmBlueprint.Piece, ownerName: string)
 		local light = Instance.new("PointLight")
 		light.Color = Bricks.rgb(piece.color)
 		light.Range = piece.light
+		light.Brightness = FarmConfig.LIGHT.BRIGHTNESS
 		light.Parent = part
 	end
 	if piece.signs then

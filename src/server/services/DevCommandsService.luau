@@ -37,7 +37,7 @@ local function onCommand(player: Player, kind: any, value: any)
 	if command.kind == "tier" then
 		player:SetAttribute(PlayerAttributes.TIER, (command :: any).tier)
 	elseif command.kind == "money" then
-		TycoonService.grant(player, DevCommands.MONEY_GRANT)
+		TycoonService.grant(player, (command :: any).amount)
 	elseif command.kind == "meteor" then
 		EventService.summonMeteor()
 	elseif command.kind == "weather" then
@@ -45,7 +45,7 @@ local function onCommand(player: Player, kind: any, value: any)
 	elseif command.kind == "pass" then
 		MonetizationService.togglePass(player, (command :: any).key)
 	elseif command.kind == "product" then
-		MonetizationService.grantProduct(player, (command :: any).key) -- achat simulé, sans Robux
+		MonetizationService.simulateProduct(player, (command :: any).key) -- achat simulé, sans Robux
 	else
 		grantItems(player)
 	end

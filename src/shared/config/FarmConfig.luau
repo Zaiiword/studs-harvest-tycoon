@@ -40,11 +40,23 @@ return Freeze.deep({
 			UPPER_INSET = 4,
 		},
 	},
+	-- Tête du joueur au-dessus de sa grange (A58), plus haut que le clocheton : repère visible de loin.
+	OWNER_BADGE = {
+		X = -26,
+		HEIGHT = 88,
+		SIZE = 26,
+		RING = 8,
+		BACKGROUND = { 245, 243, 235 },
+		RING_COLOR = { 255, 196, 0 },
+	},
+	-- Lumières de la ferme : elles s'additionnent sur les briques blanches, même en plein jour. Faibles et courtes,
+	-- elles donnent une ambiance sans éblouir.
+	LIGHT = { BRIGHTNESS = 0.3, MAX_RANGE = 14, MAX_NEON_LUMINANCE = 175 },
 	-- Variation de teinte entre deux briques : c'est elle qui fait un mur « Lego » et non un aplat.
 	SHADE = 0.05,
 	PALETTE = {
 		RED = { 178, 44, 38 },
-		WHITE = { 245, 243, 235 },
+		WHITE = { 236, 233, 225 },
 		STONE = { 152, 152, 158 },
 		STONE_DARK = { 108, 108, 116 },
 		WOOD = { 122, 82, 52 },
@@ -60,9 +72,9 @@ return Freeze.deep({
 		GLASS = { 165, 225, 255 },
 		WATER = { 80, 170, 255 },
 		DARK = { 27, 42, 53 },
-		WARM_LIGHT = { 255, 220, 150 },
+		WARM_LIGHT = { 225, 160, 80 }, -- néon : une couleur trop claire vire au blanc et éblouit
 		NEON_PINK = { 255, 60, 160 },
-		NEON_CYAN = { 0, 220, 255 },
+		NEON_CYAN = { 0, 170, 210 },
 		APPLE = { 220, 40, 40 },
 		BELT = { 40, 45, 55 },
 		SKIN = { 240, 205, 150 },

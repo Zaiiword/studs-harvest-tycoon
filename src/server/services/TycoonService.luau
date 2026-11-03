@@ -30,6 +30,7 @@ local VehicleService = require(script.Parent.VehicleService)
 local TycoonButtons = require(script.Parent.Parent.builders.TycoonButtons)
 local TycoonDecor = require(script.Parent.Parent.builders.TycoonDecor)
 local TycoonGrounds = require(script.Parent.Parent.builders.TycoonGrounds)
+local OwnerBadge = require(script.Parent.Parent.builders.OwnerBadge)
 local TycoonModels = require(script.Parent.Parent.builders.TycoonModels)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
@@ -64,7 +65,6 @@ local LAYOUT = TycoonConfig.LAYOUT
 local COLORS = TycoonConfig.COLORS
 local REBIRTH = TycoonConfig.REBIRTH_NAME
 local PAD_STYLE = TycoonConfig.PAD_STYLE
-local MACHINE_LABEL_GAP = 4 -- panneau des machines, au-dessus de leur pièce principale
 
 local entries: { [Player]: Entry } = {}
 local pendingProfiles: { [Player]: Profile.Data } = {} -- profil chargé avant que la base soit attribuée
@@ -190,8 +190,13 @@ local function refreshSilo(entry: Entry)
 end
 
 local function buildMachine(entry: Entry, machine: TycoonConfig.MachineDef, isPurchase: boolean)
-	local main = TycoonModels.machine(machine, originAt(entry, LAYOUT.MACHINES[machine.id]))
-	local label = TycoonButtons.label(main, PAD_STYLE.ICONS[machine.id] or "⭐", main.Size.Y / 2 + MACHINE_LABEL_GAP)
+	local origin = originAt(entry, LAYOUT.MACHINES[machine.id])
+	local main = TycoonModels.machine(machine, origin)
+	local label = TycoonButtons.label(main, PAD_STYLE.ICONS[machine.id] or "⭐", 0)
+	local spec = LAYOUT.MACHINE_LABEL
+	local front = (machine.size or LAYOUT.MACHINE_SIZE) / 2 + spec.FRONT
+	local gui = label.gui :: BillboardGui
+	gui.StudsOffsetWorldSpace = Vector3.new(front, origin.Y + spec.HEIGHT - main.Position.Y, 0)
 	TycoonButtons.paint(label, "info", machine.name, `Revenus ×{machine.multiplier}`)
 	local model = main.Parent :: Model
 	place(model, entry, isPurchase)
@@ -263,6 +268,7 @@ local function buildFactory(player: Player, entry: Entry)
 		return originAt(entry, { x = x, z = z })
 	end
 	buildUnloadPad(player, entry)
+	OwnerBadge.build(entry.folder, originAt(entry, { x = 0, z = 0 }), player)
 	local conveyor = LAYOUT.CONVEYOR
 	placeBlock(entry, {
 		name = "Conveyor",

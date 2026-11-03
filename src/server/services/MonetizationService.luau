@@ -146,6 +146,7 @@ local function processReceipt(receipt: any): Enum.ProductPurchaseDecision
 	if not Purchases.hasReceipt(entry.purchases, receiptId) then
 		MonetizationService.grantProduct(player, product.key)
 		Purchases.recordReceipt(entry.purchases, receiptId)
+		Purchases.addSpent(entry.purchases, tonumber(receipt.CurrencySpent) or product.price)
 	end
 	-- Accordé (maintenant ou lors d'un appel précédent) : on ne confirme qu'une fois la sauvegarde réussie.
 	if saveNow(player) then
@@ -156,6 +157,13 @@ end
 
 local function setPass(player: Player, key: string, isOwned: boolean)
 	player:SetAttribute(PlayerAttributes.PASS_PREFIX .. key, isOwned)
+	if isOwned then
+		for _, pass in MonetizationConfig.GAMEPASSES do
+			if pass.key == key then
+				Purchases.countPass(entryOf(player).purchases, key, pass.price)
+			end
+		end
+	end
 end
 
 local function loadPasses(player: Player)
@@ -163,6 +171,16 @@ local function loadPasses(player: Player)
 		if pass.id > 0 then
 			local ok, owns = pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, pass.id)
 			setPass(player, pass.key, ok and owns == true)
+		end
+	end
+end
+
+-- Simulation dans Studio (panneau de test) : accorde un produit sans achat réel, mais le compte comme dépensé.
+function MonetizationService.simulateProduct(player: Player, key: string)
+	MonetizationService.grantProduct(player, key)
+	for _, product in MonetizationConfig.PRODUCTS do
+		if product.key == key then
+			Purchases.addSpent(entryOf(player).purchases, product.price)
 		end
 	end
 end
@@ -208,6 +226,11 @@ local function onEjected(attacker: Player, target: Player)
 	aggressors[target] = { userId = attacker.UserId, at = os.clock() }
 	target:SetAttribute(PlayerAttributes.REVENGE_TARGET, attacker.DisplayName)
 	target:SetAttribute(PlayerAttributes.REVENGE_UNTIL, now() + MonetizationConfig.REVENGE_BUTTON_SECONDS)
+end
+
+-- Robux dépensés dans le jeu (classement des mécènes).
+function MonetizationService.robuxSpent(player: Player): number
+	return entryOf(player).purchases.robuxSpent
 end
 
 function MonetizationService.snapshot(player: Player): Purchases.Purchases

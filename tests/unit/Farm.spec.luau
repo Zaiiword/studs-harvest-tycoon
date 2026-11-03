@@ -2,6 +2,7 @@
 -- La grande ferme Lego (A56) : plan de construction révélé pièce par pièce, briques de la grange, étage et
 -- disposition de la base. Un plan impossible à construire doit échouer ici, pas sous les yeux du joueur.
 local TestKit = require("../TestKit")
+local DecorConfig = require("../../src/shared/config/DecorConfig")
 local FarmConfig = require("../../src/shared/config/FarmConfig")
 local MapConfig = require("../../src/shared/config/MapConfig")
 local PetConfig = require("../../src/shared/config/PetConfig")
@@ -323,9 +324,19 @@ local function fixtures(): { Box }
 			boxes,
 			box(`distributeur {id}`, { spot.x, spot.z }, PetConfig.DISPENSER_SIZE, PetConfig.DISPENSER_SIZE)
 		)
-		table.insert(boxes, box(`œuf {id}`, { spot.x + PetConfig.EGG_OFFSET_X, spot.z }, eggBase[1], eggBase[3]))
+		table.insert(boxes, box(`œuf {id}`, { spot.x, spot.z + PetConfig.EGG_OFFSET_Z }, eggBase[1], eggBase[3]))
 	end
 	table.insert(boxes, box("apparition", { LAYOUT.SPAWN.x, LAYOUT.SPAWN.z }, 6, 6))
+	local hatchery = PetVisualConfig.HATCHERY
+	table.insert(
+		boxes,
+		box(
+			"haie du couvoir",
+			{ (hatchery.MIN_X + hatchery.MAX_X) / 2, hatchery.MIN_Z - 0.75 },
+			hatchery.MAX_X - hatchery.MIN_X + 1.2,
+			1.5
+		)
+	)
 	return boxes
 end
 
@@ -414,5 +425,107 @@ describe("Distributeurs d'œufs", function()
 		expect(Pets.isEggVisible("FarmEgg", 3, 0)).toBe(true)
 		expect(Pets.isEggVisible("RebirthEgg", 7, 0)).toBe(false)
 		expect(Pets.isEggVisible("RebirthEgg", 1, 1)).toBe(true)
+	end)
+end)
+
+-- Luminance perçue d'une couleur (0-255) : au-delà du seuil, un néon vire au blanc et éblouit.
+local function luminance(rgb: { number }): number
+	return 0.2126 * rgb[1] + 0.7152 * rgb[2] + 0.0722 * rgb[3]
+end
+
+describe("Lumières", function()
+	local LIGHT = FarmConfig.LIGHT
+
+	it("restent faibles et courtes : elles s'additionnent sur les briques blanches", function()
+		expect(LIGHT.BRIGHTNESS <= 0.5).toBe(true)
+		for _, decor in PLAN do
+			for _, piece in FarmBlueprint.pieces(decor.id) do
+				expect((piece.light or 0) <= LIGHT.MAX_RANGE).toBe(true)
+			end
+		end
+	end)
+
+	it("n'utilise pas de néon assez clair pour virer au blanc", function()
+		for _, decor in PLAN do
+			for _, piece in FarmBlueprint.pieces(decor.id) do
+				if piece.material == "Neon" then
+					expect(luminance(piece.color) <= LIGHT.MAX_NEON_LUMINANCE).toBe(true)
+				end
+			end
+		end
+		for _, colors in TycoonConfig.PAD_STYLE.STATES do
+			expect(luminance(colors.ring) <= LIGHT.MAX_NEON_LUMINANCE).toBe(true)
+		end
+		expect(luminance(DecorConfig.ROAD.NEON.color) <= LIGHT.MAX_NEON_LUMINANCE).toBe(true)
+		expect(luminance(DecorConfig.ROAD.ARCH.neon) <= LIGHT.MAX_NEON_LUMINANCE).toBe(true)
+	end)
+end)
+
+describe("Couvoir", function()
+	local hatchery = PetVisualConfig.HATCHERY
+
+	it("regroupe les œufs sur sa terrasse, chaque œuf derrière son bouton", function()
+		local half = PetConfig.DISPENSER_SIZE / 2
+		local eggBase = PetVisualConfig.DISPENSER.BASE_SIZE
+		for _, spot in PetConfig.DISPENSERS do
+			expect(spot.x - half >= hatchery.MIN_X and spot.x + half <= hatchery.MAX_X).toBe(true)
+			expect(spot.z + half <= hatchery.MAX_Z).toBe(true)
+			local eggZ = spot.z + PetConfig.EGG_OFFSET_Z
+			expect(eggZ - eggBase[3] / 2 >= hatchery.MIN_Z).toBe(true)
+			expect(eggZ + eggBase[3] / 2 <= spot.z - half).toBe(true)
+		end
+	end)
+
+	it("met le premier œuf au centre, sous l'enseigne", function()
+		expect(PetConfig.DISPENSERS.BasicEgg.x).toBe((hatchery.MIN_X + hatchery.MAX_X) / 2)
+	end)
+
+	it("laisse sa terrasse libre de tout décor", function()
+		local terrace = box(
+			"terrasse du couvoir",
+			{ (hatchery.MIN_X + hatchery.MAX_X) / 2, (hatchery.MIN_Z + hatchery.MAX_Z) / 2 },
+			hatchery.MAX_X - hatchery.MIN_X,
+			hatchery.MAX_Z - hatchery.MIN_Z
+		)
+		for _, decor in PLAN do
+			for _, piece in groundPieces(decor.id) do
+				if overlaps(piece, terrace) then
+					error(`{piece.name} recouvre le couvoir`)
+				end
+			end
+		end
+		for id in LAYOUT.PADS do
+			if (LAYOUT.PADS[id].level or 0) == 0 and overlaps(padBox(id), terrace) then
+				error(`le bouton {id} recouvre le couvoir`)
+			end
+		end
+	end)
+end)
+
+describe("Lisibilité et repères", function()
+	local hatchery = PetVisualConfig.HATCHERY
+	local dispenser = PetVisualConfig.DISPENSER
+
+	it("pose le contour des boutons d'œufs au-dessus des dalles, sous la plaque (pas de scintillement)", function()
+		expect(dispenser.RIM_HEIGHT > hatchery.TILE_HEIGHT).toBe(true)
+		expect(dispenser.RIM_HEIGHT < LAYOUT.PAD_THICKNESS).toBe(true)
+	end)
+
+	it("place le panneau d'une machine devant ses ailes et sous le plancher de l'étage", function()
+		local label = LAYOUT.MACHINE_LABEL
+		local size = LAYOUT.MACHINE_SIZE
+		expect(size / 2 + label.FRONT > size * 0.45 + 1).toBe(true) -- moyeu et ailes du moulin
+		local panelHalf = TycoonConfig.PAD_STYLE.LABEL_SIZE[2] / 2
+		expect(label.HEIGHT + panelHalf < LAYOUT.LOFT_TOP - BARN.LOFT_THICKNESS).toBe(true)
+	end)
+
+	it("garde la tête du joueur au-dessus du clocheton", function()
+		local badge = FarmConfig.OWNER_BADGE
+		local top = 0
+		for _, piece in FarmBlueprint.pieces("Cupola") do
+			top = math.max(top, piece.at[2] + piece.size[2] / 2)
+		end
+		local badgeBottom = badge.HEIGHT - badge.SIZE / 0.8 / 2
+		expect(badgeBottom > top).toBe(true)
 	end)
 end)
