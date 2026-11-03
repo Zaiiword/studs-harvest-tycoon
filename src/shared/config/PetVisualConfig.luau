@@ -93,6 +93,7 @@ return Freeze.deep({
 		BASE_COLOR = { 122, 82, 52 },
 		STRAW_COLOR = { 236, 196, 84 },
 		RIM_COLOR = { 15, 35, 90 },
+		RIM_HEIGHT = 0.3, -- au-dessus des dalles du couvoir : deux faces au même niveau scintillent
 	},
 	-- Couvoir : terrasse dallée le long de la clôture sud, haie à l'arrière et enseigne (A57). Coordonnées locales.
 	HATCHERY = {
@@ -101,6 +102,7 @@ return Freeze.deep({
 		MIN_Z = -54.5,
 		MAX_Z = -33,
 		ROW_DEPTH = 5, -- rangées de dalles
+		TILE_HEIGHT = 0.2,
 		COLORS = { { 255, 205, 225 }, { 250, 238, 222 } },
 		BORDER_COLOR = { 236, 233, 225 },
 		HEDGE_COLOR = { 62, 140, 66 },

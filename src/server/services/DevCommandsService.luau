@@ -45,7 +45,7 @@ local function onCommand(player: Player, kind: any, value: any)
 	elseif command.kind == "pass" then
 		MonetizationService.togglePass(player, (command :: any).key)
 	elseif command.kind == "product" then
-		MonetizationService.grantProduct(player, (command :: any).key) -- achat simulé, sans Robux
+		MonetizationService.simulateProduct(player, (command :: any).key) -- achat simulé, sans Robux
 	else
 		grantItems(player)
 	end

@@ -47,8 +47,9 @@ function PetModels.hatchery(parent: Instance, origin: CFrame)
 		local rowDepth = depth / rows
 		decorBlock(model, {
 			name = "Tiles",
-			cframe = origin * CFrame.new(centerX, top + 0.1, HATCHERY.MIN_Z + (row - 0.5) * rowDepth),
-			size = Vector3.new(width, 0.2, rowDepth),
+			cframe = origin
+				* CFrame.new(centerX, top + HATCHERY.TILE_HEIGHT / 2, HATCHERY.MIN_Z + (row - 0.5) * rowDepth),
+			size = Vector3.new(width, HATCHERY.TILE_HEIGHT, rowDepth),
 			color = HATCHERY.COLORS[row % #HATCHERY.COLORS + 1],
 		})
 	end
@@ -101,8 +102,8 @@ function PetModels.dispenser(parent: Instance?, egg: PetConfig.EggDef, placement
 	local lift = Vector3.new(0, MapConfig.DECK_TOP, 0)
 	Build.block(model, {
 		name = "Rim",
-		cframe = placement.padCFrame + lift + Vector3.new(0, PAD_THICKNESS / 4, 0),
-		size = Vector3.new(PetConfig.DISPENSER_SIZE + 1.2, PAD_THICKNESS / 2, PetConfig.DISPENSER_SIZE + 1.2),
+		cframe = placement.padCFrame + lift + Vector3.new(0, DISPENSER.RIM_HEIGHT / 2, 0),
+		size = Vector3.new(PetConfig.DISPENSER_SIZE + 1.2, DISPENSER.RIM_HEIGHT, PetConfig.DISPENSER_SIZE + 1.2),
 		color = DISPENSER.RIM_COLOR,
 	})
 	Build.block(model, {

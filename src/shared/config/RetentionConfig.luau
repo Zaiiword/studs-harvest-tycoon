@@ -14,6 +14,8 @@ export type Gift = { minutes: number, reward: Reward }
 
 export type WheelSegment = { label: string, weight: number, reward: Reward, color: { number } }
 
+export type ScoreboardDef = { id: string, title: string, stat: string, z: number }
+
 export type QuestDef = {
 	id: string,
 	label: string,
@@ -92,6 +94,17 @@ return Freeze.deep({
 		{ id = "Bumper", label = "💥 Roi du Pare-Chocs", stat = "ejections", x = -10, z = 40 },
 	},
 	STATUE_CLEARANCE = 15, -- aucun arbre à moins de 15 studs d'une statue
+	-- Tableaux de scores (A58), côté fossé, le long du boulevard ; « level » et « robux » viennent d'ailleurs que STATS.
+	SCOREBOARDS = {
+		{ id = "Harvest", title = "🌾 ROIS DE LA RÉCOLTE", stat = "harvested", z = -48 },
+		{ id = "Money", title = "💰 LES PLUS RICHES", stat = "earned", z = -24 },
+		{ id = "Level", title = "🏆 PLUS HAUT NIVEAU", stat = "level", z = 0 },
+		{ id = "Robux", title = "💎 MÉCÈNES ROBUX", stat = "robux", z = 24 },
+		{ id = "Bumper", title = "💥 ROIS DU PARE-CHOCS", stat = "ejections", z = 48 },
+	} :: { ScoreboardDef },
+	SCOREBOARD_SIZE = 10,
 	LEADERBOARD_REFRESH_SECONDS = 120,
+	LOCAL_LEADERBOARD_REFRESH_SECONDS = 15, -- classement du serveur (sans DataStore) : rien ne limite les lectures
+	LEADERBOARD_FIRST_DELAY = 5, -- premier affichage, le temps que les profils se chargent
 	LEADERBOARD_STORE_PREFIX = "Leaderboard_v1_",
 })

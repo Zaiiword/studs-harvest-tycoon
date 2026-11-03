@@ -154,7 +154,7 @@ describe("DevCommands", function()
 		for _, amount in DevCommands.MONEY_GRANTS do
 			expect((DevCommands.parse("money", amount) :: any).amount).toBe(amount)
 		end
-		expect(table.find(DevCommands.MONEY_GRANTS, 100_000) ~= nil).toBe(true)
+		expect(table.find(DevCommands.MONEY_GRANTS, 10_000_000) ~= nil).toBe(true)
 		expect(DevCommands.parse("money", 999_999_999)).toBe(nil)
 		expect(DevCommands.parse("money", nil)).toBe(nil)
 	end)

@@ -501,3 +501,31 @@ describe("Couvoir", function()
 		end
 	end)
 end)
+
+describe("Lisibilité et repères", function()
+	local hatchery = PetVisualConfig.HATCHERY
+	local dispenser = PetVisualConfig.DISPENSER
+
+	it("pose le contour des boutons d'œufs au-dessus des dalles, sous la plaque (pas de scintillement)", function()
+		expect(dispenser.RIM_HEIGHT > hatchery.TILE_HEIGHT).toBe(true)
+		expect(dispenser.RIM_HEIGHT < LAYOUT.PAD_THICKNESS).toBe(true)
+	end)
+
+	it("place le panneau d'une machine devant ses ailes et sous le plancher de l'étage", function()
+		local label = LAYOUT.MACHINE_LABEL
+		local size = LAYOUT.MACHINE_SIZE
+		expect(size / 2 + label.FRONT > size * 0.45 + 1).toBe(true) -- moyeu et ailes du moulin
+		local panelHalf = TycoonConfig.PAD_STYLE.LABEL_SIZE[2] / 2
+		expect(label.HEIGHT + panelHalf < LAYOUT.LOFT_TOP - BARN.LOFT_THICKNESS).toBe(true)
+	end)
+
+	it("garde la tête du joueur au-dessus du clocheton", function()
+		local badge = FarmConfig.OWNER_BADGE
+		local top = 0
+		for _, piece in FarmBlueprint.pieces("Cupola") do
+			top = math.max(top, piece.at[2] + piece.size[2] / 2)
+		end
+		local badgeBottom = badge.HEIGHT - badge.SIZE / 0.8 / 2
+		expect(badgeBottom > top).toBe(true)
+	end)
+end)

@@ -40,6 +40,15 @@ return Freeze.deep({
 			UPPER_INSET = 4,
 		},
 	},
+	-- Tête du joueur au-dessus de sa grange (A58), plus haut que le clocheton : repère visible de loin.
+	OWNER_BADGE = {
+		X = -26,
+		HEIGHT = 88,
+		SIZE = 26,
+		RING = 8,
+		BACKGROUND = { 245, 243, 235 },
+		RING_COLOR = { 255, 196, 0 },
+	},
 	-- Lumières de la ferme : elles s'additionnent sur les briques blanches, même en plein jour. Faibles et courtes,
 	-- elles donnent une ambiance sans éblouir.
 	LIGHT = { BRIGHTNESS = 0.3, MAX_RANGE = 14, MAX_NEON_LUMINANCE = 175 },

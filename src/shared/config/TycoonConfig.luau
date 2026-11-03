@@ -188,6 +188,9 @@ return Freeze.deep({
 		SILO = { x = -46, z = -46, radius = 9, minHeight = 8, maxHeight = 80, levelHeight = 15 },
 		CONVEYOR = { x = -46, fromZ = -37, toZ = 26, width = 6, height = 1 },
 		MACHINE_SIZE = 10,
+		-- Panneau d'une machine : devant elle (ailes comprises) et sous le plancher de l'étage. Au-dessus, il serait
+		-- caché par la machine elle-même ou par le plancher.
+		MACHINE_LABEL = { FRONT = 2.5, HEIGHT = 11 },
 		MACHINES = {
 			Mill = { x = -33, z = -20 },
 			Oven = { x = -33, z = -2 },

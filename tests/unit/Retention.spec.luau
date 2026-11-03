@@ -1,10 +1,14 @@
 --!strict
 local TestKit = require("../TestKit")
 local FakeRng = require("../helpers/FakeRng")
+local DecorConfig = require("../../src/shared/config/DecorConfig")
+local MapConfig = require("../../src/shared/config/MapConfig")
 local RetentionConfig = require("../../src/shared/config/RetentionConfig")
 local Decor = require("../../src/shared/domain/Decor")
 local MapGeometry = require("../../src/shared/domain/MapGeometry")
+local Purchases = require("../../src/shared/domain/Purchases")
 local Retention = require("../../src/shared/domain/Retention")
+local Scoreboard = require("../../src/shared/domain/Scoreboard")
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
 local DAY = 86_400
@@ -95,5 +99,92 @@ describe("Statues de classement", function()
 				expect(distance >= RetentionConfig.STATUE_CLEARANCE).toBe(true)
 			end
 		end
+	end)
+end)
+
+describe("Tableaux de scores (A58)", function()
+	local STYLE = DecorConfig.SCOREBOARD
+
+	it("calcule un niveau qui ne redescend pas au Rebirth", function()
+		expect(Scoreboard.levelOf(1, 0)).toBe(1)
+		expect(Scoreboard.levelOf(7, 0)).toBe(7)
+		expect(Scoreboard.levelOf(1, 1) > Scoreboard.levelOf(7, 0)).toBe(true)
+	end)
+
+	it("classe du meilleur au moins bon, écarte les scores nuls et limite la liste", function()
+		local top = Scoreboard.top({
+			{ userId = 1, score = 5 },
+			{ userId = 2, score = 0 },
+			{ userId = 3, score = 9 },
+			{ userId = 4, score = 7 },
+		}, 2)
+		expect(#top).toBe(2)
+		expect(top[1].userId).toBe(3)
+		expect(top[2].userId).toBe(4)
+	end)
+
+	it("formate chaque score selon sa statistique", function()
+		expect(Scoreboard.scoreText("level", 12)).toBe("Niv. 12")
+		expect(Scoreboard.scoreText("earned", 2_000_000)).toBe("2 M $")
+		expect(Scoreboard.scoreText("robux", 499)).toBe("499 R$")
+		expect(Scoreboard.scoreText("harvested", 14_500)).toBe("14,5 K")
+	end)
+
+	it("couvre le niveau, la fortune et les Robux", function()
+		local stats = {}
+		for _, board in RetentionConfig.SCOREBOARDS do
+			stats[board.stat] = true
+		end
+		expect(stats.level and stats.earned and stats.robux).toBe(true)
+	end)
+
+	it("pose les tableaux sur la barre, sans gêner les ponts et sans se chevaucher", function()
+		for index, board in RetentionConfig.SCOREBOARDS do
+			expect(MapGeometry.zoneAt(STYLE.X, board.z)).toBe("Plaza")
+			for _, bridgeZ in MapConfig.BRIDGE_Z do
+				expect(math.abs(board.z - bridgeZ) >= STYLE.WIDTH / 2 + MapConfig.BRIDGE_WIDTH / 2).toBe(true)
+			end
+			local nextBoard = RetentionConfig.SCOREBOARDS[index + 1]
+			if nextBoard then
+				expect(nextBoard.z - board.z >= STYLE.WIDTH).toBe(true)
+			end
+		end
+	end)
+
+	it("passe au-dessus des statues et reste hors de la route", function()
+		expect(STYLE.X > MapConfig.ROAD.maxX).toBe(true)
+		expect(STYLE.X + 0.5 <= MapConfig.MOAT.minX).toBe(true)
+		expect(STYLE.LIFT > 12).toBe(true)
+	end)
+end)
+
+describe("Robux dépensés (A58)", function()
+	it("cumule les achats", function()
+		local purchases = Purchases.new()
+		Purchases.addSpent(purchases, 39)
+		Purchases.addSpent(purchases, 99)
+		expect(purchases.robuxSpent).toBe(138)
+	end)
+
+	it("ne compte un Gamepass qu'une fois, même revu à chaque connexion", function()
+		local purchases = Purchases.new()
+		Purchases.countPass(purchases, "Titan", 199)
+		Purchases.countPass(purchases, "Titan", 199)
+		expect(purchases.robuxSpent).toBe(199)
+	end)
+
+	it("survit à la sauvegarde et refuse une valeur corrompue", function()
+		local saved = Purchases.sanitize({ robuxSpent = 500, countedPasses = { "Titan", "Titan", 3 } })
+		expect(saved.robuxSpent).toBe(500)
+		expect(#saved.countedPasses).toBe(1)
+		expect(Purchases.sanitize({ robuxSpent = 0 / 0 }).robuxSpent).toBe(0)
+		expect(Purchases.sanitize({ robuxSpent = -5 }).robuxSpent).toBe(0)
+		expect(Purchases.sanitize({ robuxSpent = math.huge }).robuxSpent).toBe(0)
+	end)
+
+	it("reprend un ancien profil sans ces champs", function()
+		local saved = Purchases.sanitize({ receipts = { "a" } })
+		expect(saved.robuxSpent).toBe(0)
+		expect(#saved.countedPasses).toBe(0)
 	end)
 end)

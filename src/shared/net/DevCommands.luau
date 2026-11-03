@@ -16,7 +16,7 @@ export type Command =
 
 local DevCommands = {}
 
-DevCommands.MONEY_GRANTS = { 10_000, 100_000 } -- liste fixe : le client ne choisit jamais une somme libre
+DevCommands.MONEY_GRANTS = { 10_000, 10_000_000 } -- liste fixe : le client ne choisit jamais une somme libre
 DevCommands.ITEMS_GRANT = 3 -- exemplaires de chaque objet de sabotage
 DevCommands.GEMS_GRANT = 50
 
