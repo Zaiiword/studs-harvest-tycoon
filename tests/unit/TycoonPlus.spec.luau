@@ -1,9 +1,6 @@
 --!strict
--- Nouvelles options de l'usine (A53) : silo agrandissable, décorations, plan de la base et flèches de guidage.
+-- Options de l'usine (A53) : silo agrandissable, sauvegarde et flèches de guidage. Plan de la ferme : Farm.spec.
 local TestKit = require("../TestKit")
-local MapConfig = require("../../src/shared/config/MapConfig")
-local PetConfig = require("../../src/shared/config/PetConfig")
-local PetVisualConfig = require("../../src/shared/config/PetVisualConfig")
 local TycoonConfig = require("../../src/shared/config/TycoonConfig")
 local Guide = require("../../src/shared/domain/Guide")
 local Profile = require("../../src/shared/domain/Profile")
@@ -12,12 +9,12 @@ local Tycoon = require("../../src/shared/domain/Tycoon")
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
 local SILO = TycoonConfig.SILO_UPGRADE
-local LAYOUT = TycoonConfig.LAYOUT
 
 describe("Silo Géant", function()
 	it("double la capacité à chaque niveau acheté", function()
 		local state = Tycoon.new()
 		state.money = 1e9
+		state.machines.Mill = true -- le silo n'apparaît qu'après le Moulin
 		expect(Tycoon.siloCapacity(state)).toBe(TycoonConfig.SILO_CAPACITY)
 		expect(Tycoon.offer(state, SILO.ID, 1).price).toBe(SILO.PRICES[1])
 		expect(Tycoon.buy(state, SILO.ID, 1).isPurchased).toBe(true)
@@ -39,38 +36,6 @@ describe("Silo Géant", function()
 		state.money = 1e12
 		expect(Tycoon.offer(state, SILO.ID, 1).price).toBe(nil)
 		expect(Tycoon.buy(state, SILO.ID, 1).isPurchased).toBe(false)
-	end)
-end)
-
-describe("Décorations", function()
-	it("s'achètent une seule fois", function()
-		local state = Tycoon.new()
-		local fountain = TycoonConfig.DECORATIONS[3]
-		state.money = fountain.price
-		expect(Tycoon.buy(state, fountain.id, 1).isPurchased).toBe(true)
-		expect(state.decor[fountain.id]).toBe(true)
-		expect(state.money).toBe(0)
-		state.money = 1e9
-		expect(Tycoon.buy(state, fountain.id, 1).isPurchased).toBe(false)
-	end)
-
-	it("refusent un achat sans les moyens", function()
-		local state = Tycoon.new()
-		expect(Tycoon.buy(state, "Lamps", 1).isPurchased).toBe(false)
-		expect(state.decor.Lamps).toBe(nil)
-	end)
-
-	it("vont du moins cher au plus cher (l'ordre des boutons suit la progression)", function()
-		for index = 2, #TycoonConfig.DECORATIONS do
-			expect(TycoonConfig.DECORATIONS[index].price > TycoonConfig.DECORATIONS[index - 1].price).toBe(true)
-		end
-	end)
-
-	it("ont chacune leur bouton au sol", function()
-		for _, decor in TycoonConfig.DECORATIONS do
-			expect(LAYOUT.PADS[decor.id] ~= nil).toBe(true)
-		end
-		expect(LAYOUT.PADS[SILO.ID] ~= nil).toBe(true)
 	end)
 end)
 
@@ -122,82 +87,6 @@ describe("Profil v6", function()
 		local data = Profile.sanitize({ decor = { "Fountain", "Fountain", "Piscine", 42 }, siloLevel = 99 })
 		expect(#data.decor).toBe(1)
 		expect(data.siloLevel).toBe(#SILO.PRICES)
-	end)
-end)
-
--- Rectangle au sol (coordonnées locales de la base) : centre et dimensions.
-type Box = { name: string, x: number, z: number, sizeX: number, sizeZ: number }
-
-local function footprints(): { Box }
-	local boxes: { Box } = {}
-	local function add(name: string, x: number, z: number, sizeX: number, sizeZ: number)
-		table.insert(boxes, { name = name, x = x, z = z, sizeX = sizeX, sizeZ = sizeZ })
-	end
-	for id, spot in LAYOUT.PADS do
-		add(`bouton {id}`, spot.x, spot.z, LAYOUT.PAD_SIZE, LAYOUT.PAD_SIZE)
-	end
-	for id, spot in LAYOUT.MACHINES do
-		local depth = if id == "Factory" then LAYOUT.MACHINE_SIZE * 1.3 else LAYOUT.MACHINE_SIZE
-		add(`machine {id}`, spot.x, spot.z, LAYOUT.MACHINE_SIZE, depth)
-	end
-	local silo = LAYOUT.SILO
-	add("silo", silo.x, silo.z, silo.radius * 2, silo.radius * 2)
-	local conveyor = LAYOUT.CONVEYOR
-	add("tapis", conveyor.x, (conveyor.fromZ + conveyor.toZ) / 2, conveyor.width, conveyor.toZ - conveyor.fromZ)
-	local unload = LAYOUT.UNLOAD_PAD
-	add("déchargement", unload.x, unload.z, unload.size, unload.size)
-	local eggBase = PetVisualConfig.DISPENSER.BASE_SIZE
-	for id, spot in PetConfig.DISPENSERS do
-		add(`distributeur {id}`, spot.x, spot.z, PetConfig.DISPENSER_SIZE, PetConfig.DISPENSER_SIZE)
-		add(`œuf {id}`, spot.x + PetConfig.EGG_OFFSET_X, spot.z, eggBase[1], eggBase[3])
-	end
-	add("apparition", LAYOUT.SPAWN.x, LAYOUT.SPAWN.z, 2, 2)
-	for _, decor in TycoonConfig.DECORATIONS do
-		for k, spot in decor.spots do
-			add(`{decor.id} {k}`, spot.x, spot.z, decor.footprint[1], decor.footprint[2])
-		end
-	end
-	for _, sign in LAYOUT.SIGNS do
-		add(`panneau {sign.text}`, sign.x, sign.z, LAYOUT.SIGN.footprint[1], LAYOUT.SIGN.footprint[2])
-	end
-	return boxes
-end
-
-local function overlaps(a: Box, b: Box): boolean
-	return math.abs(a.x - b.x) < (a.sizeX + b.sizeX) / 2 and math.abs(a.z - b.z) < (a.sizeZ + b.sizeZ) / 2
-end
-
-describe("Plan de la base", function()
-	it("ne superpose aucun bouton, machine, distributeur ou décoration", function()
-		local boxes = footprints()
-		for i = 1, #boxes do
-			for j = i + 1, #boxes do
-				if overlaps(boxes[i], boxes[j]) then
-					error(`{boxes[i].name} chevauche {boxes[j].name}`)
-				end
-			end
-		end
-	end)
-
-	it("ne superpose pas deux dalles de même hauteur (elles scintilleraient)", function()
-		for _, group in { LAYOUT.ZONES, LAYOUT.AVENUES } do
-			for i = 1, #group do
-				for j = i + 1, #group do
-					local a, b = group[i], group[j]
-					local isApart = a.maxX <= b.minX or b.maxX <= a.minX or a.maxZ <= b.minZ or b.maxZ <= a.minZ
-					expect(isApart).toBe(true)
-				end
-			end
-		end
-		expect(LAYOUT.AVENUE_THICKNESS > LAYOUT.ZONE_THICKNESS).toBe(true)
-	end)
-
-	it("garde tout à l'intérieur de la base", function()
-		local half = MapConfig.BASE_SIZE / 2
-		for _, box in footprints() do
-			expect(math.abs(box.x) + box.sizeX / 2 <= half).toBe(true)
-			expect(math.abs(box.z) + box.sizeZ / 2 <= half).toBe(true)
-		end
 	end)
 end)
 

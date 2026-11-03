@@ -7,9 +7,11 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local MonetizationConfig = require(ReplicatedStorage.Shared.config.MonetizationConfig)
 local PetConfig = require(ReplicatedStorage.Shared.config.PetConfig)
+local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local Formulas = require(ReplicatedStorage.Shared.domain.Formulas)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Pets = require(ReplicatedStorage.Shared.domain.Pets)
@@ -29,6 +31,7 @@ local PetService = {}
 type Entry = {
 	collection: Pets.Collection,
 	dispensers: Folder?,
+	visibleEggs: { [string]: boolean }, -- distributeurs déjà construits (A56)
 	currentPad: string?,
 	lastHatchAt: number,
 }
@@ -45,7 +48,7 @@ local checkElapsed = 0
 local function entryOf(player: Player): Entry
 	local entry = entries[player]
 	if not entry then
-		entry = { collection = Pets.newCollection(), lastHatchAt = -math.huge }
+		entry = { collection = Pets.newCollection(), lastHatchAt = -math.huge, visibleEggs = {} }
 		entries[player] = entry
 	end
 	return entry :: Entry
@@ -103,26 +106,42 @@ local function hatch(player: Player, egg: PetConfig.EggDef)
 	end
 end
 
+-- Construit les distributeurs débloqués (A56) ; ceux qui apparaissent en cours de partie tombent du ciel.
 local function buildDispensers(player: Player)
 	local entry = entryOf(player)
 	local base = PlotService.basePlacement(player)
 	local index = PlotService.baseIndexOf(player)
 	local floor = index and MapService.basePart(index)
-	if entry.dispensers or not base or not floor then
+	if not base or not floor then
 		return
 	end
-	local folder = Instance.new("Folder")
+	local isFirstBuild = entry.dispensers == nil
+	local folder = entry.dispensers or Instance.new("Folder")
 	folder.Name = "EggDispensers"
 	folder.Parent = floor
-	for eggId, spot in PetConfig.DISPENSERS do
-		local padX, padZ = MapGeometry.baseToWorld(base, spot.x, spot.z)
-		local eggX, eggZ = MapGeometry.baseToWorld(base, spot.x + PetConfig.EGG_OFFSET_X, spot.z)
-		PetModels.dispenser(folder, Pets.egg(eggId) :: PetConfig.EggDef, {
-			padCFrame = CFrame.new(padX, 0, padZ),
-			eggCFrame = CFrame.new(eggX, 0, eggZ),
-		})
-	end
 	entry.dispensers = folder
+	local tier = player:GetAttribute(PlayerAttributes.TIER)
+	local rebirths = player:GetAttribute(PlayerAttributes.REBIRTHS)
+	for eggId, spot in PetConfig.DISPENSERS do
+		local isVisible = Pets.isEggVisible(
+			eggId,
+			if typeof(tier) == "number" then tier else 1,
+			if typeof(rebirths) == "number" then rebirths else 0
+		)
+		if isVisible and not entry.visibleEggs[eggId] then
+			entry.visibleEggs[eggId] = true
+			local padX, padZ = MapGeometry.baseToWorld(base, spot.x, spot.z)
+			local eggX, eggZ = MapGeometry.baseToWorld(base, spot.x + PetConfig.EGG_OFFSET_X, spot.z)
+			local model = PetModels.dispenser(nil, Pets.egg(eggId) :: PetConfig.EggDef, {
+				padCFrame = CFrame.new(padX, 0, padZ),
+				eggCFrame = CFrame.new(eggX, 0, eggZ),
+			})
+			if not isFirstBuild then
+				model:SetAttribute(TycoonConfig.BUILD_ANIM_ATTRIBUTE, Workspace:GetServerTimeNow())
+			end
+			model.Parent = folder
+		end
+	end
 end
 
 local function dispenserUnder(player: Player): PetConfig.EggDef?
@@ -134,7 +153,10 @@ local function dispenserUnder(player: Player): PetConfig.EggDef?
 	end
 	local localX, localZ = MapGeometry.worldToBase(base, root.Position.X, root.Position.Z)
 	for eggId, spot in PetConfig.DISPENSERS do
-		if MapGeometry.isOnSquare(localX, localZ, spot.x, spot.z, PetConfig.DISPENSER_SIZE) then
+		if
+			entryOf(player).visibleEggs[eggId]
+			and MapGeometry.isOnSquare(localX, localZ, spot.x, spot.z, PetConfig.DISPENSER_SIZE)
+		then
 			return Pets.egg(eggId)
 		end
 	end
@@ -206,9 +228,11 @@ function PetService.release(player: Player)
 end
 
 local function watch(player: Player)
-	player:GetAttributeChangedSignal(PlayerAttributes.BASE_INDEX):Connect(function()
-		buildDispensers(player)
-	end)
+	for _, name in { PlayerAttributes.BASE_INDEX, PlayerAttributes.TIER, PlayerAttributes.REBIRTHS } do
+		player:GetAttributeChangedSignal(name):Connect(function()
+			buildDispensers(player)
+		end)
+	end
 	buildDispensers(player)
 	publish(player)
 end

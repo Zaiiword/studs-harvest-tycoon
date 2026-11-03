@@ -76,8 +76,17 @@ local function refresh()
 	local capacity = numberAttribute(PlayerAttributes.BAG_CAPACITY)
 	local ratio = if capacity > 0 and capacity ~= math.huge then math.min(1, count / capacity) else 0
 	fill.Size = UDim2.fromScale(ratio, 1)
-	isAlerting = ratio >= BAR.ALERT_RATIO
-	label.Text = if ratio >= 1 then "PLEIN !" else `{count} / {capacity} 🌾`
+	local blocked = numberAttribute(PlayerAttributes.BAG_BLOCKED)
+	isAlerting = ratio >= BAR.ALERT_RATIO or (blocked > 0 and count > 0)
+	if ratio >= 1 then
+		label.Text = "PLEIN !"
+	elseif blocked > capacity then
+		label.Text = `🔒 Sac trop petit : ce blé prend {blocked} places`
+	elseif blocked > 0 then
+		label.Text = `{count} / {capacity} · il faut {blocked} places : décharge !`
+	else
+		label.Text = `{count} / {capacity} 🌾`
+	end
 	if not isAlerting then
 		fill.BackgroundColor3 = Bricks.rgb(BAR.FILL)
 	end
@@ -127,7 +136,7 @@ end
 
 function BagHudController:Start()
 	screenGui.Parent = localPlayer:WaitForChild("PlayerGui") -- attente autorisée dans Start, pas dans Init
-	for _, name in { PlayerAttributes.BAG_COUNT, PlayerAttributes.BAG_CAPACITY } do
+	for _, name in { PlayerAttributes.BAG_COUNT, PlayerAttributes.BAG_CAPACITY, PlayerAttributes.BAG_BLOCKED } do
 		localPlayer:GetAttributeChangedSignal(name):Connect(refresh)
 	end
 	refresh()

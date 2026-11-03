@@ -80,7 +80,7 @@ return Freeze.deep({
 		DiamondWheat = { 70, 45, 120 },
 		Core = { 196, 40, 28 },
 		Bridge = { 196, 40, 28 },
-		Base = { 13, 105, 172 },
+		Base = { 88, 162, 72 }, -- herbe : les bases sont des fermes (A56)
 		Water = { 4, 175, 236 },
 	} :: { [string]: { number } },
 })

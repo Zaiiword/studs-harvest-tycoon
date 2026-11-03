@@ -1,7 +1,7 @@
 --!strict
 -- Flèches de guidage au sol (A53), comme dans les grands tycoons : des chevrons lumineux défilent du joueur
 -- vers son prochain objectif (décharger quand le sac est plein, sinon le bouton abordable le moins cher),
--- en passant par les ponts, et une grosse flèche rebondit au-dessus de la cible. Un bouton ➡️ du HUD les
+-- en passant par les ponts et l'escalier de la grange, et une grosse flèche rebondit au-dessus de la cible. Un bouton ➡️ du HUD les
 -- active ou les masque. Purement local : la cible est choisie par Guide à partir des attributs des boutons.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -9,9 +9,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Guide = require(ReplicatedStorage.Shared.domain.Guide)
+local Tycoon = require(ReplicatedStorage.Shared.domain.Tycoon)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local HudButton = require(script.Parent.Parent.ui.HudButton)
@@ -47,6 +49,10 @@ local function isMine(instance: Instance): boolean
 	return instance:GetAttribute("OwnerId") == localPlayer.UserId
 end
 
+local function levelOf(y: number): number
+	return Tycoon.levelAt(y - MapConfig.DECK_TOP)
+end
+
 -- Le serveur marque « Guided » les boutons déjà achetés une fois et la grille déjà utilisée (sauvegardé).
 local function situation(): Guide.Situation
 	local buttons: { Guide.Button } = {}
@@ -57,7 +63,13 @@ local function situation(): Guide.Situation
 			local price = pad:GetAttribute("Price")
 			seen[id] = pad:GetAttribute("Guided") == true
 			if typeof(price) == "number" then
-				table.insert(buttons, { id = id, price = price, x = pad.Position.X, z = pad.Position.Z })
+				table.insert(buttons, {
+					id = id,
+					price = price,
+					x = pad.Position.X,
+					z = pad.Position.Z,
+					level = levelOf(pad.Position.Y),
+				})
 			end
 		end
 	end
@@ -155,9 +167,9 @@ local function update(deltaTime: number)
 		hideAll()
 		return
 	end
-	local from = { x = root.Position.X, z = root.Position.Z }
+	local from = { x = root.Position.X, z = root.Position.Z, level = levelOf(root.Position.Y) }
 	local distance = math.sqrt((goal.point.x - from.x) ^ 2 + (goal.point.z - from.z) ^ 2)
-	if distance < GUIDE.ARRIVED_DISTANCE then
+	if distance < GUIDE.ARRIVED_DISTANCE and from.level == (goal.point.level or 0) then
 		hideAll()
 		return
 	end
@@ -172,7 +184,7 @@ local function update(deltaTime: number)
 	rayParams.FilterDescendantsInstances = { folder, character :: Model }
 	placeChevrons(Guide.chevrons(Guide.route(from, goal.point), spec), root.Position.Y, color)
 	local bob = math.abs(math.sin(clock * GUIDE.MARKER_BOB.speed)) * GUIDE.MARKER_BOB.height
-	local groundY = groundAt(goal.point.x, goal.point.z, root.Position.Y)
+	local groundY = MapConfig.DECK_TOP + (if goal.point.level == 1 then TycoonConfig.LAYOUT.LOFT_TOP else 0)
 	marker.CFrame = CFrame.new(goal.point.x, groundY + GUIDE.MARKER_HEIGHT + bob, goal.point.z)
 	markerArrow.TextColor3 = color
 	markerGui.Enabled = true

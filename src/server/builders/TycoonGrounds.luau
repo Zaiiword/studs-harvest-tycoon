@@ -1,7 +1,6 @@
 --!strict
--- Aménagement de la base (A53) : dalles colorées par zone avec bordure, allées pavées, panneaux de zone,
--- habillage du tapis roulant (rails, rouleaux) et de la grille de déchargement (cadre, barreaux).
--- Tout est posé à plat sur le pont de la base ; `toWorld` convertit un point local en repère monde.
+-- Habillage permanent de la base (A53) : tapis roulant (rails, rouleaux) et grille de déchargement (cadre, barreaux).
+-- `toWorld` convertit un point local en repère monde. La ferme elle-même se construit achat par achat (A56).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
@@ -10,33 +9,21 @@ local Build = require(script.Parent.Build)
 local TycoonGrounds = {}
 
 export type ToWorld = (x: number, z: number) -> CFrame -- point local → repère monde au niveau du pont
+type Rect = { minX: number, maxX: number, minZ: number, maxZ: number }
 
 local LAYOUT = TycoonConfig.LAYOUT
 local BORDER = LAYOUT.BORDER
-local SIGN = LAYOUT.SIGN
 local DARK = BORDER.color
 local CHROME = { 210, 210, 215 }
 local ROLLER = { 70, 75, 85 }
-local WHITE = { 248, 248, 248 }
 local RAIL_HEIGHT = 1.6
 local RAIL_WIDTH = 0.5
 local ROLLER_SPACING = 3
 local GRATE_BARS = 6
 local GRATE_BAR_WIDTH = 0.6
 
-local function slab(parent: Instance, toWorld: ToWorld, zone: TycoonConfig.Zone, thickness: number): Part
-	local sizeX, sizeZ = zone.maxX - zone.minX, zone.maxZ - zone.minZ
-	local origin = toWorld((zone.minX + zone.maxX) / 2, (zone.minZ + zone.maxZ) / 2)
-	return Build.block(parent, {
-		name = zone.name,
-		cframe = origin * CFrame.new(0, thickness / 2, 0),
-		size = Vector3.new(sizeX, thickness, sizeZ),
-		color = zone.color,
-	})
-end
-
--- Bordure sombre posée sur le pourtour intérieur d'une zone.
-local function border(parent: Instance, toWorld: ToWorld, zone: TycoonConfig.Zone)
+-- Bordure sombre posée sur le pourtour intérieur d'un rectangle.
+local function border(parent: Instance, toWorld: ToWorld, zone: Rect)
 	local w, h = BORDER.width, BORDER.height
 	local sizeX, sizeZ = zone.maxX - zone.minX, zone.maxZ - zone.minZ
 	local centerX, centerZ = (zone.minX + zone.maxX) / 2, (zone.minZ + zone.maxZ) / 2
@@ -53,41 +40,6 @@ local function border(parent: Instance, toWorld: ToWorld, zone: TycoonConfig.Zon
 			size = edge.size,
 			color = DARK,
 		})
-	end
-end
-
-local function zoneSign(parent: Instance, toWorld: ToWorld, spec: { text: string, x: number, z: number })
-	local origin = toWorld(spec.x, spec.z)
-	for _, side in { -1, 1 } do
-		Build.block(parent, {
-			name = "SignPost",
-			cframe = origin * CFrame.new(side * (SIGN.width / 2 - 0.5), SIGN.postHeight / 2, 0),
-			size = Vector3.new(0.5, SIGN.postHeight, 0.5),
-			color = DARK,
-		})
-	end
-	local board = Build.block(parent, {
-		name = "SignBoard",
-		cframe = origin * CFrame.new(0, SIGN.postHeight + SIGN.height / 2, 0),
-		size = Vector3.new(SIGN.width, SIGN.height, 0.4),
-		color = DARK,
-	})
-	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
-		Build.sign(board, face, spec.text, WHITE)
-	end
-end
-
--- Dalles, bordures, allées et panneaux de toute la base.
-function TycoonGrounds.build(parent: Instance, toWorld: ToWorld)
-	for _, zone in LAYOUT.ZONES do
-		slab(parent, toWorld, zone, LAYOUT.ZONE_THICKNESS)
-		border(parent, toWorld, zone)
-	end
-	for _, avenue in LAYOUT.AVENUES do
-		slab(parent, toWorld, avenue, LAYOUT.AVENUE_THICKNESS)
-	end
-	for _, spec in LAYOUT.SIGNS do
-		zoneSign(parent, toWorld, spec)
 	end
 end
 
@@ -123,12 +75,10 @@ function TycoonGrounds.dressUnloadPad(parent: Instance, toWorld: ToWorld)
 	local half = pad.size / 2
 	local top = LAYOUT.PAD_THICKNESS
 	border(parent, toWorld, {
-		name = "UnloadFrame",
 		minX = pad.x - half - BORDER.width,
 		maxX = pad.x + half + BORDER.width,
 		minZ = pad.z - half - BORDER.width,
 		maxZ = pad.z + half + BORDER.width,
-		color = DARK,
 	})
 	local step = pad.size / (GRATE_BARS + 1)
 	for index = 1, GRATE_BARS do

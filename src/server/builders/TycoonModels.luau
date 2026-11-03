@@ -1,5 +1,5 @@
 --!strict
--- Machines de l'usine en briques (CDC §7.1 : Moulin, Four, Usine), posées sur la base.
+-- Machines de l'usine en briques (CDC §7.1 : Moulin, Four, Usine ; A56 : Séchoir, Presse, Emballeuse à l'étage).
 -- `origin` : centre du pied de la machine, axe X local tourné vers le champ (vers les boutons).
 -- Les ailes du moulin forment un Model « MillBlades » que le client fait tourner (TycoonAnimController).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -97,19 +97,119 @@ local function buildFactory(model: Model, origin: CFrame, size: number, color: {
 	return body
 end
 
+-- Séchoir : deux tambours couchés sur un bâti, cheminée de vapeur.
+local function buildDryer(model: Model, origin: CFrame, size: number, color: { number }): Part
+	local body = Build.block(model, {
+		name = "Body",
+		cframe = origin * CFrame.new(0, 1, 0),
+		size = Vector3.new(size, 2, size),
+		color = STONE_COLOR,
+	})
+	for _, side in { -1, 1 } do
+		local drum = Build.block(model, {
+			name = "Drum",
+			cframe = origin * CFrame.new(0, 4, side * size * 0.24),
+			size = Vector3.new(size * 0.9, size * 0.42, size * 0.42),
+			color = color,
+		})
+		drum.Shape = Enum.PartType.Cylinder
+	end
+	Build.block(model, {
+		name = "Chimney",
+		cframe = origin * CFrame.new(-size / 4, 7, 0),
+		size = Vector3.new(1.4, 4, 1.4),
+		color = DARK_COLOR,
+	})
+	return body
+end
+
+-- Presse : portique et plateau, gros vérin au centre.
+local function buildPress(model: Model, origin: CFrame, size: number, color: { number }): Part
+	local body = Build.block(model, {
+		name = "Body",
+		cframe = origin * CFrame.new(0, 1.2, 0),
+		size = Vector3.new(size, 2.4, size),
+		color = color,
+	})
+	for _, side in { -1, 1 } do
+		Build.block(model, {
+			name = "Column",
+			cframe = origin * CFrame.new(0, 5, side * (size / 2 - 0.8)),
+			size = Vector3.new(1.6, 6, 1.6),
+			color = DARK_COLOR,
+		})
+	end
+	Build.block(model, {
+		name = "Head",
+		cframe = origin * CFrame.new(0, 8.6, 0),
+		size = Vector3.new(size, 1.6, size),
+		color = color,
+	})
+	Build.block(model, {
+		name = "Ram",
+		cframe = origin * CFrame.new(0, 5.6, 0),
+		size = Vector3.new(3, 4.4, 3),
+		color = STONE_COLOR,
+	})
+	return body
+end
+
+-- Emballeuse : table à colis dorés, sous une hotte vitrée.
+local function buildPacker(model: Model, origin: CFrame, size: number, color: { number }): Part
+	local body = Build.block(model, {
+		name = "Body",
+		cframe = origin * CFrame.new(0, 1.5, 0),
+		size = Vector3.new(size, 3, size),
+		color = DARK_COLOR,
+	})
+	for _, spot in { { -2, -2 }, { 2, -2 }, { 0, 1.8 } } do
+		Build.block(model, {
+			name = "Box",
+			cframe = origin * CFrame.new(spot[1], 4, spot[2]),
+			size = Vector3.new(2.2, 2, 2.2),
+			color = color,
+		})
+	end
+	local hood = Build.block(model, {
+		name = "Hood",
+		cframe = origin * CFrame.new(0, 8, 0),
+		size = Vector3.new(size, 1, size),
+		color = WINDOW_COLOR,
+	})
+	hood.Transparency = 0.3
+	return body
+end
+
 local BUILDERS: { [string]: Builder } = {
 	Mill = buildMill,
 	Oven = buildOven,
 	Factory = buildFactory,
+	Dryer = buildDryer,
+	Press = buildPress,
+	Packer = buildPacker,
 }
 
--- Construit la machine et renvoie sa pièce principale (qui porte l'étiquette).
-function TycoonModels.machine(parent: Instance?, machine: TycoonConfig.MachineDef, origin: CFrame): Part
+-- Goulotte qui relie le tapis roulant à la machine.
+local function buildChute(model: Model, origin: CFrame, size: number, length: number)
+	Build.block(model, {
+		name = "Chute",
+		cframe = origin * CFrame.new(-(size / 2 + length / 2), 1.2, 0),
+		size = Vector3.new(length + 1, 0.5, 3),
+		color = STONE_COLOR,
+	})
+end
+
+-- Construit la machine et renvoie sa pièce principale (qui porte l'étiquette). Le modèle n'a pas de parent :
+-- l'appelant le place après l'avoir horodaté.
+function TycoonModels.machine(machine: TycoonConfig.MachineDef, origin: CFrame): Part
 	local model = Instance.new("Model")
 	model.Name = machine.id
-	local main = BUILDERS[machine.id](model, origin, TycoonConfig.LAYOUT.MACHINE_SIZE, machine.color)
+	local size = machine.size or TycoonConfig.LAYOUT.MACHINE_SIZE
+	local main = BUILDERS[machine.id](model, origin, size, machine.color)
+	if machine.chute then
+		buildChute(model, origin, size, machine.chute)
+	end
 	model.PrimaryPart = main
-	model.Parent = parent
 	return main
 end
 

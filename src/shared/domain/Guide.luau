@@ -2,12 +2,13 @@
 -- Flèches de guidage au sol (A53), sans API Roblox : où emmener le joueur (une seule fois par objet : on ne
 -- montre pas dix fois le tapis roulant), par quel chemin (les ponts pour franchir le fossé), et où poser
 -- chaque chevron le long du trajet.
+local FarmConfig = require("../config/FarmConfig")
 local MapConfig = require("../config/MapConfig")
 local TycoonConfig = require("../config/TycoonConfig")
 local MapGeometry = require("./MapGeometry")
 
-export type Point = { x: number, z: number }
-export type Button = { id: string, price: number, x: number, z: number }
+export type Point = { x: number, z: number, level: number? } -- level 1 : à l'étage de la grange
+export type Button = { id: string, price: number, x: number, z: number, level: number? }
 export type Situation = {
 	money: number,
 	isBagFull: boolean,
@@ -49,7 +50,7 @@ function Guide.target(situation: Situation): Target?
 	end
 	local button = Guide.cheapestAffordable(situation.buttons, situation.money, situation.seen)
 	if button then
-		return { kind = "button", point = { x = button.x, z = button.z }, id = button.id }
+		return { kind = "button", point = { x = button.x, z = button.z, level = button.level }, id = button.id }
 	end
 	return nil
 end
@@ -93,19 +94,74 @@ local function outdoorRoute(from: Point, to: Point): { Point }
 	return { from, plazaEnd, fieldEnd, to }
 end
 
--- Trajet complet en ligne brisée : passe par les portes des bases quitte ou rejointe, puis par les ponts.
+-- Vrai à l'intérieur de la grange d'une base.
+local function isInBarn(base: MapGeometry.Placement, point: Point): boolean
+	local barn = FarmConfig.BARN
+	local localX, localZ = MapGeometry.worldToBase(base, point.x, point.z)
+	return localX >= barn.BACK_X and localX <= barn.FRONT_X and math.abs(localZ) <= barn.HALF_Z
+end
+
+-- Point de la grange en coordonnées monde.
+local function barnPoint(base: MapGeometry.Placement, localX: number, localZ: number): Point
+	local x, z = MapGeometry.baseToWorld(base, localX, localZ)
+	return { x = x, z = z }
+end
+
+-- Bas et haut de l'escalier.
+local function stairEnds(base: MapGeometry.Placement): (Point, Point)
+	local stairs = FarmConfig.BARN.STAIRS
+	local z = (stairs.minZ + stairs.maxZ) / 2
+	return barnPoint(base, stairs.startX, z), barnPoint(base, stairs.startX - stairs.steps * stairs.run, z)
+end
+
+-- Étapes dans une même base : on passe la porte de la grange et on emprunte l'escalier si besoin.
+local function legsInside(base: MapGeometry.Placement, from: Point, to: Point): { Point }
+	local legs: { Point } = {}
+	local fromLevel, toLevel = from.level or 0, to.level or 0
+	local bottom, top = stairEnds(base)
+	local isFromIn, isToIn = isInBarn(base, from), isInBarn(base, to)
+	if fromLevel > toLevel then
+		table.insert(legs, top)
+		table.insert(legs, bottom)
+	end
+	if isFromIn ~= isToIn then
+		table.insert(legs, barnPoint(base, FarmConfig.BARN.FRONT_X, 0))
+	end
+	if toLevel > fromLevel then
+		table.insert(legs, bottom)
+		table.insert(legs, top)
+	end
+	return legs
+end
+
+-- Trajet complet en ligne brisée : portes des bases, ponts, porte de la grange et escalier.
 function Guide.route(from: Point, to: Point): { Point }
 	local fromBase, toBase = baseAt(from), baseAt(to)
+	local route: { Point } = { from }
+	local function extend(points: { Point })
+		for _, point in points do
+			table.insert(route, point)
+		end
+	end
 	if fromBase and toBase and fromBase.index == toBase.index then
-		return { from, to }
+		extend(legsInside(fromBase, from, to))
+	else
+		local start, finish = from, to
+		if fromBase then
+			start = doorOf(fromBase)
+			extend(legsInside(fromBase, from, start))
+			table.insert(route, start)
+		end
+		if toBase then
+			finish = doorOf(toBase)
+		end
+		local outdoor = outdoorRoute(start, finish)
+		extend({ table.unpack(outdoor, 2) })
+		if toBase then
+			extend(legsInside(toBase, finish, to))
+		end
 	end
-	local start = if fromBase then doorOf(fromBase) else from
-	local finish = if toBase then doorOf(toBase) else to
-	local route: { Point } = if fromBase then { from } else {}
-	for _, point in outdoorRoute(start, finish) do
-		table.insert(route, point)
-	end
-	if toBase then
+	if route[#route] ~= to then
 		table.insert(route, to)
 	end
 	return route

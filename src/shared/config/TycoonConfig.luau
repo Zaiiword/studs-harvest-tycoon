@@ -1,5 +1,5 @@
 --!strict
--- Usine Tycoon (CDC §7.1, §8 ; décisions A5 à A8, A16, A33). Montants en $, débits en $ bruts par seconde.
+-- Usine Tycoon (CDC §7.1, §8 ; décisions A5 à A8, A16, A33, A53, A56). Montants en $, débits en $ bruts par seconde.
 -- Positions en coordonnées locales de la base : +X vers le champ, Z latéral, origine au centre de la base.
 local Freeze = require("../util/Freeze")
 
@@ -9,13 +9,15 @@ export type MachineDef = {
 	price: number,
 	multiplier: number,
 	color: { number },
+	size: number?, -- côté du modèle (LAYOUT.MACHINE_SIZE par défaut)
+	chute: number?, -- longueur de la goulotte qui relie le tapis à la machine
 }
 
-export type Spot = { x: number, z: number }
-export type Zone = { name: string, minX: number, maxX: number, minZ: number, maxZ: number, color: { number } }
+export type Spot = { x: number, z: number, level: number? } -- level 1 : à l'étage de la grange
 
--- Décoration (A53) : purement esthétique, achetée une fois, conservée au Rebirth. `spots` : où la construire.
-export type DecorDef = { id: string, name: string, price: number, spots: { Spot }, footprint: { number } }
+-- Élément du plan de construction de la ferme (A56) : conservé au Rebirth, révélé quand le précédent est acheté.
+-- Ses briques sont décrites par FarmBlueprint. `fadesInside` : s'efface quand on est dans la grange (toit).
+export type DecorDef = { id: string, name: string, price: number, fadesInside: boolean? }
 
 return Freeze.deep({
 	STARTING_MONEY = 0,
@@ -29,19 +31,52 @@ return Freeze.deep({
 		BASE_PRICE = 50, -- A7 ; prix du niveau n+1 = 50 × 1,35^(n-1) (CDC §8)
 		MAX_LEVEL = 40,
 	},
-	-- Machines achetées une fois ; leurs multiplicateurs se multiplient (A6, CDC §7 : ×1,5 / ×3 / ×8).
+	-- Machines achetées une fois, dans l'ordre ; leurs multiplicateurs se multiplient (A6, CDC §7 : ×1,5 / ×3 / ×8).
 	-- Prix du Four et de l'Usine relevés par l'équilibrage (A51) : l'Usine ×8 à 40 000 $ bouclait le jeu en 1 h.
 	MACHINES = {
-		{ id = "Mill", name = "Moulin à Farine", price = 250, multiplier = 1.5, color = { 255, 255, 255 } },
-		{ id = "Oven", name = "Four à Pain", price = 20_000, multiplier = 3, color = { 218, 133, 65 } },
+		{ id = "Mill", name = "Moulin à Farine", price = 250, multiplier = 1.5, color = { 255, 255, 255 }, chute = 5 },
+		{ id = "Oven", name = "Four à Pain", price = 20_000, multiplier = 3, color = { 218, 133, 65 }, chute = 5 },
 		{
 			id = "Factory",
 			name = "Usine de Céréales Dorées",
 			price = 400_000,
 			multiplier = 8,
 			color = { 245, 205, 48 },
+			chute = 5,
 		},
 	} :: { MachineDef },
+	-- Chaîne de l'étage (A56) : débloquée par le toit et l'Usine, remise à zéro au Rebirth comme les autres machines,
+	-- mais pas exigée pour le Rebirth.
+	UPPER_MACHINES = {
+		{
+			id = "Dryer",
+			name = "Séchoir à Grains",
+			price = 1_500_000,
+			multiplier = 1.5,
+			color = { 90, 150, 200 },
+			size = 8,
+			chute = 1.5,
+		},
+		{
+			id = "Press",
+			name = "Presse à Flocons",
+			price = 6_000_000,
+			multiplier = 2,
+			color = { 200, 90, 60 },
+			size = 8,
+			chute = 1.5,
+		},
+		{
+			id = "Packer",
+			name = "Emballeuse Dorée",
+			price = 20_000_000,
+			multiplier = 3,
+			color = { 245, 205, 48 },
+			size = 8,
+			chute = 1.5,
+		},
+	} :: { MachineDef },
+	UPPER_REQUIRES = { machine = "Factory", decor = "Roof" }, -- ce qui ouvre la chaîne de l'étage
 	-- Silo agrandissable (A53) : chaque niveau double sa capacité. Le niveau est conservé au Rebirth (comme le
 	-- contenu du silo, A37). Plus de capacité = plus d'autonomie de l'usine entre deux récoltes.
 	SILO_UPGRADE = {
@@ -49,48 +84,45 @@ return Freeze.deep({
 		NAME = "Silo Géant",
 		PRICES = { 5_000, 60_000, 600_000, 6_000_000 },
 		CAPACITY_GROWTH = 2,
+		REQUIRES = "Mill", -- n'apparaît qu'après le premier achat important
 	},
-	-- Décorations (A53) : de quoi construire une base qui impressionne, du lampadaire à l'éolienne géante.
-	-- Ordre = ordre des boutons ; `footprint` = emprise au sol (x, z) pour vérifier qu'elles ne se chevauchent pas.
+	-- Plan de construction de la ferme (A56) : un seul bouton à la fois, dans cet ordre. On pose le terrain, on bâtit
+	-- la grange mur par mur, on aménage la cour, puis l'escalier et le toit ouvrent l'étage ; le reste est du prestige.
 	DECORATIONS = {
-		{
-			id = "Lamps",
-			name = "Lampadaires",
-			price = 750,
-			spots = { -- de part et d'autre de l'allée centrale
-				{ x = 6, z = -50 },
-				{ x = 14, z = -50 },
-				{ x = 6, z = -10 },
-				{ x = 14, z = -10 },
-				{ x = 6, z = 30 },
-				{ x = 14, z = 30 },
-			},
-			footprint = { 2, 2 },
-		},
-		{
-			id = "Flowers",
-			name = "Parterres Fleuris",
-			price = 2_500,
-			spots = { { x = -54, z = -20 }, { x = -54, z = 0 }, { x = -54, z = 20 }, { x = -54, z = 40 } },
-			footprint = { 4, 8 },
-		},
-		{ id = "Fountain", name = "Fontaine", price = 15_000, spots = { { x = 45, z = -44 } }, footprint = { 12, 12 } },
-		{ id = "Flag", name = "Drapeau Géant", price = 60_000, spots = { { x = 52, z = 42 } }, footprint = { 2, 10 } },
-		{
-			id = "Statue",
-			name = "Statue Dorée",
-			price = 300_000,
-			spots = { { x = 36, z = 28 } },
-			footprint = { 6, 6 },
-		},
-		{ id = "Arch", name = "Arche Néon", price = 1_500_000, spots = { { x = 59, z = 0 } }, footprint = { 2, 30 } },
-		{
-			id = "Windmill",
-			name = "Éolienne Géante",
-			price = 6_000_000,
-			spots = { { x = 48, z = -24 } },
-			footprint = { 8, 8 },
-		},
+		{ id = "Path", name = "Chemin Pavé", price = 100 },
+		{ id = "BarnFloor", name = "Plancher de la Grange", price = 250 },
+		{ id = "WallBack", name = "Mur du Fond", price = 500 },
+		{ id = "WallSouth", name = "Mur Sud", price = 800 },
+		{ id = "WallNorth", name = "Mur Nord", price = 1_200 },
+		{ id = "Facade", name = "Façade de la Grange", price = 2_000 },
+		{ id = "Doors", name = "Grandes Portes", price = 3_000 },
+		{ id = "Windows", name = "Fenêtres", price = 5_000 },
+		{ id = "Lanterns", name = "Lanternes", price = 8_000 },
+		{ id = "Mailbox", name = "Boîte aux Lettres", price = 10_000 },
+		{ id = "Flowers", name = "Parterres Fleuris", price = 14_000 },
+		{ id = "Lamps", name = "Lampadaires", price = 18_000 },
+		{ id = "Bench", name = "Banc", price = 22_000 },
+		{ id = "Hay", name = "Bottes de Foin", price = 27_000 },
+		{ id = "Trees", name = "Pommiers", price = 35_000 },
+		{ id = "Garden", name = "Potager", price = 45_000 },
+		{ id = "Well", name = "Puits", price = 55_000 },
+		{ id = "Pumpkins", name = "Carré de Citrouilles", price = 70_000 },
+		{ id = "Fountain", name = "Fontaine", price = 85_000 },
+		{ id = "Cart", name = "Charrette", price = 105_000 },
+		{ id = "Scarecrow", name = "Épouvantail", price = 130_000 },
+		{ id = "Pen", name = "Enclos à Cochons", price = 150_000 },
+		{ id = "Stairs", name = "Escalier", price = 175_000 },
+		{ id = "Loft", name = "Plancher de l'Étage", price = 250_000 },
+		{ id = "UpperWalls", name = "Murs de l'Étage", price = 400_000 },
+		{ id = "Roof", name = "Toit de la Grange", price = 700_000, fadesInside = true },
+		{ id = "Cupola", name = "Clocheton et Girouette", price = 1_000_000, fadesInside = true },
+		{ id = "Flag", name = "Drapeau Géant", price = 1_500_000 },
+		{ id = "Coop", name = "Poulailler", price = 2_000_000 },
+		{ id = "Beehives", name = "Ruches", price = 2_500_000 },
+		{ id = "Greenhouse", name = "Serre", price = 3_000_000 },
+		{ id = "Statue", name = "Statue Dorée", price = 4_500_000 },
+		{ id = "Arch", name = "Arche Néon", price = 6_500_000 },
+		{ id = "Windmill", name = "Éolienne Géante", price = 10_000_000 },
 	} :: { DecorDef },
 	GARAGE_NAME = "Garage", -- bouton d'achat du palier suivant (CDC §5)
 	REBIRTH_NAME = "Rebirth",
@@ -101,58 +133,70 @@ return Freeze.deep({
 
 	LAYOUT = {
 		UNLOAD_PAD = { x = 46, z = 0, size = 22 }, -- « grille de déchargement » (CDC §7.1), côté champ
-		SPAWN = { x = 26, z = -30 } :: Spot,
+		SPAWN = { x = 28, z = -16 } :: Spot,
 		PAD_SIZE = 10,
 		PAD_THICKNESS = 0.4,
+		LOFT_TOP = 21, -- hauteur du plancher de l'étage au-dessus du pont
+		-- Boutons au sol. Le plan de construction n'en montre qu'un à la fois : ils se relaient sur le chemin
+		-- devant la grange, ou à l'intérieur pour ce qui se construit dedans.
 		PADS = {
-			Conveyor = { x = 0, z = -40 },
-			Mill = { x = 0, z = -20 },
-			Oven = { x = 0, z = 0 },
-			Factory = { x = 0, z = 20 },
-			Garage = { x = 0, z = 40 },
-			Rebirth = { x = 20, z = 40 }, -- CDC §7.3 : bouton Rebirth (A8)
-			SiloUpgrade = { x = -20, z = -46 },
-			-- Rangée des décorations, le long du bord de la base.
-			Lamps = { x = -28, z = 53 },
-			Flowers = { x = -16, z = 53 },
-			Fountain = { x = -4, z = 53 },
-			Flag = { x = 8, z = 53 },
-			Statue = { x = 20, z = 53 },
-			Arch = { x = 32, z = 53 },
-			Windmill = { x = 44, z = 53 },
+			Conveyor = { x = 10, z = -16 },
+			Garage = { x = 10, z = 16 },
+			Rebirth = { x = 16, z = 34 }, -- CDC §7.3 : bouton Rebirth (A8)
+			SiloUpgrade = { x = -18, z = -46 },
+			Mill = { x = -16, z = -20 },
+			Oven = { x = -16, z = -2 },
+			Factory = { x = -16, z = 16 },
+			Dryer = { x = -29, z = -20, level = 1 },
+			Press = { x = -29, z = -2, level = 1 },
+			Packer = { x = -29, z = 14, level = 1 },
+			Path = { x = 24, z = 0 },
+			BarnFloor = { x = -6, z = 0 },
+			WallBack = { x = -6, z = -14 },
+			WallSouth = { x = -6, z = 14 },
+			WallNorth = { x = -6, z = 0 },
+			Facade = { x = 14, z = 0 },
+			Doors = { x = 24, z = 0 },
+			Windows = { x = 14, z = 0 },
+			Lanterns = { x = 24, z = 0 },
+			Mailbox = { x = 14, z = 0 },
+			Flowers = { x = 24, z = 0 },
+			Lamps = { x = 14, z = 0 },
+			Bench = { x = 24, z = 0 },
+			Hay = { x = 14, z = 0 },
+			Trees = { x = 24, z = 0 },
+			Garden = { x = 14, z = 0 },
+			Well = { x = 24, z = 0 },
+			Pumpkins = { x = 14, z = 0 },
+			Fountain = { x = 24, z = 0 },
+			Cart = { x = 14, z = 0 },
+			Scarecrow = { x = 24, z = 0 },
+			Pen = { x = 14, z = 0 },
+			Stairs = { x = -6, z = 14 },
+			Loft = { x = -6, z = -14 },
+			UpperWalls = { x = -6, z = 0 },
+			Roof = { x = 14, z = 0 },
+			Cupola = { x = 24, z = 0 },
+			Flag = { x = 14, z = 0 },
+			Coop = { x = 24, z = 0 },
+			Beehives = { x = 14, z = 0 },
+			Greenhouse = { x = 24, z = 0 },
+			Statue = { x = 14, z = 0 },
+			Arch = { x = 24, z = 0 },
+			Windmill = { x = 14, z = 0 },
 		} :: { [string]: Spot },
-		SILO = { x = -42, z = -42, radius = 9, minHeight = 8, maxHeight = 80, levelHeight = 15 },
-		CONVEYOR = { x = -42, fromZ = -30, toZ = 44, width = 6, height = 1 },
+		SILO = { x = -46, z = -46, radius = 9, minHeight = 8, maxHeight = 80, levelHeight = 15 },
+		CONVEYOR = { x = -46, fromZ = -37, toZ = 26, width = 6, height = 1 },
 		MACHINE_SIZE = 10,
 		MACHINES = {
-			Mill = { x = -26, z = -10 },
-			Oven = { x = -26, z = 14 },
-			Factory = { x = -26, z = 38 },
+			Mill = { x = -33, z = -20 },
+			Oven = { x = -33, z = -2 },
+			Factory = { x = -33, z = 16 },
+			Dryer = { x = -40, z = -20, level = 1 },
+			Press = { x = -40, z = -2, level = 1 },
+			Packer = { x = -40, z = 14, level = 1 },
 		} :: { [string]: Spot },
-		-- Zones au sol (A53) : dalles colorées bordées, pour une base lisible. Rectangles en coordonnées locales.
-		ZONES = {
-			{ name = "Factory", minX = -59, maxX = -15, minZ = -58, maxZ = 46, color = { 110, 115, 125 } },
-			{ name = "Shop", minX = -8, maxX = 6, minZ = -56, maxZ = 46, color = { 205, 210, 218 } },
-			{ name = "EggsSouth", minX = 14, maxX = 34, minZ = -58, maxZ = -4, color = { 255, 175, 215 } },
-			{ name = "EggsNorth", minX = 14, maxX = 34, minZ = 4, maxZ = 22, color = { 255, 175, 215 } },
-			{ name = "Garden", minX = -46, maxX = 52, minZ = 47, maxZ = 59, color = { 90, 170, 80 } },
-		} :: { Zone },
-		-- Allées pavées, un peu plus hautes que les zones (pas de faces au même niveau qui scintillent).
-		AVENUES = {
-			{ name = "Main", minX = 6, maxX = 14, minZ = -58, maxZ = 47, color = { 240, 238, 230 } },
-			{ name = "ToUnload", minX = 14, maxX = 35, minZ = -4, maxZ = 4, color = { 240, 238, 230 } },
-		} :: { Zone },
-		ZONE_THICKNESS = 0.08,
-		AVENUE_THICKNESS = 0.12,
-		BORDER = { width = 0.6, height = 0.3, color = { 27, 42, 53 } },
-		-- Panneaux de zone sur poteau ; `footprint` vérifié par le test du plan de la base.
-		SIGNS = {
-			{ text = "🏭 USINE", x = -30, z = -56 },
-			{ text = "⭐ ACHATS", x = 0, z = -53 },
-			{ text = "🥚 ŒUFS", x = 24, z = -55 },
-			{ text = "🌷 DÉCO", x = -40, z = 53 },
-		} :: { { text: string, x: number, z: number } },
-		SIGN = { width = 7, height = 2.6, postHeight = 3.4, footprint = { 7, 1 } },
+		BORDER = { width = 0.6, height = 0.3, color = { 27, 42, 53 } }, -- cadre de la grille de déchargement
 	},
 	-- Boutons au sol façon grands tycoons (A53) : socle sombre, plaque colorée, anneau néon, panneau de prix.
 	-- Un bouton épuisé (machine achetée, décoration construite…) disparaît, comme dans les tycoons classiques.
@@ -170,10 +214,40 @@ return Freeze.deep({
 			Factory = "🏭",
 			Garage = "🚜",
 			Rebirth = "♻️",
-			Lamps = "💡",
+			Dryer = "♨️",
+			Press = "⚙️",
+			Packer = "📦",
+			Path = "🧱",
+			BarnFloor = "🟫",
+			WallBack = "🧱",
+			WallSouth = "🧱",
+			WallNorth = "🧱",
+			Facade = "🏠",
+			Doors = "🚪",
+			Windows = "🖼️",
+			Lanterns = "🏮",
 			Flowers = "🌷",
+			Lamps = "💡",
+			Hay = "🌾",
+			Trees = "🍎",
+			Well = "💧",
 			Fountain = "⛲",
+			Cart = "🛒",
+			Scarecrow = "👒",
+			Mailbox = "📬",
+			Bench = "💺",
+			Garden = "🥕",
+			Pumpkins = "🎃",
+			Pen = "🐷",
+			Beehives = "🐝",
+			Stairs = "⬆️",
+			Loft = "🟫",
+			UpperWalls = "🧱",
+			Roof = "🏚️",
+			Cupola = "🐓",
 			Flag = "🚩",
+			Coop = "🐔",
+			Greenhouse = "🌱",
 			Statue = "🗿",
 			Arch = "🌈",
 			Windmill = "🌬️",
@@ -183,13 +257,13 @@ return Freeze.deep({
 			affordable = { top = { 120, 230, 60 }, bottom = { 40, 165, 30 }, ring = { 120, 255, 120 } },
 			expensive = { top = { 255, 110, 100 }, bottom = { 200, 30, 40 }, ring = { 255, 70, 70 } },
 			rebirth = { top = { 210, 130, 255 }, bottom = { 120, 50, 210 }, ring = { 200, 120, 255 } },
-			locked = { top = { 175, 175, 185 }, bottom = { 110, 110, 120 }, ring = { 140, 140, 150 } },
 			info = { top = { 110, 175, 255 }, bottom = { 40, 95, 215 }, ring = { 110, 175, 255 } },
 			unload = { top = { 255, 230, 90 }, bottom = { 255, 150, 20 }, ring = { 255, 220, 60 } },
 			egg = { top = { 255, 140, 200 }, bottom = { 170, 60, 210 }, ring = { 255, 140, 200 } },
 		} :: { [string]: { top: { number }, bottom: { number }, ring: { number } } },
 	},
 	BUILD_ANIM_ATTRIBUTE = "BuiltAt", -- heure serveur de construction : le client anime l'arrivée des briques
+	FADE_ATTRIBUTE = "FadesInside", -- s'efface pour le joueur qui est dans la grange (toit, clocheton)
 	PAD_TAG = "TycoonPad", -- boutons repérés par les flèches de guidage (attributs ButtonId, OwnerId, Price, State)
 	UNLOAD_TAG = "UnloadPad",
 	GUIDE_UNLOAD_KEY = "Unload", -- premier déchargement fait : les flèches n'y ramènent plus (A53)

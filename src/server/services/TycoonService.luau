@@ -44,7 +44,8 @@ type Entry = {
 	folder: Folder,
 	machines: { [string]: Model },
 	decor: { [string]: Model },
-	pads: { [string]: TycoonButtons.Pad },
+	pads: { [string]: TycoonButtons.Pad }, -- boutons actuellement visibles
+	isLive: boolean, -- faux pendant la restauration d'un profil : rien n'est animé
 	silo: Part,
 	siloRoof: Part,
 	unloadPad: Part,
@@ -83,10 +84,12 @@ local function bonusOf(player: Player, entry: Entry): Tycoon.IncomeBonus
 end
 local incomeElapsed, padElapsed = 0, 0
 
--- Repère d'un point de la base : centre au niveau du pont, orienté comme la base (+X vers le champ).
+-- Repère d'un point de la base : centre au niveau de son plancher (pont, ou étage de la grange), orienté comme
+-- la base (+X vers le champ).
 local function originAt(entry: Entry, spot: TycoonConfig.Spot): CFrame
 	local x, z = MapGeometry.baseToWorld(entry.base, spot.x, spot.z)
-	return CFrame.new(x, MapConfig.DECK_TOP, z) * CFrame.Angles(0, -entry.base.angle, 0)
+	local height = if spot.level == 1 then LAYOUT.LOFT_TOP else 0
+	return CFrame.new(x, MapConfig.DECK_TOP + height, z) * CFrame.Angles(0, -entry.base.angle, 0)
 end
 
 -- Brique ancrée posée sur la base, centrée sur le point local de `spec.spot`.
@@ -113,7 +116,7 @@ end
 local function rebirthView(entry: Entry): TycoonButtons.View
 	local title = `Rebirth n°{entry.progress.rebirths + 1}`
 	if not Rebirth.isTycoonComplete(entry.state) then
-		return { state = "locked", title = title, price = "Achète toutes les machines" }
+		return { state = "soldout", title = title } -- le bouton n'apparaît qu'une fois l'usine complète (A56)
 	end
 	local cost = Rebirth.cost(entry.progress)
 	return {
@@ -132,9 +135,20 @@ local function offerView(entry: Entry, offer: Tycoon.Offer): TycoonButtons.View
 	return { state = state, title = offer.label, price = `{Format.money(price)} $` }
 end
 
+local function addPad(player: Player, entry: Entry, buttonId: string): TycoonButtons.Pad
+	local pad = TycoonButtons.build(buttonId, originAt(entry, LAYOUT.PADS[buttonId]))
+	pad.top:SetAttribute("ButtonId", buttonId)
+	pad.top:SetAttribute("OwnerId", player.UserId)
+	CollectionService:AddTag(pad.top, TycoonConfig.PAD_TAG)
+	place(pad.model, entry, entry.isLive) -- à la restauration d'un profil, les boutons ne tombent pas du ciel
+	entry.pads[buttonId] = pad
+	return pad
+end
+
+-- Les boutons n'existent que le temps où ils sont utiles : créés une fois débloqués, détruits une fois épuisés (A56).
 local function refreshPads(player: Player, entry: Entry)
 	local tier = VehicleService.purchasedTierOf(player)
-	for buttonId, pad in entry.pads do
+	for buttonId in LAYOUT.PADS do
 		local price: number? = nil
 		local view: TycoonButtons.View
 		if buttonId == REBIRTH then
@@ -145,11 +159,20 @@ local function refreshPads(player: Player, entry: Entry)
 			price = offer.price
 			view = offerView(entry, offer)
 		end
-		TycoonButtons.update(pad, view)
-		-- Lus par les flèches de guidage du client (GuideController).
-		pad.top:SetAttribute("Price", price)
-		pad.top:SetAttribute("State", view.state)
-		pad.top:SetAttribute("Guided", entry.state.guided[buttonId] == true)
+		local pad = entry.pads[buttonId]
+		if view.state == "soldout" then
+			if pad then
+				pad.model:Destroy()
+				entry.pads[buttonId] = nil
+			end
+		else
+			pad = pad or addPad(player, entry, buttonId)
+			TycoonButtons.update(pad, view)
+			-- Lus par les flèches de guidage du client (GuideController).
+			pad.top:SetAttribute("Price", price)
+			pad.top:SetAttribute("State", view.state)
+			pad.top:SetAttribute("Guided", entry.state.guided[buttonId] == true)
+		end
 	end
 end
 
@@ -167,7 +190,7 @@ local function refreshSilo(entry: Entry)
 end
 
 local function buildMachine(entry: Entry, machine: TycoonConfig.MachineDef, isPurchase: boolean)
-	local main = TycoonModels.machine(nil, machine, originAt(entry, LAYOUT.MACHINES[machine.id]))
+	local main = TycoonModels.machine(machine, originAt(entry, LAYOUT.MACHINES[machine.id]))
 	local label = TycoonButtons.label(main, PAD_STYLE.ICONS[machine.id] or "⭐", main.Size.Y / 2 + MACHINE_LABEL_GAP)
 	TycoonButtons.paint(label, "info", machine.name, `Revenus ×{machine.multiplier}`)
 	local model = main.Parent :: Model
@@ -177,29 +200,27 @@ end
 
 -- Fait correspondre les modèles de machines à l'état (achat, Rebirth, restauration d'un profil).
 local function syncMachines(entry: Entry, isPurchase: boolean)
-	for _, machine in TycoonConfig.MACHINES do
-		local model = entry.machines[machine.id]
-		local isOwned = entry.state.machines[machine.id] == true
-		if isOwned and not model then
-			buildMachine(entry, machine, isPurchase)
-		elseif not isOwned and model then
-			model:Destroy()
-			entry.machines[machine.id] = nil
+	for _, list in { TycoonConfig.MACHINES, TycoonConfig.UPPER_MACHINES } do
+		for _, machine in list do
+			local model = entry.machines[machine.id]
+			local isOwned = entry.state.machines[machine.id] == true
+			if isOwned and not model then
+				buildMachine(entry, machine, isPurchase)
+			elseif not isOwned and model then
+				model:Destroy()
+				entry.machines[machine.id] = nil
+			end
 		end
 	end
 end
 
--- Même chose pour les décorations (A53), conservées au Rebirth.
+-- Même chose pour le plan de construction de la ferme (A56), conservé au Rebirth.
 local function syncDecor(player: Player, entry: Entry, isPurchase: boolean)
 	for _, decor in TycoonConfig.DECORATIONS do
 		local model = entry.decor[decor.id]
 		local isOwned = entry.state.decor[decor.id] == true
 		if isOwned and not model then
-			local origins = {}
-			for _, spot in decor.spots do
-				table.insert(origins, originAt(entry, spot))
-			end
-			local built = TycoonDecor.build(nil, decor, origins, player.DisplayName)
+			local built = TycoonDecor.build(decor, originAt(entry, { x = 0, z = 0 }), player.DisplayName)
 			place(built, entry, isPurchase)
 			entry.decor[decor.id] = built
 		elseif not isOwned and model then
@@ -241,14 +262,6 @@ local function buildFactory(player: Player, entry: Entry)
 	local function toWorld(x: number, z: number): CFrame
 		return originAt(entry, { x = x, z = z })
 	end
-	TycoonGrounds.build(entry.folder, toWorld)
-	for buttonId, spot in LAYOUT.PADS do
-		local pad = TycoonButtons.build(entry.folder, buttonId, originAt(entry, spot))
-		pad.top:SetAttribute("ButtonId", buttonId)
-		pad.top:SetAttribute("OwnerId", player.UserId)
-		CollectionService:AddTag(pad.top, TycoonConfig.PAD_TAG)
-		entry.pads[buttonId] = pad
-	end
 	buildUnloadPad(player, entry)
 	local conveyor = LAYOUT.CONVEYOR
 	placeBlock(entry, {
@@ -265,6 +278,7 @@ local function buildFactory(player: Player, entry: Entry)
 end
 
 local function applyProfile(player: Player, entry: Entry, data: Profile.Data)
+	entry.isLive = false
 	entry.state = Profile.toTycoon(data)
 	entry.progress = Profile.toProgress(data)
 	syncMachines(entry, false)
@@ -272,6 +286,7 @@ local function applyProfile(player: Player, entry: Entry, data: Profile.Data)
 	entry.unloadPad:SetAttribute("Guided", entry.state.guided[TycoonConfig.GUIDE_UNLOAD_KEY] == true)
 	player:SetAttribute(PlayerAttributes.TIER, data.tier)
 	publish(player, entry)
+	entry.isLive = true
 end
 
 local function claimFactory(player: Player)
@@ -292,6 +307,7 @@ local function claimFactory(player: Player)
 		machines = {},
 		decor = {},
 		pads = {},
+		isLive = false,
 		silo = nil :: any, -- posés par buildFactory
 		siloRoof = nil :: any,
 		unloadPad = nil :: any,
@@ -305,6 +321,7 @@ local function claimFactory(player: Player)
 		applyProfile(player, entry, pending)
 	else
 		publish(player, entry)
+		entry.isLive = true
 	end
 end
 
@@ -343,8 +360,11 @@ end
 
 local function padUnder(entry: Entry, position: Vector3): string?
 	local localX, localZ = MapGeometry.worldToBase(entry.base, position.X, position.Z)
-	for buttonId, spot in LAYOUT.PADS do
-		if MapGeometry.isOnSquare(localX, localZ, spot.x, spot.z, LAYOUT.PAD_SIZE) then
+	local level = Tycoon.levelAt(position.Y - MapConfig.DECK_TOP)
+	for buttonId in entry.pads do
+		local spot = LAYOUT.PADS[buttonId]
+		local isSameLevel = (spot.level or 0) == level -- pas d'achat de l'étage depuis le rez-de-chaussée
+		if isSameLevel and MapGeometry.isOnSquare(localX, localZ, spot.x, spot.z, LAYOUT.PAD_SIZE) then
 			return buttonId
 		end
 	end

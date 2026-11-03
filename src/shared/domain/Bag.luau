@@ -1,10 +1,11 @@
 --!strict
--- Sac à dos / remorque (CDC §4) : compte les blés coupés et leur valeur brute en $ (décision A5).
+-- Sac à dos / remorque (CDC §4) : compte les places occupées et la valeur brute en $ (décision A5). Un blé prend
+-- autant de places qu'il vaut (A55) : 1 pour le Blé Vert, 25 pour le Maïs Doré, 250 pour le Blé Diamant.
 -- Une capacité infinie (Remorque Infinie, décision A16) n'est jamais « PLEINE ».
 local FieldConfig = require("../config/FieldConfig")
 
 export type Bag = {
-	count: number,
+	count: number, -- places occupées
 	value: number,
 	capacity: number,
 }
@@ -22,12 +23,24 @@ function Bag.isFull(bag: Bag): boolean
 	return bag.count >= bag.capacity
 end
 
--- Ajoute un blé. Renvoie false (sans rien modifier) si le sac est déjà plein.
-function Bag.add(bag: Bag, value: number): boolean
-	if Bag.isFull(bag) then
+-- Places prises par un blé de cette zone : sa valeur de base. La rareté et les événements multiplient la valeur
+-- sans prendre plus de place : un Blé Arc-en-ciel reste une bonne surprise, jamais un refus (A55).
+function Bag.placesOf(zone: string): number
+	local wheat = FieldConfig.WHEAT_ZONES[zone]
+	return if wheat then wheat.value else 1
+end
+
+function Bag.canFit(bag: Bag, places: number): boolean
+	return bag.count + places <= bag.capacity
+end
+
+-- Ajoute un blé (1 place par défaut). Renvoie false, sans rien modifier, s'il ne tient pas dans le sac.
+function Bag.add(bag: Bag, value: number, places: number?): boolean
+	local taken = places or 1
+	if not Bag.canFit(bag, taken) then
 		return false
 	end
-	bag.count += 1
+	bag.count += taken
 	bag.value += value
 	return true
 end

@@ -96,10 +96,15 @@ return Freeze.deep({
 	-- Distributeurs d'œufs sur la base (coordonnées locales du bouton, comme TycoonConfig.LAYOUT) ;
 	-- l'œuf géant est posé EGG_OFFSET_X plus loin, côté champ.
 	EGG_OFFSET_X = 9,
+	-- Tous les œufs ne sont pas là d'emblée (A56) : l'œuf de base, puis ceux qu'on peut vraiment se payer.
+	EGG_UNLOCKS = {
+		FarmEgg = { minTier = 3, minRebirths = 1 },
+		RebirthEgg = { minRebirths = 1 },
+	} :: { [string]: { minTier: number?, minRebirths: number? } },
 	DISPENSERS = {
-		BasicEgg = { x = 20, z = -45 },
-		FarmEgg = { x = 20, z = -15 },
-		RebirthEgg = { x = 20, z = 15 },
+		BasicEgg = { x = 14, z = -46 },
+		FarmEgg = { x = 14, z = -30 },
+		RebirthEgg = { x = 36, z = -46 },
 	} :: { [string]: { x: number, z: number } },
 	DISPENSER_SIZE = 10,
 	HATCH_COOLDOWN = 1.2, -- secondes entre deux éclosions d'un même joueur

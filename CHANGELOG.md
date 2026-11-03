@@ -2,6 +2,27 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Grande ferme Lego et sac à places (A55, A56)
+
+### Ajouté
+- **Plan de construction** de 34 éléments, révélés un par un : on part d'un terrain d'herbe et on bâtit une grange
+  (plancher, murs, façade, portes, fenêtres, lanternes), on aménage la cour (fleurs, lampadaires, banc, foin, pommiers,
+  potager, puits, citrouilles, fontaine, charrette, épouvantail, enclos à cochons), puis l'étage et le toit, et enfin
+  le prestige (clocheton, drapeau, poulailler, ruches, serre, statue, arche, éolienne).
+- **Deuxième étage** : escalier, plancher, murs et toit ouvrent une chaîne de 3 nouvelles machines (Séchoir ×1,5,
+  Presse ×2, Emballeuse ×3).
+- Murs en rangées de briques en quinconce avec soubassement en pierre et chaînage d'angle, toit à la Mansart en gradins
+  à tenons, fenêtres à croisillons, portes à croix de Saint-André.
+- Le toit s'efface quand on entre dans la grange ; les flèches passent par la porte et l'escalier.
+- Le HUD explique quand un blé ne tient pas dans le sac.
+
+### Modifié
+- **Un blé prend autant de places qu'il vaut** : 1, 25 ou 250. La rareté et les événements ne prennent pas de place.
+- Les boutons n'existent que le temps où ils sont utiles : une poignée à l'écran, qui tombent du ciel à leur apparition.
+- Les machines se débloquent dans l'ordre ; le bouton Rebirth n'apparaît qu'une fois l'usine complète ; le Silo Géant
+  après le Moulin ; les œufs de Ferme et de Rebirth avec la progression.
+- Base en herbe, silo et tapis repositionnés derrière la grange. Les zones au sol et panneaux d'A53 disparaissent.
+
 ## Boulevard vers le champ et engin réservé au champ (A54)
 
 ### Ajouté

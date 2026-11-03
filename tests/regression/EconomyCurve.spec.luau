@@ -1,5 +1,5 @@
 --!strict
--- Courbe de progression (docs/EQUILIBRAGE.md, A51) : temps de jeu d'un joueur seul, sans Pet ni avantage
+-- Courbe de progression (docs/EQUILIBRAGE.md, A51, A55, A56) : temps de jeu d'un joueur seul, sans Pet ni avantage
 -- Robux, pour atteindre chaque palier et le premier Rebirth. Un réglage de prix qui sort de ces fourchettes
 -- doit être intentionnel (mettre à jour ce fichier et EQUILIBRAGE.md).
 local TestKit = require("../TestKit")
@@ -33,4 +33,13 @@ describe("Courbe de progression (golden)", function()
 		expect(within(minutes(result.rebirthReadyAt), 150, 190)).toBe(true)
 		expect(within(minutes(result.tierReachedAt[7]), 165, 210)).toBe(true)
 	end)
+	it(
+		"la grange se bâtit tout du long : façade vers 1 h 15, toit puis machines de l'étage après 3 h (A56)",
+		function()
+			expect(within(minutes(result.builtAt.WallBack), 10, 40)).toBe(true)
+			expect(within(minutes(result.builtAt.Facade), 50, 100)).toBe(true)
+			expect(within(minutes(result.builtAt.Roof), 180, 230)).toBe(true)
+			expect(result.builtAt.Dryer > result.builtAt.Roof).toBe(true)
+		end
+	)
 end)
