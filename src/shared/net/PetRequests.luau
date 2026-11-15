@@ -4,13 +4,17 @@
 local PetConfig = require("../config/PetConfig")
 local Pets = require("../domain/Pets")
 
-export type Action = "equip" | "unequip" | "fuse"
+export type Action = "equip" | "unequip" | "fuse" | "best"
 
 local PetRequests = {}
 
 local ACTIONS: { [string]: boolean } = { equip = true, unequip = true, fuse = true }
 
+-- « best » (Équiper les meilleurs, A66) ne porte pas de clé : elle est renvoyée vide.
 function PetRequests.parseAction(action: any, key: any): (Action?, string?)
+	if action == "best" then
+		return "best", ""
+	end
 	if typeof(action) ~= "string" or not ACTIONS[action] or not Pets.isKnown(key) then
 		return nil, nil
 	end

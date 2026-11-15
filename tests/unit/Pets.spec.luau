@@ -33,27 +33,45 @@ describe("Pets", function()
 
 	describe("roll", function()
 		local basic = Pets.egg("BasicEgg") :: PetConfig.EggDef
-		it("respecte les seuils de l'œuf de base (CDC §8)", function()
-			expect(Pets.roll(basic, FakeRng.constant(0))).toBe("Chick:Normal")
-			expect(Pets.roll(basic, FakeRng.constant(0.61))).toBe("Cow:Normal")
-			expect(Pets.roll(basic, FakeRng.constant(0.9))).toBe("Tractor:Normal")
-			expect(Pets.roll(basic, FakeRng.constant(0.96))).toBe("Dragon:Normal")
-			expect(Pets.roll(basic, FakeRng.constant(0.9995))).toBe("Phoenix:Normal")
+		local function rarityOf(key: string): string
+			return Pets.rarityOf(key).id
+		end
+		it("respecte les seuils de rareté de l'œuf de base (CDC §8)", function()
+			expect(Pets.roll(basic, FakeRng.constant(0))).toBe("Chick:Normal") -- première espèce du CDC
+			expect(rarityOf(Pets.roll(basic, FakeRng.constant(0.61)))).toBe("Rare")
+			expect(rarityOf(Pets.roll(basic, FakeRng.constant(0.9)))).toBe("Epic")
+			expect(rarityOf(Pets.roll(basic, FakeRng.constant(0.96)))).toBe("Legendary")
+			expect(rarityOf(Pets.roll(basic, FakeRng.constant(0.9995)))).toBe("Mythic")
 		end)
 		it("ne donne jamais de Commun avec l'Œuf de Ferme", function()
 			local farm = Pets.egg("FarmEgg") :: PetConfig.EggDef
 			local rng = FakeRng.seeded(3)
 			for _ = 1, 500 do
-				expect(Pets.roll(farm, rng) ~= "Chick:Normal").toBe(true)
+				expect(rarityOf(Pets.roll(farm, rng)) ~= "Common").toBe(true)
 			end
 		end)
 		it("tire les fréquences annoncées sur un grand échantillon", function()
 			local rng = FakeRng.seeded(11)
 			local commons = 0
 			for _ = 1, 20_000 do
-				commons += if Pets.roll(basic, rng) == "Chick:Normal" then 1 else 0
+				commons += if rarityOf(Pets.roll(basic, rng)) == "Common" then 1 else 0
 			end
 			expect(math.abs(commons / 20_000 - 0.6) < 0.02).toBe(true)
+		end)
+		it("répartit les espèces d'une même rareté (A66)", function()
+			local rng = FakeRng.seeded(5)
+			local seen: { [string]: number } = {}
+			for _ = 1, 3_000 do
+				local key = Pets.roll(basic, rng)
+				if rarityOf(key) == "Common" then
+					seen[key] = (seen[key] or 0) + 1
+				end
+			end
+			for _, species in PetConfig.SPECIES do
+				if species.rarity == "Common" then
+					expect((seen[Pets.key(species.id, "Normal")] or 0) > 400).toBe(true)
+				end
+			end
 		end)
 	end)
 
@@ -99,11 +117,11 @@ describe("Pets", function()
 	describe("sauvegarde et réseau", function()
 		it("nettoie une collection corrompue", function()
 			local collection = Pets.sanitize({
-				owned = { ["Chick:Normal"] = 2.9, ["Unicorn:Normal"] = 3, ["Cow:Gold"] = -1 },
+				owned = { ["Chick:Normal"] = 2.9, ["Kraken:Normal"] = 3, ["Cow:Gold"] = -1 },
 				equipped = { "Chick:Normal", "Chick:Normal", "Chick:Normal", "Hack" },
 			})
 			expect(collection.owned["Chick:Normal"]).toBe(2)
-			expect(collection.owned["Unicorn:Normal"]).toBe(nil)
+			expect(collection.owned["Kraken:Normal"]).toBe(nil)
 			expect(collection.owned["Cow:Gold"]).toBe(nil)
 			expect(#collection.equipped).toBe(2)
 		end)

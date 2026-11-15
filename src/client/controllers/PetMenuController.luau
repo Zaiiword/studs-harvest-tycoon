@@ -59,6 +59,8 @@ local screenGui: ScreenGui
 local window: Window.Window
 local header: TextLabel
 local grid: ScrollingFrame
+local indexGrid: ScrollingFrame
+local indexHeader: TextLabel
 local empty: TextLabel
 local detail: Detail
 local eggCards: { [string]: EggCard } = {}
@@ -318,7 +320,7 @@ local function refreshPets()
 		table.insert(bonuses, Pets.bonusOf(key))
 	end
 	local factor = math.floor(Formulas.petFactor(bonuses) * 100 + 0.5) / 100
-	header.Text = `Équipés : {#equipped} / {PetConfig.MAX_EQUIPPED}  ·  Bonus total ×{factor}`
+	header.Text = `Équipés {#equipped}/{PetConfig.MAX_EQUIPPED} · Bonus ×{factor}`
 	local keep = if selected and owned[selected] then selected else keys[1]
 	selectPet(keep)
 end
@@ -326,8 +328,15 @@ end
 local function buildPetsPage(): Frame
 	local page = Instance.new("Frame")
 	page.BackgroundTransparency = 1
-	header = Style.label(page, "", UDim2.new(1 - MENU.DETAIL_WIDTH, -2 * PAD, 0, MENU.HEADER_HEIGHT))
+	local listWidth = 1 - MENU.DETAIL_WIDTH
+	header = Style.label(page, "", UDim2.new(listWidth * MENU.HEADER_SHARE, -PAD, 0, MENU.HEADER_HEIGHT))
 	header.Position = UDim2.fromOffset(PAD, 0)
+	-- « Équiper les meilleurs » (A66) : le serveur choisit les Pets au plus gros bonus.
+	local best = newCandy(page, "⭐ MEILLEURS", function()
+		actionRemote:FireServer("best")
+	end)
+	best.button.Position = UDim2.new(listWidth * MENU.HEADER_SHARE, 0, 0, 2)
+	best.button.Size = UDim2.new(listWidth * (1 - MENU.HEADER_SHARE), -PAD, 0, MENU.HEADER_HEIGHT - 4)
 	grid = Grid.page({
 		minWidth = MENU.CARD_MIN_WIDTH,
 		height = MENU.CARD_HEIGHT,
@@ -342,6 +351,74 @@ local function buildPetsPage(): Frame
 		Style.label(page, "Pas encore de Pet !\nVa aux distributeurs d'œufs 🥚", UDim2.new(0.6, -2 * PAD, 0.3, 0))
 	empty.Position = UDim2.new(0, PAD, 0.3, 0)
 	buildDetail(page)
+	return page
+end
+
+-- Index (A66) ---------------------------------------------------------------------------------------------------
+
+-- Une carte par espèce et variante : le Pet en 3D s'il a été découvert, sa silhouette noire sinon.
+local function buildIndexCard(key: string, order: number, isFound: boolean)
+	local top, bottom = rarityColors(key)
+	local colors = if isFound
+		then { top = top, bottom = bottom, edge = WINDOW.STROKE_COLOR }
+		else { top = MENU.LOCKED_TOP, bottom = MENU.LOCKED_BOTTOM, edge = WINDOW.STROKE_COLOR }
+	local card = Style.button(indexGrid, colors)
+	card.LayoutOrder = order
+	card.AutoButtonColor = false
+	local species, variant = Pets.parse(key)
+	if isFound and variant and variant.id == "Rainbow" then
+		(card:FindFirstChildOfClass("UIGradient") :: UIGradient).Color = rainbow()
+	end
+	local petView = PetViewport.new(card, key)
+	if petView then
+		petView.frame.Position = UDim2.fromOffset(4, 4)
+		petView.frame.Size = UDim2.new(1, -8, 0.7, -4)
+		if not isFound then
+			petView.frame.ImageColor3 = Color3.new(0, 0, 0) -- silhouette
+			petView.frame.ImageTransparency = 0.2
+		end
+	end
+	local variantName = if variant and variant.name ~= "" then ` {variant.name}` else ""
+	local text = if isFound then `{(species :: PetConfig.SpeciesDef).name}{variantName}` else `??? {variantName}`
+	local name = Style.label(card, text, UDim2.new(1, -8, 0.26, 0))
+	name.Position = UDim2.new(0, 4, 0.72, 0)
+	if not isFound then
+		badge(card, `+{Pets.indexGems(key)}💎`, MENU.INDEX_GEMS_COLOR, UDim2.new(1, -22, 0, 14))
+	end
+end
+
+local function refreshIndex()
+	local discovered = Pets.decodeDiscovered(localPlayer:GetAttribute(PlayerAttributes.DISCOVERED_PETS))
+	for _, child in indexGrid:GetChildren() do
+		if child:IsA("GuiButton") then
+			child:Destroy()
+		end
+	end
+	local keys = Pets.indexKeys()
+	local found = 0
+	for order, key in keys do
+		local isFound = discovered[key] == true
+		found += if isFound then 1 else 0
+		buildIndexCard(key, order, isFound)
+	end
+	indexHeader.Text = `📖 Index : {found} / {#keys}  ·  chaque découverte rapporte des 💎`
+end
+
+local function buildIndexPage(): Frame
+	local page = Instance.new("Frame")
+	page.BackgroundTransparency = 1
+	indexHeader = Style.label(page, "", UDim2.new(1, -2 * PAD, 0, MENU.HEADER_HEIGHT))
+	indexHeader.Position = UDim2.fromOffset(PAD, 0)
+	indexGrid = Grid.page({
+		minWidth = MENU.CARD_MIN_WIDTH,
+		height = MENU.CARD_HEIGHT,
+		minColumns = MENU.MIN_COLUMNS,
+		maxColumns = MENU.INDEX_MAX_COLUMNS,
+		padding = PAD,
+	})
+	indexGrid.Position = UDim2.fromOffset(0, MENU.HEADER_HEIGHT)
+	indexGrid.Size = UDim2.new(1, 0, 1, -MENU.HEADER_HEIGHT)
+	indexGrid.Parent = page
 	return page
 end
 
@@ -439,6 +516,7 @@ end
 local function refresh()
 	refreshPets()
 	refreshEggs()
+	refreshIndex()
 end
 
 local function animate(deltaTime: number)
@@ -459,6 +537,7 @@ function PetMenuController:Init()
 	local tabs = Tabs.new(window.body)
 	tabs:add("🐾 PETS", buildPetsPage())
 	tabs:add("🥚 ŒUFS", buildEggsPage())
+	tabs:add("📖 INDEX", buildIndexPage())
 	tabs:select(1)
 	local hud = HudButton.new(screenGui, {
 		icon = "🐾",
@@ -479,6 +558,7 @@ function PetMenuController:Start()
 		{
 			PlayerAttributes.OWNED_PETS,
 			PlayerAttributes.EQUIPPED_PETS,
+			PlayerAttributes.DISCOVERED_PETS,
 			PlayerAttributes.ITEM_PREFIX .. "LegendaryEgg",
 		}
 	do

@@ -42,6 +42,7 @@ local random = Random.new()
 local entries: { [Player]: Entry } = {}
 local requestLimiter = RateLimiter.new(6, 3)
 local hatchResult: RemoteEvent
+local notify: RemoteEvent
 local announce: RemoteEvent
 local checkElapsed = 0
 
@@ -58,8 +59,24 @@ local function publish(player: Player)
 	local collection = entryOf(player).collection
 	player:SetAttribute(PlayerAttributes.EQUIPPED_PETS, Pets.encodeEquipped(collection.equipped))
 	player:SetAttribute(PlayerAttributes.OWNED_PETS, Pets.encodeOwned(collection.owned))
+	player:SetAttribute(PlayerAttributes.DISCOVERED_PETS, Pets.encodeDiscovered(collection.discovered))
 	-- A2 : la puissance de coupe profite du même facteur que les revenus (1 + Σ(bonus − 1)).
 	player:SetAttribute(PlayerAttributes.CUT_POWER_MULTIPLIER, Formulas.petFactor(Pets.bonuses(collection)))
+end
+
+-- Index (A66) : la première obtention d'une clé rapporte des gemmes.
+local function rewardDiscovery(player: Player, key: string, wasDiscovered: boolean)
+	local collection = entryOf(player).collection
+	if wasDiscovered or not collection.discovered[key] then
+		return
+	end
+	local gems = Pets.indexGems(key)
+	if gems > 0 then
+		TycoonService.grantGems(player, gems)
+	end
+	local species, variant = Pets.parse(key)
+	local variantName = if variant and variant.name ~= "" then ` {variant.name}` else ""
+	notify:FireClient(player, `📖 Nouveau dans l'index : {(species :: any).name}{variantName} (+{gems} 💎)`)
 end
 
 local function nextRoll(): number
@@ -81,8 +98,10 @@ local function hatchOne(player: Player, entry: Entry, egg: PetConfig.EggDef): bo
 		return false
 	end
 	local key = Pets.roll(egg, nextRoll)
+	local wasDiscovered = entry.collection.discovered[key] == true
 	Pets.add(entry.collection, key)
 	publish(player)
+	rewardDiscovery(player, key, wasDiscovered)
 	hatchResult:FireClient(player, egg.id, key)
 	if Pets.rarityOf(key).isAnnounced then
 		announce:FireAllClients(player.DisplayName, key) -- CDC §8 : annonce globale (DisplayName, déjà filtré)
@@ -191,8 +210,16 @@ local function onAction(player: Player, rawAction: any, rawKey: any)
 		Pets.equip(collection, key)
 	elseif action == "unequip" then
 		Pets.unequip(collection, key)
+	elseif action == "best" then
+		Pets.equipBest(collection)
 	else
-		Pets.fuse(collection, key)
+		local fused = Pets.nextVariant(key)
+		local wasDiscovered = fused ~= nil and collection.discovered[fused] == true
+		if Pets.fuse(collection, key) then
+			publish(player)
+			rewardDiscovery(player, fused :: string, wasDiscovered)
+			return
+		end
 	end
 	publish(player)
 end
@@ -206,14 +233,21 @@ end
 
 -- Donne un Pet précis (Starter Pack, CDC §10). Renvoie faux si la collection est pleine.
 function PetService.grantPet(player: Player, key: string): boolean
-	local isAdded = Pets.add(entryOf(player).collection, key)
+	local collection = entryOf(player).collection
+	local wasDiscovered = collection.discovered[key] == true
+	local isAdded = Pets.add(collection, key)
 	publish(player)
+	rewardDiscovery(player, key, wasDiscovered)
 	return isAdded
 end
 
 function PetService.snapshot(player: Player): Pets.Collection
 	local collection = entryOf(player).collection
-	return { owned = table.clone(collection.owned), equipped = table.clone(collection.equipped) }
+	return {
+		owned = table.clone(collection.owned),
+		equipped = table.clone(collection.equipped),
+		discovered = table.clone(collection.discovered),
+	}
 end
 
 function PetService.restore(player: Player, collection: Pets.Collection)
@@ -243,6 +277,7 @@ end
 
 function PetService:Init()
 	hatchResult = Remotes.event(Remotes.HATCH_RESULT)
+	notify = Remotes.event(Remotes.NOTIFY)
 	announce = Remotes.event(Remotes.PET_ANNOUNCE)
 	Remotes.event(Remotes.PET_ACTION).OnServerEvent:Connect(onAction)
 	Remotes.event(Remotes.OPEN_EGG).OnServerEvent:Connect(onOpenEgg)

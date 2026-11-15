@@ -68,6 +68,11 @@ return Freeze.deep({
 		MAX_COLUMNS = 6,
 		DETAIL_WIDTH = 0.36, -- part de la largeur occupée par la fiche
 		HEADER_HEIGHT = 34, -- bandeau « Équipés 2 / 3 · Bonus ×3,4 »
+		HEADER_SHARE = 0.64, -- part du bandeau laissée au texte ; le reste pour « ⭐ MEILLEURS » (A66)
+		INDEX_MAX_COLUMNS = 7, -- l'index occupe toute la largeur de la fenêtre
+		LOCKED_TOP = { 90, 95, 110 }, -- carte d'un Pet pas encore découvert
+		LOCKED_BOTTOM = { 45, 48, 60 },
+		INDEX_GEMS_COLOR = { 98, 37, 209 },
 		SPIN_SPEED = 1.2, -- rad/s : le Pet de la fiche tourne sur lui-même
 		CAMERA = { fov = 40, distance = 1.9, height = 0.35, side = 0.55 }, -- cadrage des Pets 3D
 		SELECTED_STROKE = { 255, 255, 255 },

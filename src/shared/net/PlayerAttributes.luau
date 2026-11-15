@@ -32,6 +32,7 @@ return table.freeze({
 	BOOST_UNTIL = "BoostUntil", -- fin du multiplicateur ×3 gagné contre le boss (EventService)
 	ITEM_PREFIX = "Item_", -- Item_Mud, Item_Glove… : nombre d'exemplaires (InventoryService)
 	EQUIPPED_PETS = "EquippedPets", -- « Dragon:Gold,Cow:Normal » (PetService, Pets.encodeEquipped)
+	DISCOVERED_PETS = "DiscoveredPets", -- « Chick:Normal,Cow:Gold » : index des Pets (A66)
 	OWNED_PETS = "OwnedPets", -- « Dragon:Gold=2,Cow:Normal=5 » pour le menu des Pets
 	CUT_POWER_MULTIPLIER = "CutPowerMultiplier", -- facteur des Pets sur la puissance de coupe (A2)
 	SESSION_STARTED_AT = "SessionStartedAt", -- début de la session (cadeaux de temps de jeu)

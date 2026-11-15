@@ -37,14 +37,25 @@ return Freeze.deep({
 		{ id = "Mythic", name = "Secret Mythique", bonus = 15, color = { 255, 89, 89 }, isAnnounced = true },
 	} :: { RarityDef },
 
-	-- Un pet par rareté (CDC §7.2 ; le cinquième, pour le Secret Mythique, est la décision A43).
+	-- Espèces (CDC §7.2 ; A43, A66). Plusieurs par rareté : à rareté égale, même bonus, mais une collection à
+	-- compléter. Le tirage choisit la rareté selon l'œuf, puis l'espèce au hasard dans cette rareté. Les premières
+	-- espèces de chaque rareté sont celles du CDC.
 	SPECIES = {
 		{ id = "Chick", name = "Poussin Carré", rarity = "Common" },
+		{ id = "Pig", name = "Cochonnet Rose", rarity = "Common" },
+		{ id = "Bunny", name = "Lapin Brique", rarity = "Common" },
 		{ id = "Cow", name = "Vache Cubique", rarity = "Rare" },
+		{ id = "Sheep", name = "Mouton Laineux", rarity = "Rare" },
 		{ id = "Tractor", name = "Tracteur Vivant", rarity = "Epic" },
+		{ id = "Bee", name = "Abeille Géante", rarity = "Epic" },
 		{ id = "Dragon", name = "Dragon Doré", rarity = "Legendary" },
+		{ id = "Unicorn", name = "Licorne Étoilée", rarity = "Legendary" },
 		{ id = "Phoenix", name = "Phénix Arc-en-ciel", rarity = "Mythic" },
+		{ id = "Golem", name = "Golem de Cristal", rarity = "Mythic" },
 	} :: { SpeciesDef },
+	-- Index (A66) : la première fois qu'on obtient une espèce dans une variante, on gagne des gemmes, selon la
+	-- rareté et multipliées par la variante (Or ×2, Arc-en-ciel ×5).
+	INDEX_GEMS = { Common = 1, Rare = 2, Epic = 4, Legendary = 8, Mythic = 20 } :: { [string]: number },
 
 	-- A9 + A42 : l'œuf de base suit exactement la table du CDC §8 ; les œufs plus chers retirent les raretés basses.
 	EGGS = {

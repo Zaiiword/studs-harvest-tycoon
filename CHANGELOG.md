@@ -2,6 +2,18 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Pets : nouvelles espèces, index et « Meilleurs » (A66)
+
+### Ajouté
+- **6 nouvelles espèces** en briques : Cochonnet Rose et Lapin Brique (Communs), Mouton Laineux (Rare), Abeille Géante
+  (Épique), Licorne Étoilée (Légendaire), Golem de Cristal (Secret Mythique). 11 espèces au total.
+- **Index** (onglet 📖 du menu 🐾) : 33 entrées (espèce × variante), silhouettes noires pour celles qui manquent ;
+  chaque première obtention rapporte des gemmes (1 à 100 selon la rareté et la variante).
+- Bouton **⭐ MEILLEURS** : équipe d'un clic les Pets au plus gros bonus.
+
+### Modifié
+- Le tirage choisit la rareté selon l'œuf (chances inchangées), puis l'espèce au hasard dans cette rareté.
+
 ## Succès et améliorations en gemmes (A64, A65)
 
 ### Ajouté
