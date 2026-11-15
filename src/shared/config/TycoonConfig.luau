@@ -128,6 +128,9 @@ return Freeze.deep({
 	REBIRTH_NAME = "Rebirth",
 
 	INCOME_INTERVAL = 1, -- CDC §8 : revenu calculé côté serveur chaque seconde
+	-- Gains hors ligne (A60) : l'usine continue de vider le silo pendant l'absence du joueur, au plus 12 h.
+	-- Le silo borne déjà le gain : on ne gagne que ce qu'on a récolté avant de partir.
+	OFFLINE = { MAX_SECONDS = 12 * 3600, MIN_SECONDS = 60 },
 	PAD_CHECK_INTERVAL = 0.25,
 	PURCHASE_COOLDOWN = 0.75, -- secondes entre deux achats d'un même joueur (rester sur un bouton n'achète pas en boucle)
 

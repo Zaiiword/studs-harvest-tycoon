@@ -27,6 +27,7 @@ export type Data = {
 	siloLevel: number, -- v6 : agrandissements du silo (A53)
 	decor: { string }, -- v6 : décorations achetées (A53)
 	guided: { string }, -- v6 : objets où les flèches de guidage ne ramènent plus (A53)
+	lastSeenAt: number, -- v7 : heure Unix de la dernière sauvegarde, pour les gains hors ligne (A60)
 }
 
 -- Ce que les services fournissent pour composer un profil à sauvegarder.
@@ -38,13 +39,15 @@ export type GameParts = {
 	pets: Pets.Collection,
 	retention: Retention.State,
 	purchases: Purchases.Purchases,
+	savedAt: number?, -- heure Unix de la capture (gains hors ligne, A60)
 }
 
 local Profile = {}
 
--- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases` ; v5 → v6 : `siloLevel`, `decor`, `guided`. Un champ absent reprend sa valeur par défaut :
+-- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases` ; v5 → v6 : `siloLevel`, `decor`, `guided` ;
+-- v6 → v7 : `lastSeenAt`. Un champ absent reprend sa valeur par défaut :
 -- la migration est donc faite par `sanitize`, sans code spécifique.
-Profile.VERSION = 6
+Profile.VERSION = 7
 
 local knownMachines: { [string]: boolean } = {}
 for _, list in { TycoonConfig.MACHINES, TycoonConfig.UPPER_MACHINES } do
@@ -78,6 +81,7 @@ function Profile.default(): Data
 		siloLevel = 0,
 		decor = {},
 		guided = {},
+		lastSeenAt = 0,
 	}
 end
 
@@ -134,6 +138,7 @@ function Profile.sanitize(raw: any): Data
 		siloLevel = number(source.siloLevel, 0, #TycoonConfig.SILO_UPGRADE.PRICES, 0, true),
 		decor = idsOf(source.decor, knownDecor),
 		guided = idsOf(source.guided, knownGuided),
+		lastSeenAt = number(source.lastSeenAt, 0, math.huge - 1, 0, true),
 	}
 end
 
@@ -154,6 +159,7 @@ function Profile.fromGame(parts: GameParts): Data
 		siloLevel = state.siloLevel,
 		decor = sortedKeys(state.decor),
 		guided = sortedKeys(state.guided),
+		lastSeenAt = parts.savedAt or 0,
 	})
 end
 

@@ -16,6 +16,7 @@ local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
 local Goal = require(ReplicatedStorage.Shared.domain.Goal)
+local Offline = require(ReplicatedStorage.Shared.domain.Offline)
 local Pets = require(ReplicatedStorage.Shared.domain.Pets)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Profile = require(ReplicatedStorage.Shared.domain.Profile)
@@ -23,6 +24,7 @@ local Rebirth = require(ReplicatedStorage.Shared.domain.Rebirth)
 local Tycoon = require(ReplicatedStorage.Shared.domain.Tycoon)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Perks = require(ReplicatedStorage.Shared.net.Perks)
+local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Format = require(ReplicatedStorage.Shared.util.Format)
 local MapService = require(script.Parent.MapService)
@@ -69,6 +71,7 @@ local PAD_STYLE = TycoonConfig.PAD_STYLE
 
 local entries: { [Player]: Entry } = {}
 local pendingProfiles: { [Player]: Profile.Data } = {} -- profil chargé avant que la base soit attribuée
+local pendingOffline: { [Player]: { lastSeenAt: number, now: number } } = {} -- gains hors ligne à verser (A60)
 
 -- Bonus de revenus : Rebirths, Pets équipés (attribut posé par PetService, CDC §8) et multiplicateur
 -- temporaire posé par EventService (récompense du boss). Lus dans les attributs : l'usine ne dépend
@@ -346,6 +349,11 @@ local function claimFactory(player: Player)
 	pendingProfiles[player] = nil
 	if pending then
 		applyProfile(player, entry, pending)
+		local away = pendingOffline[player]
+		pendingOffline[player] = nil
+		if away then
+			TycoonService.collectOffline(player, away.lastSeenAt, away.now)
+		end
 	else
 		publish(player, entry)
 		entry.isLive = true
@@ -447,6 +455,25 @@ function TycoonService.unload(player: Player, bag: Bag.Bag): number
 	return accepted
 end
 
+-- Gains hors ligne (A60) : le tapis a continué de vider le silo pendant l'absence, avec les bonus permanents du
+-- joueur (pas le boost temporaire du boss). Si la base n'est pas encore attribuée, on attend qu'elle le soit.
+function TycoonService.collectOffline(player: Player, lastSeenAt: number, now: number)
+	local entry = entries[player]
+	if not entry then
+		pendingOffline[player] = { lastSeenAt = lastSeenAt, now = now }
+		return
+	end
+	local bonus = bonusOf(player, entry)
+	bonus.boostMultiplier = 1
+	local result = Offline.collect(entry.state, lastSeenAt, now, bonus)
+	if result.earned <= 0 then
+		return
+	end
+	TycoonService.Earned:Fire(player, result.earned)
+	publish(player, entry)
+	Remotes.event(Remotes.OFFLINE_EARNINGS):FireClient(player, result.seconds, result.earned)
+end
+
 -- Crédit direct (panneau de test en Studio ; récompenses aux sprints suivants).
 function TycoonService.grant(player: Player, amount: number)
 	local entry = entries[player]
@@ -510,6 +537,7 @@ end
 -- Détruit l'usine d'un joueur qui part. Appelé par DataService après la capture du profil.
 function TycoonService.release(player: Player)
 	pendingProfiles[player] = nil
+	pendingOffline[player] = nil
 	local entry = entries[player]
 	if entry then
 		entry.folder:Destroy()
@@ -528,6 +556,10 @@ local function watch(player: Player)
 		end
 	end)
 	claimFactory(player)
+end
+
+function TycoonService:Init()
+	Remotes.event(Remotes.OFFLINE_EARNINGS) -- créé tout de suite : le client l'attend dès son démarrage
 end
 
 function TycoonService:Start()

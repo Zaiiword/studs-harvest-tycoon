@@ -24,6 +24,7 @@ Remotes.WHEEL_RESULT = "WheelResult" -- serveur → client : (index de case) ré
 Remotes.CLAIM_QUEST = "ClaimQuest" -- client → serveur : (id) réclamer une quête du jour
 Remotes.TELEPORT_HOME = "TeleportHome" -- client → serveur : « Retour Base Instantané » (A19)
 Remotes.NOTIFY = "Notify" -- serveur → client : (message) récompense ou refus à afficher
+Remotes.OFFLINE_EARNINGS = "OfflineEarnings" -- serveur → client : (secondes, argent) gains hors ligne (A60)
 
 local KINDS: { [string]: string } = {
 	[Remotes.PET_ACTION] = "RemoteEvent",
@@ -33,6 +34,7 @@ local KINDS: { [string]: string } = {
 	[Remotes.CLAIM_QUEST] = "RemoteEvent",
 	[Remotes.TELEPORT_HOME] = "RemoteEvent",
 	[Remotes.NOTIFY] = "RemoteEvent",
+	[Remotes.OFFLINE_EARNINGS] = "RemoteEvent",
 	[Remotes.OPEN_EGG] = "RemoteEvent",
 	[Remotes.HATCH_RESULT] = "RemoteEvent",
 	[Remotes.PET_ANNOUNCE] = "RemoteEvent",

@@ -88,6 +88,8 @@ local function loadPlayer(player: Player)
 	PetService.restore(player, data.pets)
 	RetentionService.restore(player, data.retention)
 	MonetizationService.restore(player, data.purchases)
+	-- Après les Pets et les Gamepasses : l'usine hors ligne tourne avec les mêmes bonus qu'en jeu (A60).
+	TycoonService.collectOffline(player, data.lastSeenAt, os.time())
 	player:SetAttribute(PlayerAttributes.IS_DATA_LOADED, true)
 end
 
@@ -104,6 +106,7 @@ local function capture(player: Player): Profile.Data?
 		pets = PetService.snapshot(player),
 		retention = RetentionService.snapshot(player),
 		purchases = MonetizationService.snapshot(player),
+		savedAt = os.time(),
 	})
 end
 

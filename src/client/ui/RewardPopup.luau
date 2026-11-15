@@ -109,7 +109,7 @@ local function burstConfetti(parent: Instance)
 	end
 end
 
-local function buildCard(parent: Instance, icon: string, text: string): (Frame, TextLabel, TextButton)
+local function buildCard(parent: Instance, icon: string, text: string, heading: string): (Frame, TextLabel, TextButton)
 	local card = Instance.new("Frame")
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	card.Position = UDim2.fromScale(0.5, 0.5)
@@ -120,7 +120,7 @@ local function buildCard(parent: Instance, icon: string, text: string): (Frame, 
 	Style.stroke(card, UiConfig.WINDOW.STROKE_COLOR, UiConfig.WINDOW.STROKE)
 	Style.shine(card)
 	card.Parent = parent
-	local title = Style.label(card, "🎉 GAGNÉ ! 🎉", UDim2.new(1, -20, 0.18, 0))
+	local title = Style.label(card, heading, UDim2.new(1, -20, 0.18, 0))
 	title.Position = UDim2.new(0, 10, 0.04, 0)
 	local iconLabel = Style.label(card, icon, UDim2.fromScale(1, 0.34))
 	iconLabel.Position = UDim2.fromScale(0, 0.22)
@@ -135,8 +135,8 @@ local function buildCard(parent: Instance, icon: string, text: string): (Frame, 
 	return card, iconLabel, close
 end
 
--- Montre le lot gagné ; un nouvel appel remplace la pop-up en cours.
-function RewardPopup.show(icon: string, text: string)
+-- Montre le lot gagné ; un nouvel appel remplace la pop-up en cours. `heading` remplace « 🎉 GAGNÉ ! 🎉 ».
+function RewardPopup.show(icon: string, text: string, heading: string?)
 	token += 1
 	local myToken = token
 	local root = screen()
@@ -152,7 +152,7 @@ function RewardPopup.show(icon: string, text: string)
 	scale.Scale = 0
 	scale.Parent = stage
 	local halo = buildRays(stage)
-	local _, iconLabel, close = buildCard(stage, icon, text)
+	local _, iconLabel, close = buildCard(stage, icon, text, heading or "🎉 GAGNÉ ! 🎉")
 	burstConfetti(stage)
 	TweenService:Create(scale, POP, { Scale = 1 }):Play()
 	local clock = 0

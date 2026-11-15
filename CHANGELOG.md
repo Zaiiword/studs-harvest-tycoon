@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Gains hors ligne (A60)
+
+### Ajouté
+- **L'usine tourne pendant l'absence** : à la connexion, le tapis a vidé le silo comme en jeu (12 h au plus), avec les
+  bonus permanents du joueur. Pop-up « Bon retour ! » avec le gain et la durée. Remplir son silo avant de partir
+  devient une vraie stratégie.
+- Profil v7 (heure de la dernière sauvegarde).
+
 ## Récompenses à la mesure du joueur et objectif suivant (A59)
 
 ### Ajouté

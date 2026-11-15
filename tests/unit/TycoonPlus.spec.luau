@@ -69,7 +69,7 @@ describe("Profil v6", function()
 			retention = nil :: any,
 			purchases = nil :: any,
 		})
-		expect(data.version).toBe(6)
+		expect(data.version).toBe(Profile.VERSION)
 		local restored = Profile.toTycoon(Profile.sanitize(data))
 		expect(restored.siloLevel).toBe(3)
 		expect(restored.decor.Flag).toBe(true)
