@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée p
 ### Corrigé
 - Un nouveau joueur (0 $, sac vide) n'avait **aucune flèche** : rien d'achetable, rien à décharger. Les flèches,
   en bleu ciel, le mènent maintenant au champ par le pont le plus proche, jusqu'à son premier déchargement.
+- Le joueur apparaissait face au couvoir, le champ sur le côté : il apparaît maintenant tourné vers le champ.
+
+### Ajouté
+- `docs/AMELIORATIONS.md` : inventaire des améliorations possibles pour viser le top 100, avec ce qui est fait,
+  recommandé, à décider ou déconseillé.
 
 ## Pets : nouvelles espèces, index et « Meilleurs » (A66)
 
