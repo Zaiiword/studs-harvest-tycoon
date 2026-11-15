@@ -84,6 +84,8 @@ local function bonusOf(player: Player, entry: Entry): Tycoon.IncomeBonus
 	local equipped = Pets.decodeEquipped(player:GetAttribute(PlayerAttributes.EQUIPPED_PETS))
 	bonus.petBonuses = Pets.bonuses({ owned = {}, equipped = equipped })
 	bonus.hasIncomeX2 = Perks.hasPass(player, "IncomeX2") -- Gamepass Revenus ×2 (CDC §9)
+	local social = player:GetAttribute(PlayerAttributes.SOCIAL_BOOST) -- amis et Premium (A63)
+	bonus.socialMultiplier = if typeof(social) == "number" and social >= 1 then social else 1
 	return bonus
 end
 local incomeElapsed, padElapsed = 0, 0
@@ -247,7 +249,7 @@ function TycoonService.factoryIncome(player: Player): number
 		return 0
 	end
 	local bonus = bonusOf(player, entry)
-	bonus.boostMultiplier = 1
+	bonus.boostMultiplier, bonus.socialMultiplier = 1, 1
 	return Tycoon.fullIncomePerSecond(entry.state, bonus)
 end
 
@@ -464,7 +466,7 @@ function TycoonService.collectOffline(player: Player, lastSeenAt: number, now: n
 		return
 	end
 	local bonus = bonusOf(player, entry)
-	bonus.boostMultiplier = 1
+	bonus.boostMultiplier, bonus.socialMultiplier = 1, 1 -- les amis n'étaient pas là non plus
 	local result = Offline.collect(entry.state, lastSeenAt, now, bonus)
 	if result.earned <= 0 then
 		return

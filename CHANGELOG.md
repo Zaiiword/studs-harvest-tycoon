@@ -2,6 +2,12 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Bonus des amis et de Premium (A63)
+
+### Ajouté
+- **+10 % de revenus par ami** présent sur le serveur (4 au plus) et **+10 % pour Roblox Premium**.
+- Pastille « 👥 Inviter » à droite de la barre d'objectif : affiche le bonus en cours et ouvre l'invitation Roblox.
+
 ## Connexion quotidienne et codes (A61, A62)
 
 ### Ajouté

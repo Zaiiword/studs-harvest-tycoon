@@ -3,10 +3,13 @@
 -- du silo ; alerte quand le silo est vide et que l'usine s'arrête (CDC §8). Lit les attributs du joueur.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SocialService = game:GetService("SocialService")
 
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
+local Social = require(ReplicatedStorage.Shared.domain.Social)
+local Style = require(script.Parent.Parent.ui.Style)
 local Format = require(ReplicatedStorage.Shared.util.Format)
 
 local EconomyHudController = {}
@@ -20,8 +23,10 @@ local summary: TextLabel
 local alert: TextLabel
 local goalFill: Frame
 local goalText: TextLabel
+local inviteText: TextLabel
 
 local GOAL = PANEL.GOAL
+local INVITE = PANEL.INVITE
 
 local function newLabel(parent: Instance): TextLabel
 	local text = Instance.new("TextLabel")
@@ -65,6 +70,25 @@ local function buildGoal(top: number)
 	bar.Parent = screenGui
 end
 
+-- Invite des amis (A63) : chacun ajoute +10 % de revenus tant qu'il joue sur le même serveur.
+local function promptInvite()
+	local ok, canInvite = pcall(SocialService.CanSendGameInviteAsync, SocialService, localPlayer)
+	if ok and canInvite then
+		pcall(SocialService.PromptGameInvite, SocialService, localPlayer)
+	end
+end
+
+local function buildInvite(top: number)
+	local button = Style.button(screenGui, { top = INVITE.TOP, bottom = INVITE.BOTTOM, edge = UiConfig.STROKE_COLOR })
+	button.Name = "Invite"
+	button.AnchorPoint = Vector2.new(0, 0)
+	button.Position = UDim2.new(0.5, GOAL.WIDTH / 2 + GOAL.GAP, 0, top)
+	button.Size = UDim2.fromOffset(INVITE.WIDTH, GOAL.HEIGHT)
+	inviteText = Style.label(button, "", UDim2.new(1, -10, 1, -4))
+	inviteText.Position = UDim2.fromOffset(5, 2)
+	button.Activated:Connect(promptInvite)
+end
+
 local function buildPanel()
 	local frame = Instance.new("Frame")
 	frame.Name = "Economy"
@@ -92,6 +116,7 @@ local function buildPanel()
 	alert.TextStrokeTransparency = 0
 	alert.Text = "Silo vide : l'usine est à l'arrêt, retourne récolter !"
 	buildGoal(goalTop)
+	buildInvite(goalTop)
 end
 
 local function numberAttribute(name: string): number
@@ -116,6 +141,12 @@ local function refreshGoal()
 		else `🎯 {label} · {Format.money(money)} / {Format.money(price)} $`
 end
 
+local function refreshInvite()
+	local boost = localPlayer:GetAttribute(PlayerAttributes.SOCIAL_BOOST)
+	local multiplier = if typeof(boost) == "number" then boost else 1
+	inviteText.Text = if multiplier > 1 then `👥 Amis {Social.percent(multiplier)}` else "👥 Inviter : +10 %"
+end
+
 local function refresh()
 	local silo = numberAttribute(PlayerAttributes.SILO_VALUE)
 	local rate = numberAttribute(PlayerAttributes.CONVEYOR_RATE)
@@ -126,6 +157,7 @@ local function refresh()
 		`♻️ {numberAttribute(PlayerAttributes.REBIRTHS)}  💎 {numberAttribute(PlayerAttributes.GEMS)}`
 	summary.Text = `💰 {money} $  ·  +{income} $/s  ·  Silo {autonomy}  ·  {prestige}`
 	refreshGoal()
+	refreshInvite()
 	-- L'alerte n'a de sens qu'une fois l'usine lancée (quelque chose a déjà été déposé ou gagné).
 	alert.Visible = silo <= 0 and numberAttribute(PlayerAttributes.MONEY) > 0
 end
@@ -149,6 +181,7 @@ function EconomyHudController:Start()
 			PlayerAttributes.GEMS,
 			PlayerAttributes.GOAL_LABEL,
 			PlayerAttributes.GOAL_PRICE,
+			PlayerAttributes.SOCIAL_BOOST,
 		}
 	do
 		localPlayer:GetAttributeChangedSignal(name):Connect(refresh)

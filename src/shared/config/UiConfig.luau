@@ -34,6 +34,8 @@ return Freeze.deep({
 			FILL = { 90, 200, 70 },
 			READY = { 255, 200, 40 },
 		},
+		-- Pastille d'invitation à droite de la barre d'objectif (A63) : montre le bonus des amis et ouvre l'invitation.
+		INVITE = { WIDTH = 170, TOP = { 120, 200, 255 }, BOTTOM = { 40, 110, 230 } },
 	},
 	-- Bandeau des événements sous la trésorerie (météo, boss, multiplicateur) — CDC §6.
 	EVENT_BANNER = {

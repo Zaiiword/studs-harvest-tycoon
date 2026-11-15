@@ -21,6 +21,8 @@ return table.freeze({
 	REBIRTHS = "Rebirths", -- nombre de Rebirths (+50 % de revenus, +15 % de masse chacun)
 	GEMS = "Gems", -- Gemmes de Prestige
 	IS_DATA_LOADED = "IsDataLoaded", -- vrai une fois le profil chargé (DataService)
+	FRIENDS_ONLINE = "FriendsOnline", -- amis présents sur le serveur (A63)
+	SOCIAL_BOOST = "SocialBoost", -- multiplicateur de revenus des amis et de Premium (Social.multiplier)
 	BOOST_UNTIL = "BoostUntil", -- fin du multiplicateur ×3 gagné contre le boss (EventService)
 	ITEM_PREFIX = "Item_", -- Item_Mud, Item_Glove… : nombre d'exemplaires (InventoryService)
 	EQUIPPED_PETS = "EquippedPets", -- « Dragon:Gold,Cow:Normal » (PetService, Pets.encodeEquipped)
