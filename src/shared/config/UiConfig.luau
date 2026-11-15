@@ -26,12 +26,20 @@ return Freeze.deep({
 		TOP_MARGIN = 12,
 		ALERT_HEIGHT = 28,
 		ALERT_COLOR = { 220, 40, 40 },
+		-- Barre d'objectif sous la trésorerie (A59) : le prochain grand achat et l'épargne déjà réunie.
+		GOAL = {
+			WIDTH = 440,
+			HEIGHT = 28,
+			GAP = 6,
+			FILL = { 90, 200, 70 },
+			READY = { 255, 200, 40 },
+		},
 	},
 	-- Bandeau des événements sous la trésorerie (météo, boss, multiplicateur) — CDC §6.
 	EVENT_BANNER = {
 		WIDTH = 520,
 		HEIGHT = 30,
-		TOP = 84,
+		TOP = 122, -- sous la barre d'objectif et l'alerte « silo vide »
 		SPACING = 6,
 		BOSS_BAR_COLOR = { 128, 230, 255 },
 		WEATHER_COLOR = { 245, 205, 48 },

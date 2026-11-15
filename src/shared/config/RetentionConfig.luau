@@ -4,7 +4,8 @@
 local Freeze = require("../util/Freeze")
 
 export type Reward = {
-	money: number?,
+	money: number?, -- montant plancher en $
+	incomeMinutes: number?, -- A59 : ou autant de minutes de l'usine à plein régime, si c'est plus (Rewards)
 	gems: number?,
 	item: string?, -- id d'objet de l'inventaire (sabotage ou Œuf Légendaire)
 	count: number?,
@@ -27,26 +28,26 @@ export type QuestDef = {
 return Freeze.deep({
 	-- CDC §7.4 : 9 cadeaux qui se débloquent entre 2 et 60 minutes de présence (par session, A44).
 	GIFTS = {
-		{ minutes = 2, reward = { money = 250 } },
-		{ minutes = 5, reward = { money = 1_000 } },
+		{ minutes = 2, reward = { money = 250, incomeMinutes = 1 } },
+		{ minutes = 5, reward = { money = 1_000, incomeMinutes = 2 } },
 		{ minutes = 10, reward = { gems = 3 } },
 		{ minutes = 15, reward = { item = "Mud", count = 2 } },
-		{ minutes = 20, reward = { money = 5_000 } },
+		{ minutes = 20, reward = { money = 5_000, incomeMinutes = 5 } },
 		{ minutes = 30, reward = { gems = 10 } },
 		{ minutes = 40, reward = { item = "Glove", count = 2 } },
-		{ minutes = 50, reward = { money = 25_000 } },
+		{ minutes = 50, reward = { money = 25_000, incomeMinutes = 10 } },
 		{ minutes = 60, reward = { item = "LegendaryEgg", count = 1 } },
 	} :: { Gift },
 
 	-- Roue de la Fortune : un tour gratuit toutes les 24 h (A45). Chances affichées sur la roue.
 	WHEEL_COOLDOWN_SECONDS = 24 * 3600,
 	WHEEL = {
-		{ label = "500 $", weight = 30, reward = { money = 500 }, color = { 75, 151, 75 } },
-		{ label = "2 000 $", weight = 22, reward = { money = 2_000 }, color = { 13, 105, 172 } },
+		{ label = "500 $", weight = 30, reward = { money = 500, incomeMinutes = 1 }, color = { 75, 151, 75 } },
+		{ label = "2 000 $", weight = 22, reward = { money = 2_000, incomeMinutes = 3 }, color = { 13, 105, 172 } },
 		{ label = "5 💎", weight = 18, reward = { gems = 5 }, color = { 98, 37, 209 } },
 		{ label = "2 🟫", weight = 10, reward = { item = "Mud", count = 2 }, color = { 105, 64, 40 } },
 		{ label = "🥊", weight = 8, reward = { item = "Glove", count = 1 }, color = { 196, 40, 28 } },
-		{ label = "10 000 $", weight = 7, reward = { money = 10_000 }, color = { 245, 205, 48 } },
+		{ label = "10 000 $", weight = 7, reward = { money = 10_000, incomeMinutes = 10 }, color = { 245, 205, 48 } },
 		{ label = "20 💎", weight = 3, reward = { gems = 20 }, color = { 255, 89, 89 } },
 		{
 			label = "🥚 Légendaire",
@@ -59,7 +60,13 @@ return Freeze.deep({
 	-- Quêtes de destruction (CDC §7.4) : 3 quêtes par jour, tirées du catalogue selon la date (A46).
 	QUESTS_PER_DAY = 3,
 	QUESTS = {
-		{ id = "Harvest", label = "Couper 300 blés", stat = "harvested", target = 300, reward = { money = 2_000 } },
+		{
+			id = "Harvest",
+			label = "Couper 300 blés",
+			stat = "harvested",
+			target = 300,
+			reward = { money = 2_000, incomeMinutes = 4 },
+		},
 		{ id = "Corn", label = "Couper 80 Maïs Dorés", stat = "corn", target = 80, reward = { gems = 5 } },
 		{ id = "Diamond", label = "Couper 25 Blés Diamant", stat = "diamond", target = 25, reward = { gems = 10 } },
 		{
@@ -74,7 +81,7 @@ return Freeze.deep({
 			label = "Décharger 8 fois au silo",
 			stat = "unloads",
 			target = 8,
-			reward = { money = 3_000 },
+			reward = { money = 3_000, incomeMinutes = 6 },
 		},
 		{
 			id = "Boss",

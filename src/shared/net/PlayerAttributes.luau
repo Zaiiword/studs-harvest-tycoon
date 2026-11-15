@@ -12,6 +12,9 @@ return table.freeze({
 	IMMUNE_UNTIL = "ImmuneUntil", -- fin de la bulle d'immunité aux chocs
 	MONEY = "Money", -- trésorerie en $ (TycoonService)
 	INCOME_PER_SECOND = "IncomePerSecond", -- cadence de l'usine, 0 si le silo est vide
+	FACTORY_INCOME = "FactoryIncome", -- revenu de l'usine à plein régime, sans boost : base des récompenses (A59)
+	GOAL_LABEL = "GoalLabel", -- prochain grand achat visé (Goal) : « 🚜 Tracteur Fermier », "" sans objectif
+	GOAL_PRICE = "GoalPrice",
 	SILO_VALUE = "SiloValue", -- valeur brute en attente dans le silo
 	SILO_CAPACITY = "SiloCapacity",
 	CONVEYOR_RATE = "ConveyorRate", -- $ bruts consommés par seconde (autonomie = silo / débit)

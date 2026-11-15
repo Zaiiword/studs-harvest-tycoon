@@ -2,6 +2,17 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Récompenses à la mesure du joueur et objectif suivant (A59)
+
+### Ajouté
+- **Barre d'objectif** sous la trésorerie : le prochain grand achat (palier du Garage, machine ou Rebirth, le moins
+  cher des trois) et l'argent déjà réuni ; elle devient dorée quand on peut l'acheter.
+
+### Modifié
+- Les récompenses en argent (cadeaux, quêtes, roue) valent **le plus grand** de leur montant d'origine et de quelques
+  minutes de l'usine à plein régime : 500 $ ne voulaient plus rien dire après une heure de jeu. Le menu 🎁 affiche le
+  montant réel, la notification aussi.
+
 ## Classements, tête du joueur et lisibilité (A58)
 
 ### Ajouté

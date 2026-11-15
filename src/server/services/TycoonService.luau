@@ -15,6 +15,7 @@ local EventConfig = require(ReplicatedStorage.Shared.config.EventConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
+local Goal = require(ReplicatedStorage.Shared.domain.Goal)
 local Pets = require(ReplicatedStorage.Shared.domain.Pets)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Profile = require(ReplicatedStorage.Shared.domain.Profile)
@@ -235,10 +236,30 @@ local function syncDecor(player: Player, entry: Entry, isPurchase: boolean)
 	end
 end
 
+-- Revenu à plein régime sans le boost temporaire du boss : la base des récompenses en argent ne doit pas tripler
+-- pendant 5 minutes (A59).
+function TycoonService.factoryIncome(player: Player): number
+	local entry = entries[player]
+	if not entry then
+		return 0
+	end
+	local bonus = bonusOf(player, entry)
+	bonus.boostMultiplier = 1
+	return Tycoon.fullIncomePerSecond(entry.state, bonus)
+end
+
+local function publishGoal(player: Player, entry: Entry)
+	local goal = Goal.next(entry.state, VehicleService.purchasedTierOf(player), entry.progress)
+	player:SetAttribute(PlayerAttributes.GOAL_LABEL, if goal then goal.label else "")
+	player:SetAttribute(PlayerAttributes.GOAL_PRICE, if goal then goal.price else 0)
+end
+
 local function publish(player: Player, entry: Entry)
 	local state = entry.state
 	player:SetAttribute(PlayerAttributes.MONEY, math.floor(state.money))
 	player:SetAttribute(PlayerAttributes.INCOME_PER_SECOND, Tycoon.incomePerSecond(state, bonusOf(player, entry)))
+	player:SetAttribute(PlayerAttributes.FACTORY_INCOME, TycoonService.factoryIncome(player))
+	publishGoal(player, entry)
 	player:SetAttribute(PlayerAttributes.SILO_VALUE, math.floor(state.silo))
 	player:SetAttribute(PlayerAttributes.SILO_CAPACITY, Tycoon.siloCapacity(state))
 	player:SetAttribute(PlayerAttributes.CONVEYOR_RATE, Tycoon.conveyorRate(state))

@@ -121,6 +121,11 @@ function Tycoon.incomePerSecond(state: State, bonus: IncomeBonus): number
 	return income(state, if state.silo > 0 then Tycoon.conveyorRate(state) else 0, bonus)
 end
 
+-- Revenu de l'usine à plein régime, même silo vide : référence des récompenses en argent (A59, Rewards).
+function Tycoon.fullIncomePerSecond(state: State, bonus: IncomeBonus): number
+	return income(state, Tycoon.conveyorRate(state), bonus)
+end
+
 -- Fait tourner l'usine pendant `dt` secondes : le tapis vide le silo et le revenu est encaissé.
 function Tycoon.tick(state: State, dt: number, bonus: IncomeBonus): number
 	local consumed = math.min(state.silo, Tycoon.conveyorRate(state) * dt)

@@ -12,6 +12,7 @@ local RetentionConfig = require(ReplicatedStorage.Shared.config.RetentionConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Retention = require(ReplicatedStorage.Shared.domain.Retention)
 local RewardText = require(ReplicatedStorage.Shared.domain.RewardText)
+local Rewards = require(ReplicatedStorage.Shared.domain.Rewards)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -56,6 +57,8 @@ local screenGui: ScreenGui
 local window: Window.Window
 local hud: HudButton.HudButton
 local giftTiles: { Tile } = {}
+local giftRewards: { TextLabel } = {} -- montants des cadeaux, qui suivent le revenu du joueur (A59)
+local wheelLabels: { { TextLabel } } = {} -- textes de chaque case de la roue (sur la roue et dans les chances)
 local questRows: { QuestRow } = {}
 local rotor: Frame
 local pointer: TextLabel
@@ -71,6 +74,16 @@ end
 
 -- (Le rebond des boutons occupe leur UIScale : la respiration se fait sur un enfant.)
 -- Change l'état d'une tuile (couleurs, texte) ; les tuiles prêtes « respirent » (voir animate).
+-- Une récompense en argent vaut au moins quelques minutes de l'usine (A59) : même calcul que le serveur.
+local function rewardLabel(reward: RetentionConfig.Reward): string
+	local income = attribute(PlayerAttributes.FACTORY_INCOME)
+	return RewardText.label(Rewards.resolve(reward, if typeof(income) == "number" then income else 0))
+end
+
+local function segmentLabel(segment: RetentionConfig.WheelSegment): string
+	return if segment.reward.money then rewardLabel(segment.reward) else segment.label
+end
+
 local function setState(tile: Tile, state: State, text: string)
 	tile.state = state
 	tile.status.Text = text
@@ -103,8 +116,9 @@ local function buildGift(page: ScrollingFrame, index: number, gift: RetentionCon
 	card.LayoutOrder = index
 	local icon = Style.label(card, RewardText.icon(gift.reward), UDim2.fromScale(1, 0.38))
 	icon.Position = UDim2.fromScale(0, 0.04)
-	local reward = Style.label(card, RewardText.label(gift.reward), UDim2.new(1, -12, 0.22, 0))
+	local reward = Style.label(card, rewardLabel(gift.reward), UDim2.new(1, -12, 0.22, 0))
 	reward.Position = UDim2.new(0, 6, 0.42, 0)
+	giftRewards[index] = reward
 	local pill = Instance.new("Frame")
 	pill.AnchorPoint = Vector2.new(0.5, 1)
 	pill.Position = UDim2.new(0.5, 0, 1, -8)
@@ -252,7 +266,9 @@ local function buildSegments(face: Frame)
 		chip.BackgroundColor3 = Bricks.rgb(segment.color)
 		Style.corner(chip, CIRCLE)
 		Style.stroke(chip, WINDOW.STROKE_COLOR, 2)
-		Style.label(chip, segment.label, UDim2.new(1, -6, 1, -4)).Position = UDim2.fromOffset(3, 2)
+		local text = Style.label(chip, segmentLabel(segment), UDim2.new(1, -6, 1, -4))
+		text.Position = UDim2.fromOffset(3, 2)
+		wheelLabels[index] = { text }
 		chip.Parent = rotor
 	end
 end
@@ -302,7 +318,8 @@ local function buildOdds(page: Frame)
 		row.BackgroundColor3 = Bricks.rgb(segment.color)
 		Style.corner(row, CIRCLE)
 		Style.stroke(row, WINDOW.STROKE_COLOR, 2)
-		local name = Style.label(row, segment.label, UDim2.new(0.68, -8, 1, -6))
+		local name = Style.label(row, segmentLabel(segment), UDim2.new(0.68, -8, 1, -6))
+		table.insert(wheelLabels[index], name)
 		name.Position = UDim2.fromOffset(10, 3)
 		name.TextXAlignment = Enum.TextXAlignment.Left
 		local chance = Style.label(row, `{odds[index]} %`, UDim2.new(0.32, -10, 1, -6))
@@ -339,7 +356,7 @@ local function spinTo(index: number)
 	local spin = TweenService:Create(rotor, info, { Rotation = target })
 	spin.Completed:Once(function()
 		local reward = RetentionConfig.WHEEL[index].reward
-		RewardPopup.show(RewardText.icon(reward), RewardText.label(reward))
+		RewardPopup.show(RewardText.icon(reward), rewardLabel(reward))
 	end)
 	spin:Play()
 end
@@ -369,6 +386,7 @@ local function refreshGifts(now: number): boolean
 	local hasReady = false
 	for index, gift in RetentionConfig.GIFTS do
 		local tile = giftTiles[index]
+		giftRewards[index].Text = rewardLabel(gift.reward)
 		if claimed[index] then
 			setState(tile, "done", "✔ REÇU")
 		elseif Retention.isGiftClaimable(index, session, claimed) then
@@ -396,7 +414,7 @@ local function refreshQuests(now: number): boolean
 		row.fill.Size = UDim2.fromScale(done / quest.target, 1)
 		row.count.Text = `{done} / {quest.target}`
 		local isClaimed = string.find("," .. claimed .. ",", "," .. quest.id .. ",", 1, true) ~= nil
-		local reward = RewardText.label(quest.reward)
+		local reward = rewardLabel(quest.reward)
 		if isClaimed then
 			setState(row.tile, "done", "✔ REÇU")
 		elseif done >= quest.target then
@@ -411,6 +429,11 @@ local function refreshQuests(now: number): boolean
 end
 
 local function refreshWheel(now: number): boolean
+	for index, segment in RetentionConfig.WHEEL do
+		for _, label in wheelLabels[index] do
+			label.Text = segmentLabel(segment)
+		end
+	end
 	local readyAt = attribute(PlayerAttributes.WHEEL_READY_AT)
 	local wait = if typeof(readyAt) == "number" then readyAt - now else 0
 	if wait > 0 then
