@@ -45,9 +45,9 @@ export type GameParts = {
 local Profile = {}
 
 -- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases` ; v5 → v6 : `siloLevel`, `decor`, `guided` ;
--- v6 → v7 : `lastSeenAt`. Un champ absent reprend sa valeur par défaut :
+-- v6 → v7 : `lastSeenAt` ; v7 → v8 : `retention.login`, `retention.codes`. Un champ absent reprend sa valeur par défaut :
 -- la migration est donc faite par `sanitize`, sans code spécifique.
-Profile.VERSION = 7
+Profile.VERSION = 8
 
 local knownMachines: { [string]: boolean } = {}
 for _, list in { TycoonConfig.MACHINES, TycoonConfig.UPPER_MACHINES } do

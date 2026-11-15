@@ -1,6 +1,7 @@
 --!strict
--- Menu des récompenses 🎁 (CDC §7.4, §10) dans le style de la boutique : onglets Cadeaux (9 cadeaux de temps
--- de jeu), Quêtes du jour (barres de progression) et Roue de la Fortune (chances affichées, A45).
+-- Menu des récompenses 🎁 (CDC §7.4, §10) dans le style de la boutique : onglets Connexion quotidienne (A61),
+-- Cadeaux (9 cadeaux de temps de jeu), Quêtes du jour (barres de progression), Roue de la Fortune (chances
+-- affichées, A45) et Codes (A62). Il s'ouvre seul sur la connexion quand la récompense du jour attend.
 -- Le client ne fait que demander ; la roue tourne jusqu'à la case tirée par le serveur.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -57,6 +58,12 @@ local screenGui: ScreenGui
 local window: Window.Window
 local hud: HudButton.HudButton
 local giftTiles: { Tile } = {}
+local loginTiles: { Tile } = {}
+local loginRewards: { TextLabel } = {}
+local codeBox: TextBox
+local codeFeedback: TextLabel
+local tabs: Tabs.Tabs
+local hasAutoOpened = false
 local giftRewards: { TextLabel } = {} -- montants des cadeaux, qui suivent le revenu du joueur (A59)
 local wheelLabels: { { TextLabel } } = {} -- textes de chaque case de la roue (sur la roue et dans les chances)
 local questRows: { QuestRow } = {}
@@ -107,6 +114,107 @@ local function candy(parent: Instance, state: State): TextButton
 	local button = Style.button(parent, { top = colors.top, bottom = colors.bottom, edge = WINDOW.STROKE_COLOR })
 	Style.shine(button)
 	return button
+end
+
+-- Connexion quotidienne (A61) ----------------------------------------------------------------------------------
+
+local function buildLoginDay(page: ScrollingFrame, index: number, reward: RetentionConfig.Reward)
+	local card = candy(page, "wait")
+	card.LayoutOrder = index
+	local day = Style.label(card, `JOUR {index}`, UDim2.new(1, -12, 0.18, 0))
+	day.Position = UDim2.new(0, 6, 0.03, 0)
+	local icon = Style.label(card, RewardText.icon(reward), UDim2.fromScale(1, 0.3))
+	icon.Position = UDim2.fromScale(0, 0.2)
+	local amount = Style.label(card, rewardLabel(reward), UDim2.new(1, -12, 0.18, 0))
+	amount.Position = UDim2.new(0, 6, 0.5, 0)
+	loginRewards[index] = amount
+	local pill = Instance.new("Frame")
+	pill.AnchorPoint = Vector2.new(0.5, 1)
+	pill.Position = UDim2.new(0.5, 0, 1, -8)
+	pill.Size = UDim2.new(1, -16, 0.24, 0)
+	pill.BackgroundColor3 = Bricks.rgb(WINDOW.STROKE_COLOR)
+	pill.BackgroundTransparency = 0.35
+	Style.corner(pill, CIRCLE)
+	pill.Parent = card
+	local status = Style.label(pill, "", UDim2.new(1, -10, 1, -6))
+	status.Position = UDim2.fromOffset(5, 3)
+	card.Activated:Connect(function()
+		remotes.login:FireServer()
+	end)
+	loginTiles[index] = newTile(card, icon, status)
+end
+
+local function buildLogin(): ScrollingFrame
+	local page = Grid.page({
+		minWidth = GIFT_MIN_WIDTH,
+		height = MENU.GIFT_HEIGHT,
+		minColumns = MENU.LOGIN_COLUMNS,
+		maxColumns = MENU.LOGIN_COLUMNS,
+		padding = PAD,
+	})
+	for index, reward in RetentionConfig.LOGIN_REWARDS do
+		buildLoginDay(page, index, reward)
+	end
+	return page
+end
+
+-- Codes (A62) --------------------------------------------------------------------------------------------------
+
+local function buildCodes(): Frame
+	local page = Instance.new("Frame")
+	page.BackgroundTransparency = 1
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, PAD)
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Parent = page
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, PAD * 2)
+	padding.Parent = page
+	local title = Style.label(page, "🎟️ Entre un code pour recevoir un cadeau !", UDim2.new(0.9, 0, 0, 40))
+	title.LayoutOrder = 1
+	codeBox = Instance.new("TextBox")
+	codeBox.LayoutOrder = 2
+	codeBox.Size = UDim2.new(0.7, 0, 0, MENU.CODE_HEIGHT)
+	codeBox.BackgroundColor3 = Bricks.rgb(MENU.QUEST_TOP)
+	codeBox.PlaceholderText = "CODE"
+	codeBox.Text = ""
+	codeBox.ClearTextOnFocus = false
+	codeBox.Font = (Enum.Font :: any)[UiConfig.FONT]
+	codeBox.TextScaled = true
+	codeBox.TextColor3 = Bricks.rgb(WINDOW.STROKE_COLOR)
+	Style.corner(codeBox, UDim.new(0, UiConfig.CORNER_RADIUS))
+	Style.stroke(codeBox, WINDOW.STROKE_COLOR, 3)
+	codeBox.Parent = page
+	local submit = candy(page, "ready")
+	submit.LayoutOrder = 3
+	submit.Size = UDim2.new(0.45, 0, 0, SPIN_HEIGHT)
+	Style.label(submit, "VALIDER", UDim2.new(1, -12, 1, -12)).Position = UDim2.fromOffset(6, 6)
+	local function send()
+		if codeBox.Text ~= "" then
+			remotes.code:FireServer(codeBox.Text)
+		end
+	end
+	submit.Activated:Connect(send)
+	codeBox.FocusLost:Connect(function(enterPressed: boolean)
+		if enterPressed then
+			send()
+		end
+	end)
+	codeFeedback = Style.label(page, "", UDim2.new(0.9, 0, 0, 34))
+	codeFeedback.LayoutOrder = 4
+	local hint = Style.label(page, "Des codes sont offerts à chaque mise à jour !", UDim2.new(0.9, 0, 0, 26))
+	hint.LayoutOrder = 5
+	hint.TextTransparency = 0.25
+	return page
+end
+
+local function onCodeResult(isOk: boolean, message: string)
+	codeFeedback.Text = message
+	codeFeedback.TextColor3 = Bricks.rgb(if isOk then MENU.CODE_OK else MENU.CODE_ERROR)
+	if isOk then
+		codeBox.Text = ""
+	end
 end
 
 -- Cadeaux ----------------------------------------------------------------------------------------------------
@@ -376,6 +484,27 @@ end
 
 -- Rafraîchissement ---------------------------------------------------------------------------------------------
 
+local function refreshLogin(now: number): boolean
+	local state = Retention.newState()
+	local lastDay, streak = attribute(PlayerAttributes.LOGIN_LAST_DAY), attribute(PlayerAttributes.LOGIN_STREAK)
+	state.login.lastDay = if typeof(lastDay) == "number" then lastDay else -1
+	state.login.streak = if typeof(streak) == "number" then streak else 0
+	local status = Retention.loginStatus(state, Retention.dayOf(now))
+	for index, reward in RetentionConfig.LOGIN_REWARDS do
+		loginRewards[index].Text = rewardLabel(reward)
+		local tile = loginTiles[index]
+		local isToday = index == status.index
+		if index > status.index then
+			setState(tile, "wait", if index == status.index + 1 then "DEMAIN" else `J+{index - status.index}`)
+		elseif isToday and status.isClaimable then
+			setState(tile, "ready", "RÉCLAMER !")
+		else
+			setState(tile, "done", "✔ REÇU") -- jours précédents de la série, ou aujourd'hui déjà réclamé
+		end
+	end
+	return status.isClaimable
+end
+
 local function refreshGifts(now: number): boolean
 	local started = attribute(PlayerAttributes.SESSION_STARTED_AT)
 	local session = if typeof(started) == "number" then now - started else 0
@@ -446,10 +575,19 @@ end
 
 local function refresh()
 	local now = Workspace:GetServerTimeNow()
+	local loginReady = refreshLogin(now)
 	local giftReady = refreshGifts(now)
 	local questReady = refreshQuests(now)
 	local wheelReady = refreshWheel(now)
-	HudButton.setAlert(hud, giftReady or questReady or wheelReady)
+	HudButton.setAlert(hud, loginReady or giftReady or questReady or wheelReady)
+	-- La récompense du jour attend : le menu s'ouvre seul, une fois par session, une fois le profil chargé.
+	if loginReady and not hasAutoOpened and attribute(PlayerAttributes.IS_DATA_LOADED) == true then
+		hasAutoOpened = true
+		task.delay(MENU.LOGIN_AUTO_OPEN_DELAY, function()
+			tabs:select(1)
+			window:open()
+		end)
+	end
 end
 
 -- Les récompenses prêtes « respirent » pour attirer l'œil.
@@ -459,8 +597,10 @@ local function animate(deltaTime: number)
 		return
 	end
 	local scale = 1 + math.sin(clock * MENU.READY_PULSE.speed) * MENU.READY_PULSE.scale
-	for _, tile in giftTiles do
-		tile.pulse.Scale = if tile.state == "ready" then scale else 1
+	for _, list in { giftTiles, loginTiles } do
+		for _, tile in list do
+			tile.pulse.Scale = if tile.state == "ready" then scale else 1
+		end
 	end
 	for _, row in questRows do
 		row.tile.pulse.Scale = if row.tile.state == "ready" then scale else 1
@@ -477,11 +617,13 @@ function RetentionMenuController:Init()
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	window = Window.new(screenGui, "Rewards", "🎁 RÉCOMPENSES")
 	window.onOpen = refresh
-	local tabs = Tabs.new(window.body)
+	tabs = Tabs.new(window.body)
+	tabs:add("📅 JOUR", buildLogin())
 	tabs:add("🎁 CADEAUX", buildGifts())
 	tabs:add("📜 QUÊTES", buildQuests())
 	tabs:add("🎡 ROUE", buildWheel())
-	tabs:select(1)
+	tabs:add("🎟️ CODES", buildCodes())
+	tabs:select(2)
 	hud = HudButton.new(screenGui, {
 		icon = "🎁",
 		caption = "CADEAUX",
@@ -498,6 +640,9 @@ function RetentionMenuController:Start()
 	remotes.gift = Remotes.event(Remotes.CLAIM_GIFT)
 	remotes.spin = Remotes.event(Remotes.SPIN_WHEEL)
 	remotes.quest = Remotes.event(Remotes.CLAIM_QUEST)
+	remotes.login = Remotes.event(Remotes.CLAIM_LOGIN)
+	remotes.code = Remotes.event(Remotes.REDEEM_CODE)
+	Remotes.event(Remotes.CODE_RESULT).OnClientEvent:Connect(onCodeResult)
 	Remotes.event(Remotes.WHEEL_RESULT).OnClientEvent:Connect(spinTo)
 	RunService.Heartbeat:Connect(function(deltaTime: number)
 		elapsed += deltaTime

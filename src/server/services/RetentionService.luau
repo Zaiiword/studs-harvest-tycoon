@@ -38,6 +38,7 @@ local entries: { [Player]: Entry } = {}
 local limiter = RateLimiter.new(5, 2)
 local notify: RemoteEvent
 local wheelResult: RemoteEvent
+local codeResult: RemoteEvent
 local publishElapsed = 0
 
 local function now(): number
@@ -74,6 +75,8 @@ local function publish(player: Player, entry: Entry)
 	)
 	player:SetAttribute(PlayerAttributes.QUEST_PROGRESS, table.concat(progress, ","))
 	player:SetAttribute(PlayerAttributes.QUESTS_CLAIMED, table.concat(claimed, ","))
+	player:SetAttribute(PlayerAttributes.LOGIN_LAST_DAY, entry.state.login.lastDay)
+	player:SetAttribute(PlayerAttributes.LOGIN_STREAK, entry.state.login.streak)
 end
 
 -- Verse une récompense (argent, gemmes ou objet) et prévient le joueur.
@@ -140,6 +143,37 @@ local function onClaimQuest(player: Player, rawId: any)
 	end
 end
 
+local function onClaimLogin(player: Player)
+	local entry = entries[player]
+	if not entry or not limiter:allow(player, os.clock()) then
+		return
+	end
+	local reward = Retention.claimLogin(entry.state, Retention.dayOf(now()))
+	if reward then
+		grant(player, reward, `Connexion, jour {entry.state.login.streak}`)
+		publish(player, entry)
+	end
+end
+
+local CODE_MESSAGES: { [Retention.CodeResult]: string } = {
+	invalid = "Ce code n'existe pas.",
+	used = "Tu as déjà utilisé ce code.",
+	expired = "Ce code a expiré.",
+	ok = "Code validé !",
+}
+
+local function onRedeemCode(player: Player, raw: any)
+	local entry = entries[player]
+	if not entry or not limiter:allow(player, os.clock()) then
+		return
+	end
+	local reward, result = Retention.redeemCode(entry.state, raw, os.time())
+	if reward then
+		grant(player, reward, "Code")
+	end
+	codeResult:FireClient(player, result == "ok", CODE_MESSAGES[result])
+end
+
 -- Statistique cumulée d'un joueur (statues de classement).
 function RetentionService.stat(player: Player, stat: string): number
 	local entry = entries[player]
@@ -192,6 +226,9 @@ function RetentionService:Init()
 	Remotes.event(Remotes.CLAIM_GIFT).OnServerEvent:Connect(onClaimGift)
 	Remotes.event(Remotes.SPIN_WHEEL).OnServerEvent:Connect(onSpinWheel)
 	Remotes.event(Remotes.CLAIM_QUEST).OnServerEvent:Connect(onClaimQuest)
+	codeResult = Remotes.event(Remotes.CODE_RESULT)
+	Remotes.event(Remotes.CLAIM_LOGIN).OnServerEvent:Connect(onClaimLogin)
+	Remotes.event(Remotes.REDEEM_CODE).OnServerEvent:Connect(onRedeemCode)
 end
 
 function RetentionService:Start()

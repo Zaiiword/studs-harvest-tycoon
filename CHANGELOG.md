@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Connexion quotidienne et codes (A61, A62)
+
+### Ajouté
+- **Calendrier de connexion** sur 7 jours (onglet 📅 du menu 🎁) : argent, gemmes, objets, et un Œuf Légendaire au
+  jour 7. Un jour manqué fait repartir la série au jour 1. Le menu s'ouvre seul quand la récompense du jour attend.
+- **Codes** (onglet 🎟️) : un usage par compte, insensibles à la casse ; codes de lancement BIENVENUE, LEGO, MOISSON.
+  Ajouter un code = une ligne dans `RetentionConfig.CODES` (avec date d'expiration facultative).
+- Profil v8 (série de connexion, codes utilisés).
+
 ## Gains hors ligne (A60)
 
 ### Ajouté

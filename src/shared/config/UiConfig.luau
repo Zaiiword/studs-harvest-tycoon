@@ -93,6 +93,11 @@ return Freeze.deep({
 	-- Menu de rétention 🎁 (CDC §7.4) : cadeaux de temps de jeu, quêtes du jour, Roue de la Fortune.
 	RETENTION_MENU = {
 		GIFT_COLUMNS = 3,
+		LOGIN_COLUMNS = 4, -- calendrier de connexion : 7 jours sur deux rangées (A61)
+		LOGIN_AUTO_OPEN_DELAY = 3, -- secondes après le chargement du profil
+		CODE_HEIGHT = 56,
+		CODE_OK = { 120, 255, 120 },
+		CODE_ERROR = { 255, 110, 110 },
 		GIFT_HEIGHT = 128,
 		QUEST_HEIGHT = 92,
 		PADDING = 12,

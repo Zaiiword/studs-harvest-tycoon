@@ -15,6 +15,8 @@ export type Gift = { minutes: number, reward: Reward }
 
 export type WheelSegment = { label: string, weight: number, reward: Reward, color: { number } }
 
+export type CodeDef = { code: string, reward: Reward, expiresAt: number? } -- expiresAt : heure Unix, nil = sans fin
+
 export type ScoreboardDef = { id: string, title: string, stat: string, z: number }
 
 export type QuestDef = {
@@ -38,6 +40,27 @@ return Freeze.deep({
 		{ minutes = 50, reward = { money = 25_000, incomeMinutes = 10 } },
 		{ minutes = 60, reward = { item = "LegendaryEgg", count = 1 } },
 	} :: { Gift },
+
+	-- Connexion quotidienne (A61) : une récompense par jour, de plus en plus belle sur 7 jours d'affilée. Un jour
+	-- manqué fait repartir la série au jour 1 ; après le jour 7, le cycle recommence.
+	LOGIN_REWARDS = {
+		{ money = 500, incomeMinutes = 3 },
+		{ gems = 5 },
+		{ item = "Mud", count = 3 },
+		{ money = 5_000, incomeMinutes = 10 },
+		{ gems = 15 },
+		{ item = "Glove", count = 3 },
+		{ item = "LegendaryEgg", count = 1 },
+	} :: { Reward },
+
+	-- Codes à saisir dans le menu 🎁 (A62) : un usage par compte. Insensibles à la casse et aux espaces.
+	-- Pour en ajouter un (annonce sur les réseaux, mise à jour), il suffit d'une ligne ici.
+	CODES = {
+		{ code = "BIENVENUE", reward = { money = 1_000, incomeMinutes = 5 } },
+		{ code = "LEGO", reward = { gems = 10 } },
+		{ code = "MOISSON", reward = { item = "Glove", count = 2 } },
+	} :: { CodeDef },
+	CODE_MAX_LENGTH = 24,
 
 	-- Roue de la Fortune : un tour gratuit toutes les 24 h (A45). Chances affichées sur la roue.
 	WHEEL_COOLDOWN_SECONDS = 24 * 3600,

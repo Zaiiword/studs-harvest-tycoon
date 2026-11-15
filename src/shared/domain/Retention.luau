@@ -10,11 +10,21 @@ export type QuestState = {
 	claimed: { [string]: boolean },
 }
 
--- Partie sauvegardée dans le profil (v4).
+-- Série de connexions quotidiennes (A61) : jour (Retention.dayOf) de la dernière récompense réclamée.
+export type LoginState = { lastDay: number, streak: number }
+
+-- Ce que montre le calendrier : la case du jour (1 à 7), et si on peut la réclamer.
+export type LoginStatus = { index: number, streak: number, isClaimable: boolean }
+
+export type CodeResult = "ok" | "invalid" | "used" | "expired"
+
+-- Partie sauvegardée dans le profil (v4 ; connexion et codes en v8).
 export type State = {
 	lastWheelAt: number,
 	quests: QuestState,
 	stats: { [string]: number },
+	login: LoginState,
+	codes: { [string]: boolean }, -- codes déjà utilisés (A62)
 }
 
 local Retention = {}
@@ -24,13 +34,23 @@ local questsById: { [string]: RetentionConfig.QuestDef } = {}
 for _, quest in RetentionConfig.QUESTS do
 	questsById[quest.id] = quest
 end
+local codesByName: { [string]: RetentionConfig.CodeDef } = {}
+for _, code in RetentionConfig.CODES do
+	codesByName[string.upper(code.code)] = code
+end
 local knownStats: { [string]: boolean } = {}
 for _, stat in RetentionConfig.STATS do
 	knownStats[stat] = true
 end
 
 function Retention.newState(): State
-	return { lastWheelAt = 0, quests = { day = -1, progress = {}, claimed = {} }, stats = {} }
+	return {
+		lastWheelAt = 0,
+		quests = { day = -1, progress = {}, claimed = {} },
+		stats = {},
+		login = { lastDay = -1, streak = 0 },
+		codes = {},
+	}
 end
 
 local function count(value: any): number?
@@ -57,6 +77,12 @@ function Retention.sanitize(raw: any): State
 	end
 	for id, value in if typeof(quests.claimed) == "table" then quests.claimed else {} do
 		state.quests.claimed[id] = if questsById[id] and value == true then true else nil
+	end
+	local login = if typeof(source.login) == "table" then source.login else {}
+	state.login.lastDay = count(login.lastDay) or -1
+	state.login.streak = count(login.streak) or 0
+	for code, value in if typeof(source.codes) == "table" then source.codes else {} do
+		state.codes[code] = if typeof(code) == "string" and codesByName[code] and value == true then true else nil
 	end
 	return state
 end
@@ -137,6 +163,63 @@ function Retention.claimQuest(state: State, questId: string, day: number): Reten
 		end
 	end
 	return nil
+end
+
+-- Connexion quotidienne (A61) ----------------------------------------------------------------------------------
+
+local function cycleIndex(streak: number): number
+	return (math.max(streak, 1) - 1) % #RetentionConfig.LOGIN_REWARDS + 1
+end
+
+-- Réclamée aujourd'hui : la case reste affichée comme reçue. Réclamée hier : la série continue. Sinon : jour 1.
+function Retention.loginStatus(state: State, today: number): LoginStatus
+	local login = state.login
+	if login.lastDay == today then
+		return { index = cycleIndex(login.streak), streak = login.streak, isClaimable = false }
+	end
+	local streak = if login.lastDay == today - 1 then login.streak + 1 else 1
+	return { index = cycleIndex(streak), streak = streak, isClaimable = true }
+end
+
+-- Réclame la récompense du jour. Renvoie la récompense, ou nil si elle a déjà été réclamée aujourd'hui.
+function Retention.claimLogin(state: State, today: number): RetentionConfig.Reward?
+	local status = Retention.loginStatus(state, today)
+	if not status.isClaimable then
+		return nil
+	end
+	state.login = { lastDay = today, streak = status.streak }
+	return RetentionConfig.LOGIN_REWARDS[status.index]
+end
+
+-- Codes (A62) --------------------------------------------------------------------------------------------------
+
+-- « bien venue » → « BIENVENUE » : majuscules, sans espaces. nil si ce n'est pas un texte raisonnable.
+function Retention.normalizeCode(raw: any): string?
+	if typeof(raw) ~= "string" or #raw > RetentionConfig.CODE_MAX_LENGTH * 4 then
+		return nil
+	end
+	local code = string.upper((string.gsub(raw, "%s", "")))
+	if code == "" or #code > RetentionConfig.CODE_MAX_LENGTH or string.find(code, "[^%w]") then
+		return nil
+	end
+	return code
+end
+
+-- Utilise un code : sa récompense et "ok", ou nil et la raison du refus.
+function Retention.redeemCode(state: State, raw: any, now: number): (RetentionConfig.Reward?, CodeResult)
+	local code = Retention.normalizeCode(raw)
+	local def = if code then codesByName[code] else nil
+	if not code or not def then
+		return nil, "invalid"
+	end
+	if state.codes[code] then
+		return nil, "used"
+	end
+	if def.expiresAt and now >= def.expiresAt then
+		return nil, "expired"
+	end
+	state.codes[code] = true
+	return def.reward, "ok"
 end
 
 return Retention

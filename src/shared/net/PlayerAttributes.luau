@@ -31,6 +31,8 @@ return table.freeze({
 	WHEEL_READY_AT = "WheelReadyAt", -- prochain tour de roue possible
 	QUEST_PROGRESS = "QuestProgress", -- « Harvest=120,Boss=0 » : avancement des quêtes du jour
 	QUESTS_CLAIMED = "QuestsClaimed", -- « Harvest,Corn » : quêtes du jour déjà réclamées
+	LOGIN_LAST_DAY = "LoginLastDay", -- jour de la dernière récompense de connexion réclamée (A61)
+	LOGIN_STREAK = "LoginStreak", -- jours de connexion d'affilée
 	HOME_READY_AT = "HomeReadyAt", -- prochain « Retour Base Instantané » possible (A19)
 	PASS_PREFIX = "Pass_", -- Pass_IncomeX2… : vrai si le joueur possède le Gamepass (MonetizationService)
 	HAS_TURBO_TRACTOR = "HasTurboTractor", -- Mini-Tracteur Turbo du Starter Pack (A12)
