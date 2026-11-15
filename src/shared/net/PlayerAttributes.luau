@@ -23,6 +23,12 @@ return table.freeze({
 	IS_DATA_LOADED = "IsDataLoaded", -- vrai une fois le profil chargé (DataService)
 	FRIENDS_ONLINE = "FriendsOnline", -- amis présents sur le serveur (A63)
 	SOCIAL_BOOST = "SocialBoost", -- multiplicateur de revenus des amis et de Premium (Social.multiplier)
+	UPGRADES = "Upgrades", -- « Bag=2,Blades=0,Accountant=1 » : améliorations en gemmes (A65, Upgrades.encode)
+	BAG_UPGRADE = "BagUpgrade", -- multiplicateurs des améliorations : capacité du sac…
+	CUT_UPGRADE = "CutUpgrade", -- … puissance de coupe…
+	INCOME_UPGRADE = "IncomeUpgrade", -- … et revenus de l'usine
+	STATS = "Stats", -- « harvested=120,corn=4 » : statistiques cumulées, pour les succès (A64)
+	ACHIEVEMENTS = "Achievements", -- « Harvest=2,Corn=1 » : paliers de succès réclamés
 	BOOST_UNTIL = "BoostUntil", -- fin du multiplicateur ×3 gagné contre le boss (EventService)
 	ITEM_PREFIX = "Item_", -- Item_Mud, Item_Glove… : nombre d'exemplaires (InventoryService)
 	EQUIPPED_PETS = "EquippedPets", -- « Dragon:Gold,Cow:Normal » (PetService, Pets.encodeEquipped)

@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Succès et améliorations en gemmes (A64, A65)
+
+### Ajouté
+- **Succès** (onglet 🏆 du menu 🎁) : 7 familles (récolte, Maïs, Diamant, déchargements, éjections, boss, argent
+  gagné) de 3 à 5 paliers chacune, payés en gemmes. Pastille « ! » quand un palier est prêt.
+- **Améliorations en gemmes** (onglet 💎 de la boutique), conservées au Rebirth : Sac XXL (+10 % de places),
+  Lames Affûtées (+15 % de coupe), Comptable Génial (+10 % de revenus), 5 niveaux chacune.
+- Profil v9 (améliorations, paliers de succès).
+
 ## Bonus des amis et de Premium (A63)
 
 ### Ajouté

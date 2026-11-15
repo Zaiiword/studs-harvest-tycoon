@@ -1,7 +1,7 @@
 --!strict
 -- Menu des récompenses 🎁 (CDC §7.4, §10) dans le style de la boutique : onglets Connexion quotidienne (A61),
 -- Cadeaux (9 cadeaux de temps de jeu), Quêtes du jour (barres de progression), Roue de la Fortune (chances
--- affichées, A45) et Codes (A62). Il s'ouvre seul sur la connexion quand la récompense du jour attend.
+-- affichées, A45), Succès (A64) et Codes (A62). Il s'ouvre seul sur la connexion quand la récompense du jour attend.
 -- Le client ne fait que demander ; la roue tourne jusqu'à la case tirée par le serveur.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -67,6 +67,7 @@ local hasAutoOpened = false
 local giftRewards: { TextLabel } = {} -- montants des cadeaux, qui suivent le revenu du joueur (A59)
 local wheelLabels: { { TextLabel } } = {} -- textes de chaque case de la roue (sur la roue et dans les chances)
 local questRows: { QuestRow } = {}
+local achievementRows: { [string]: QuestRow } = {}
 local rotor: Frame
 local pointer: TextLabel
 local lastSegment = 0 -- case sous le pointeur, pour le faire claquer à chaque passage
@@ -301,12 +302,15 @@ local function buildQuestRow(page: ScrollingFrame, order: number)
 	local questRow: QuestRow =
 		{ icon = icon, title = title, fill = fill, count = count, claim = claim, tile = newTile(claim, status, status) }
 	claim.Activated:Connect(function()
-		remotes.quest:FireServer(claim:GetAttribute("QuestId"))
+		local questId = claim:GetAttribute("QuestId")
+		if questId then
+			remotes.quest:FireServer(questId)
+		end
 	end)
 	table.insert(questRows, questRow)
 end
 
-local function buildQuests(): ScrollingFrame
+local function listPage(): ScrollingFrame
 	local page = Instance.new("ScrollingFrame")
 	page.BackgroundTransparency = 1
 	page.BorderSizePixel = 0
@@ -321,8 +325,28 @@ local function buildQuests(): ScrollingFrame
 	layout.Padding = UDim.new(0, PAD)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = page
+	return page
+end
+
+local function buildQuests(): ScrollingFrame
+	local page = listPage()
 	for order = 1, RetentionConfig.QUESTS_PER_DAY do
 		buildQuestRow(page, order)
+	end
+	return page
+end
+
+-- Succès (A64) : une ligne par famille, qui montre le prochain palier à atteindre.
+local function buildAchievements(): ScrollingFrame
+	local page = listPage()
+	for order, def in RetentionConfig.ACHIEVEMENTS do
+		buildQuestRow(page, order)
+		local row = table.remove(questRows) :: QuestRow -- même ligne que les quêtes, rangée à part
+		row.icon.Text = def.icon
+		row.claim.Activated:Connect(function()
+			remotes.achievement:FireServer(def.id)
+		end)
+		achievementRows[def.id] = row
 	end
 	return page
 end
@@ -557,6 +581,39 @@ local function refreshQuests(now: number): boolean
 	return hasReady
 end
 
+local function parseCounts(name: string): { [string]: number }
+	local counts: { [string]: number } = {}
+	for id, value in string.gmatch(tostring(attribute(name) or ""), "(%w+)=(%d+)") do
+		counts[id] = tonumber(value) :: number
+	end
+	return counts
+end
+
+local function refreshAchievements(): boolean
+	local state = Retention.newState()
+	state.stats = parseCounts(PlayerAttributes.STATS)
+	state.achievements = parseCounts(PlayerAttributes.ACHIEVEMENTS)
+	local hasReady = false
+	for _, def in RetentionConfig.ACHIEVEMENTS do
+		local row = achievementRows[def.id]
+		local status = Retention.achievementStatus(state, def)
+		local done = math.min(status.progress, status.target)
+		local label = string.gsub(def.label, "{n}", Format.money(status.target))
+		row.title.Text = `{label}  ({status.tier}/{#def.targets})`
+		row.fill.Size = UDim2.fromScale(done / status.target, 1)
+		row.count.Text = `{Format.money(done)} / {Format.money(status.target)}`
+		if status.isMaxed then
+			setState(row.tile, "done", "✔ TERMINÉ")
+		elseif status.isClaimable then
+			setState(row.tile, "ready", `RÉCLAMER\n{status.gems} 💎`)
+			hasReady = true
+		else
+			setState(row.tile, "wait", `🎁 {status.gems} 💎`)
+		end
+	end
+	return hasReady
+end
+
 local function refreshWheel(now: number): boolean
 	for index, segment in RetentionConfig.WHEEL do
 		for _, label in wheelLabels[index] do
@@ -579,7 +636,8 @@ local function refresh()
 	local giftReady = refreshGifts(now)
 	local questReady = refreshQuests(now)
 	local wheelReady = refreshWheel(now)
-	HudButton.setAlert(hud, loginReady or giftReady or questReady or wheelReady)
+	local achievementReady = refreshAchievements()
+	HudButton.setAlert(hud, loginReady or giftReady or questReady or wheelReady or achievementReady)
 	-- La récompense du jour attend : le menu s'ouvre seul, une fois par session, une fois le profil chargé.
 	if loginReady and not hasAutoOpened and attribute(PlayerAttributes.IS_DATA_LOADED) == true then
 		hasAutoOpened = true
@@ -602,8 +660,10 @@ local function animate(deltaTime: number)
 			tile.pulse.Scale = if tile.state == "ready" then scale else 1
 		end
 	end
-	for _, row in questRows do
-		row.tile.pulse.Scale = if row.tile.state == "ready" then scale else 1
+	for _, rows in { questRows, achievementRows } :: { { [any]: QuestRow } } do
+		for _, row in rows do
+			row.tile.pulse.Scale = if row.tile.state == "ready" then scale else 1
+		end
 	end
 	spinTile.pulse.Scale = if spinTile.state == "ready" then scale else 1
 	flickPointer()
@@ -621,6 +681,7 @@ function RetentionMenuController:Init()
 	tabs:add("📅 JOUR", buildLogin())
 	tabs:add("🎁 CADEAUX", buildGifts())
 	tabs:add("📜 QUÊTES", buildQuests())
+	tabs:add("🏆 SUCCÈS", buildAchievements())
 	tabs:add("🎡 ROUE", buildWheel())
 	tabs:add("🎟️ CODES", buildCodes())
 	tabs:select(2)
@@ -641,6 +702,7 @@ function RetentionMenuController:Start()
 	remotes.spin = Remotes.event(Remotes.SPIN_WHEEL)
 	remotes.quest = Remotes.event(Remotes.CLAIM_QUEST)
 	remotes.login = Remotes.event(Remotes.CLAIM_LOGIN)
+	remotes.achievement = Remotes.event(Remotes.CLAIM_ACHIEVEMENT)
 	remotes.code = Remotes.event(Remotes.REDEEM_CODE)
 	Remotes.event(Remotes.CODE_RESULT).OnClientEvent:Connect(onCodeResult)
 	Remotes.event(Remotes.WHEEL_RESULT).OnClientEvent:Connect(spinTo)

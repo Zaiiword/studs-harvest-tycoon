@@ -15,6 +15,16 @@ export type Gift = { minutes: number, reward: Reward }
 
 export type WheelSegment = { label: string, weight: number, reward: Reward, color: { number } }
 
+-- Succès (A64) : une famille par statistique, avec des paliers de plus en plus durs, chacun payé en gemmes.
+export type AchievementDef = {
+	id: string,
+	icon: string,
+	label: string, -- « {n} » est remplacé par l'objectif du palier (« Couper 5 K blés »)
+	stat: string,
+	targets: { number },
+	gems: { number }, -- récompense de chaque palier
+}
+
 export type CodeDef = { code: string, reward: Reward, expiresAt: number? } -- expiresAt : heure Unix, nil = sans fin
 
 export type ScoreboardDef = { id: string, title: string, stat: string, z: number }
@@ -52,6 +62,66 @@ return Freeze.deep({
 		{ item = "Glove", count = 3 },
 		{ item = "LegendaryEgg", count = 1 },
 	} :: { Reward },
+
+	-- Succès permanents (A64) : objectifs de long terme, qui alimentent les améliorations en gemmes (A65).
+	ACHIEVEMENTS = {
+		{
+			id = "Harvest",
+			icon = "🌾",
+			label = "Couper {n} blés",
+			stat = "harvested",
+			targets = { 500, 5_000, 50_000, 500_000, 5_000_000 },
+			gems = { 5, 10, 20, 40, 80 },
+		},
+		{
+			id = "Corn",
+			icon = "🌽",
+			label = "Couper {n} Maïs Dorés",
+			stat = "corn",
+			targets = { 200, 2_000, 20_000, 200_000 },
+			gems = { 5, 10, 20, 40 },
+		},
+		{
+			id = "Diamond",
+			icon = "💠",
+			label = "Couper {n} Blés Diamant",
+			stat = "diamond",
+			targets = { 100, 1_000, 10_000, 100_000 },
+			gems = { 10, 20, 40, 80 },
+		},
+		{
+			id = "Unload",
+			icon = "📥",
+			label = "Décharger {n} fois au silo",
+			stat = "unloads",
+			targets = { 10, 100, 1_000, 10_000 },
+			gems = { 5, 10, 20, 40 },
+		},
+		{
+			id = "Bumper",
+			icon = "💥",
+			label = "Éjecter {n} rivaux",
+			stat = "ejections",
+			targets = { 5, 50, 500 },
+			gems = { 10, 25, 50 },
+		},
+		{
+			id = "Boss",
+			icon = "☄️",
+			label = "Infliger {n} dégâts au boss",
+			stat = "bossDamage",
+			targets = { 5_000, 50_000, 500_000, 5_000_000 },
+			gems = { 5, 15, 30, 60 },
+		},
+		{
+			id = "Money",
+			icon = "💰",
+			label = "Gagner {n} $ avec l'usine",
+			stat = "earned",
+			targets = { 10_000, 1_000_000, 100_000_000, 10_000_000_000, 1_000_000_000_000 },
+			gems = { 5, 15, 30, 60, 120 },
+		},
+	} :: { AchievementDef },
 
 	-- Codes à saisir dans le menu 🎁 (A62) : un usage par compte. Insensibles à la casse et aux espaces.
 	-- Pour en ajouter un (annonce sur les réseaux, mise à jour), il suffit d'une ligne ici.

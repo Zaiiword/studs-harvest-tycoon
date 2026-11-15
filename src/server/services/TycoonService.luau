@@ -86,6 +86,8 @@ local function bonusOf(player: Player, entry: Entry): Tycoon.IncomeBonus
 	bonus.hasIncomeX2 = Perks.hasPass(player, "IncomeX2") -- Gamepass Revenus ×2 (CDC §9)
 	local social = player:GetAttribute(PlayerAttributes.SOCIAL_BOOST) -- amis et Premium (A63)
 	bonus.socialMultiplier = if typeof(social) == "number" and social >= 1 then social else 1
+	local upgrade = player:GetAttribute(PlayerAttributes.INCOME_UPGRADE) -- Comptable Génial (A65)
+	bonus.upgradeMultiplier = if typeof(upgrade) == "number" and upgrade >= 1 then upgrade else 1
 	return bonus
 end
 local incomeElapsed, padElapsed = 0, 0

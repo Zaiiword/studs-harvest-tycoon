@@ -18,6 +18,16 @@ export type LoginStatus = { index: number, streak: number, isClaimable: boolean 
 
 export type CodeResult = "ok" | "invalid" | "used" | "expired"
 
+-- Où en est une famille de succès (A64) : palier à atteindre (1 = le premier), avancement, récompense.
+export type AchievementStatus = {
+	tier: number,
+	target: number,
+	progress: number,
+	gems: number,
+	isClaimable: boolean,
+	isMaxed: boolean, -- tous les paliers réclamés
+}
+
 -- Partie sauvegardée dans le profil (v4 ; connexion et codes en v8).
 export type State = {
 	lastWheelAt: number,
@@ -25,6 +35,7 @@ export type State = {
 	stats: { [string]: number },
 	login: LoginState,
 	codes: { [string]: boolean }, -- codes déjà utilisés (A62)
+	achievements: { [string]: number }, -- paliers de succès réclamés, par famille (A64)
 }
 
 local Retention = {}
@@ -33,6 +44,10 @@ local SECONDS_PER_DAY = 86_400
 local questsById: { [string]: RetentionConfig.QuestDef } = {}
 for _, quest in RetentionConfig.QUESTS do
 	questsById[quest.id] = quest
+end
+local achievementsById: { [string]: RetentionConfig.AchievementDef } = {}
+for _, achievement in RetentionConfig.ACHIEVEMENTS do
+	achievementsById[achievement.id] = achievement
 end
 local codesByName: { [string]: RetentionConfig.CodeDef } = {}
 for _, code in RetentionConfig.CODES do
@@ -50,6 +65,7 @@ function Retention.newState(): State
 		stats = {},
 		login = { lastDay = -1, streak = 0 },
 		codes = {},
+		achievements = {},
 	}
 end
 
@@ -81,6 +97,13 @@ function Retention.sanitize(raw: any): State
 	local login = if typeof(source.login) == "table" then source.login else {}
 	state.login.lastDay = count(login.lastDay) or -1
 	state.login.streak = count(login.streak) or 0
+	for id, value in if typeof(source.achievements) == "table" then source.achievements else {} do
+		local def = if typeof(id) == "string" then achievementsById[id] else nil
+		local claimed = count(value)
+		if def and claimed then
+			state.achievements[id] = math.min(claimed, #def.targets)
+		end
+	end
 	for code, value in if typeof(source.codes) == "table" then source.codes else {} do
 		state.codes[code] = if typeof(code) == "string" and codesByName[code] and value == true then true else nil
 	end
@@ -189,6 +212,48 @@ function Retention.claimLogin(state: State, today: number): RetentionConfig.Rewa
 	end
 	state.login = { lastDay = today, streak = status.streak }
 	return RetentionConfig.LOGIN_REWARDS[status.index]
+end
+
+-- Succès (A64) ------------------------------------------------------------------------------------------------
+
+function Retention.achievementStatus(state: State, def: RetentionConfig.AchievementDef): AchievementStatus
+	local claimed = state.achievements[def.id] or 0
+	local progress = state.stats[def.stat] or 0
+	if claimed >= #def.targets then
+		local last = #def.targets
+		return {
+			tier = last,
+			target = def.targets[last],
+			progress = progress,
+			gems = 0,
+			isClaimable = false,
+			isMaxed = true,
+		}
+	end
+	local tier = claimed + 1
+	local target = def.targets[tier]
+	return {
+		tier = tier,
+		target = target,
+		progress = progress,
+		gems = def.gems[tier],
+		isClaimable = progress >= target,
+		isMaxed = false,
+	}
+end
+
+-- Réclame le palier atteint d'une famille de succès. Renvoie sa récompense, ou nil.
+function Retention.claimAchievement(state: State, id: any): RetentionConfig.Reward?
+	local def = if typeof(id) == "string" then achievementsById[id] else nil
+	if not def then
+		return nil
+	end
+	local status = Retention.achievementStatus(state, def)
+	if not status.isClaimable then
+		return nil
+	end
+	state.achievements[def.id] = status.tier
+	return { gems = status.gems }
 end
 
 -- Codes (A62) --------------------------------------------------------------------------------------------------

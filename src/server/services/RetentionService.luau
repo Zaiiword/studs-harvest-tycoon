@@ -77,6 +77,15 @@ local function publish(player: Player, entry: Entry)
 	player:SetAttribute(PlayerAttributes.QUESTS_CLAIMED, table.concat(claimed, ","))
 	player:SetAttribute(PlayerAttributes.LOGIN_LAST_DAY, entry.state.login.lastDay)
 	player:SetAttribute(PlayerAttributes.LOGIN_STREAK, entry.state.login.streak)
+	local stats, achievements = {}, {}
+	for stat, value in entry.state.stats do
+		table.insert(stats, `{stat}={math.floor(value)}`)
+	end
+	for id, tier in entry.state.achievements do
+		table.insert(achievements, `{id}={tier}`)
+	end
+	player:SetAttribute(PlayerAttributes.STATS, table.concat(stats, ","))
+	player:SetAttribute(PlayerAttributes.ACHIEVEMENTS, table.concat(achievements, ","))
 end
 
 -- Verse une récompense (argent, gemmes ou objet) et prévient le joueur.
@@ -155,6 +164,18 @@ local function onClaimLogin(player: Player)
 	end
 end
 
+local function onClaimAchievement(player: Player, rawId: any)
+	local entry = entries[player]
+	if not entry or not limiter:allow(player, os.clock()) then
+		return
+	end
+	local reward = Retention.claimAchievement(entry.state, rawId)
+	if reward then
+		grant(player, reward, "Succès")
+		publish(player, entry)
+	end
+end
+
 local CODE_MESSAGES: { [Retention.CodeResult]: string } = {
 	invalid = "Ce code n'existe pas.",
 	used = "Tu as déjà utilisé ce code.",
@@ -228,6 +249,7 @@ function RetentionService:Init()
 	Remotes.event(Remotes.CLAIM_QUEST).OnServerEvent:Connect(onClaimQuest)
 	codeResult = Remotes.event(Remotes.CODE_RESULT)
 	Remotes.event(Remotes.CLAIM_LOGIN).OnServerEvent:Connect(onClaimLogin)
+	Remotes.event(Remotes.CLAIM_ACHIEVEMENT).OnServerEvent:Connect(onClaimAchievement)
 	Remotes.event(Remotes.REDEEM_CODE).OnServerEvent:Connect(onRedeemCode)
 end
 

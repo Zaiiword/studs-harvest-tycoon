@@ -251,6 +251,10 @@ return Freeze.deep({
 			TripleHatch = { icon = "🥚", top = { 120, 235, 160 }, bottom = { 30, 160, 90 } },
 			Bazooka = { icon = "💥", top = { 255, 150, 80 }, bottom = { 220, 70, 30 } },
 			Meteor = { icon = "☄️", top = { 255, 210, 90 }, bottom = { 190, 110, 20 }, badge = "ÉPIQUE" },
+			-- Améliorations en gemmes (A65).
+			Bag = { icon = "🎒", top = { 120, 220, 255 }, bottom = { 40, 120, 210 } },
+			Blades = { icon = "⚔️", top = { 255, 140, 120 }, bottom = { 190, 50, 60 } },
+			Accountant = { icon = "📈", top = { 140, 240, 150 }, bottom = { 40, 160, 80 }, badge = "REVENUS" },
 		} :: { [string]: { icon: string, top: { number }, bottom: { number }, badge: string? } },
 	},
 	-- Fenêtres de menu « premium » (boutique…) : dégradé, gros contour, croix rouge, ouverture qui rebondit.

@@ -1,7 +1,8 @@
 --!strict
 -- Boutique Robux 🛒 (CDC §9, §10) façon jeux Roblox les plus joués : fenêtre en dégradé avec croix rouge,
--- onglets Gamepasses / Objets, grille de cartes colorées (icône flottante, badge, bouton d'achat vert).
--- L'achat passe par la fenêtre officielle de Roblox ; le serveur accorde le produit.
+-- onglets Gamepasses / Objets / Gemmes, grille de cartes colorées (icône flottante, badge, bouton d'achat vert).
+-- L'achat Robux passe par la fenêtre officielle de Roblox ; le serveur accorde le produit. L'onglet Gemmes vend les
+-- améliorations permanentes (A65) contre des gemmes, achat validé par le serveur.
 local ContentProvider = game:GetService("ContentProvider")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +10,9 @@ local RunService = game:GetService("RunService")
 
 local AssetIds = require(ReplicatedStorage.Shared.config.AssetIds)
 local MonetizationConfig = require(ReplicatedStorage.Shared.config.MonetizationConfig)
+local UpgradeConfig = require(ReplicatedStorage.Shared.config.UpgradeConfig)
+local Upgrades = require(ReplicatedStorage.Shared.domain.Upgrades)
+local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
@@ -25,6 +29,7 @@ local ShopController = {}
 type Offer = { key: string, name: string, description: string, price: number }
 type Card = {
 	icon: TextLabel,
+	description: TextLabel,
 	buy: TextButton,
 	gradient: UIGradient,
 	price: TextLabel,
@@ -48,6 +53,7 @@ local screenGui: ScreenGui
 local window: Window.Window
 local message: TextLabel
 local cards: { [string]: Card } = {}
+local upgradeCards: { [string]: Card } = {}
 local hasRobuxIcon = true
 local clock = 0
 
@@ -133,8 +139,15 @@ local function buildCard(page: ScrollingFrame, order: number, offer: Offer): Car
 	end
 	local buy, gradient, price, robux = addBuyButton(card)
 	card.Parent = page
-	local built: Card =
-		{ icon = icon, buy = buy, gradient = gradient, price = price, robux = robux, amount = offer.price }
+	local built: Card = {
+		icon = icon,
+		description = description,
+		buy = buy,
+		gradient = gradient,
+		price = price,
+		robux = robux,
+		amount = offer.price,
+	}
 	setPrice(built)
 	return built
 end
@@ -192,6 +205,42 @@ local function buildProducts(page: ScrollingFrame)
 	end
 end
 
+-- Améliorations en gemmes (A65) ----------------------------------------------------------------------------------
+
+local function refreshUpgrades()
+	local levels = Upgrades.decode(localPlayer:GetAttribute(PlayerAttributes.UPGRADES))
+	local gems = localPlayer:GetAttribute(PlayerAttributes.GEMS)
+	for _, def in UpgradeConfig.UPGRADES do
+		local card = upgradeCards[def.id]
+		local level = levels[def.id] or 0
+		local price = Upgrades.price(levels, def.id)
+		local bonus = math.floor(def.perLevel * level * 100 + 0.5)
+		card.description.Text = `{def.description}\nNiv. {level}/{#def.prices} · total +{bonus} %`
+		card.robux.Visible = false
+		local canBuy = price ~= nil and typeof(gems) == "number" and gems >= price
+		local top = if canBuy then SHOP.BUY_TOP else SHOP.OWNED_TOP
+		local bottom = if canBuy then SHOP.BUY_BOTTOM else SHOP.OWNED_BOTTOM
+		card.gradient.Color = ColorSequence.new(Bricks.rgb(top), Bricks.rgb(bottom))
+		card.price.Text = if price then `💎 {price}` else "✔ MAX"
+	end
+end
+
+local function buildUpgrades(page: ScrollingFrame)
+	local buy = Remotes.event(Remotes.BUY_UPGRADE)
+	for order, def in UpgradeConfig.UPGRADES do
+		local card = buildCard(page, order, { key = def.id, name = def.name, description = def.description, price = 0 })
+		card.icon.Text = def.icon
+		card.buy.Activated:Connect(function()
+			buy:FireServer(def.id)
+		end)
+		upgradeCards[def.id] = card
+	end
+	for _, name in { PlayerAttributes.UPGRADES, PlayerAttributes.GEMS } do
+		localPlayer:GetAttributeChangedSignal(name):Connect(refreshUpgrades)
+	end
+	refreshUpgrades()
+end
+
 local function buildMessage()
 	message = Style.label(window.body, "", UDim2.new(1, -24, 0, 30))
 	message.AnchorPoint = Vector2.new(0.5, 1)
@@ -209,8 +258,10 @@ local function animate(deltaTime: number)
 		return
 	end
 	local bob = SHOP.ICON_BOB
-	for _, card in cards do
-		card.icon.Position = UDim2.new(0, 0, 0.06, math.sin(clock * bob.speed) * bob.height)
+	for _, list in { cards, upgradeCards } do
+		for _, card in list do
+			card.icon.Position = UDim2.new(0, 0, 0.06, math.sin(clock * bob.speed) * bob.height)
+		end
 	end
 end
 
@@ -223,6 +274,7 @@ local function checkRobuxIcon()
 				setPrice(card)
 			end
 			refreshPasses()
+			refreshUpgrades()
 		end
 	end)
 end
@@ -253,11 +305,13 @@ end
 
 function ShopController:Start()
 	local tabs = Tabs.new(window.body)
-	local passes, products = gridPage(), gridPage()
+	local passes, products, upgrades = gridPage(), gridPage(), gridPage()
 	tabs:add("⭐ GAMEPASSES", passes)
 	tabs:add("💥 OBJETS", products)
+	tabs:add("💎 GEMMES", upgrades)
 	buildPasses(passes)
 	buildProducts(products)
+	buildUpgrades(upgrades)
 	tabs:select(1)
 	buildMessage()
 	screenGui.Parent = localPlayer:WaitForChild("PlayerGui")

@@ -18,6 +18,7 @@ local PetService = require(script.Parent.PetService)
 local RetentionService = require(script.Parent.RetentionService)
 local MonetizationService = require(script.Parent.MonetizationService)
 local TycoonService = require(script.Parent.TycoonService)
+local UpgradeService = require(script.Parent.UpgradeService)
 
 local DataService = {}
 
@@ -88,6 +89,7 @@ local function loadPlayer(player: Player)
 	PetService.restore(player, data.pets)
 	RetentionService.restore(player, data.retention)
 	MonetizationService.restore(player, data.purchases)
+	UpgradeService.restore(player, data.upgrades)
 	-- Après les Pets et les Gamepasses : l'usine hors ligne tourne avec les mêmes bonus qu'en jeu (A60).
 	TycoonService.collectOffline(player, data.lastSeenAt, os.time())
 	player:SetAttribute(PlayerAttributes.IS_DATA_LOADED, true)
@@ -107,6 +109,7 @@ local function capture(player: Player): Profile.Data?
 		retention = RetentionService.snapshot(player),
 		purchases = MonetizationService.snapshot(player),
 		savedAt = os.time(),
+		upgrades = UpgradeService.snapshot(player),
 	})
 end
 
@@ -133,6 +136,7 @@ local function onPlayerRemoving(player: Player)
 	PetService.release(player)
 	RetentionService.release(player)
 	MonetizationService.release(player)
+	UpgradeService.release(player)
 	local wasLoaded = loaded[player]
 	loaded[player] = nil
 	if data and wasLoaded then
