@@ -2,6 +2,12 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Flèches vers le champ pour les débutants (A67)
+
+### Corrigé
+- Un nouveau joueur (0 $, sac vide) n'avait **aucune flèche** : rien d'achetable, rien à décharger. Les flèches,
+  en bleu ciel, le mènent maintenant au champ par le pont le plus proche, jusqu'à son premier déchargement.
+
 ## Pets : nouvelles espèces, index et « Meilleurs » (A66)
 
 ### Ajouté

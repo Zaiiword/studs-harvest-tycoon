@@ -180,6 +180,7 @@ return Freeze.deep({
 		CHEVRON = { length = 2.4, width = 0.55, thickness = 0.15, angle = 0.75 },
 		BUTTON_COLOR = { 120, 255, 120 },
 		UNLOAD_COLOR = { 255, 220, 60 },
+		FIELD_COLOR = { 90, 220, 255 }, -- débutant : direction le champ (A67)
 		MARKER_HEIGHT = 9, -- grosse flèche au-dessus de la cible
 		MARKER_SIZE = 90, -- pixels
 		MARKER_BOB = { height = 1.2, speed = 4 },
