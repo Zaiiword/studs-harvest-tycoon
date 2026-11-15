@@ -23,7 +23,7 @@ describe("Usine (golden)", function()
 	end)
 	it("prix des machines", function()
 		local state = Tycoon.new()
-		expect(Tycoon.offer(state, "Mill", 1).price).toBe(250)
+		expect(Tycoon.offer(state, "Mill", 1).price).toBe(100) -- A68
 		expect(TycoonConfig.MACHINES[2].price).toBe(20000)
 		expect(TycoonConfig.MACHINES[3].price).toBe(400000)
 	end)

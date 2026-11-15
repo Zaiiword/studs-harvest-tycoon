@@ -93,6 +93,7 @@ return Freeze.deep({
 	-- sac plein (le premier des deux), pendant 15 minutes.
 	STARTER = {
 		OFFER_AFTER_SECONDS = 240,
+		EARLIEST_SECONDS = 120, -- A68 : jamais pendant les deux premières minutes
 		OFFER_DURATION_SECONDS = 900,
 		MONEY = 10_000,
 		PET = "Tractor:Normal", -- Pet Épique

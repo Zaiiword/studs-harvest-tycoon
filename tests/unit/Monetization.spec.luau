@@ -63,7 +63,8 @@ describe("Purchases", function()
 	it("propose le Starter Pack après 4 min ou au premier sac plein, une seule fois (A50)", function()
 		local purchases = Purchases.new()
 		expect(Purchases.shouldOfferStarter(purchases, 100, false)).toBe(false)
-		expect(Purchases.shouldOfferStarter(purchases, 100, true)).toBe(true)
+		expect(Purchases.shouldOfferStarter(purchases, 100, true)).toBe(false) -- A68 : pas avant 2 min
+		expect(Purchases.shouldOfferStarter(purchases, 130, true)).toBe(true)
 		expect(Purchases.shouldOfferStarter(purchases, 240, false)).toBe(true)
 		purchases.starterOfferedAt = 1000
 		expect(Purchases.shouldOfferStarter(purchases, 999, true)).toBe(false)

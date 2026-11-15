@@ -196,3 +196,18 @@ describe("Guidage du débutant vers le champ (A67)", function()
 		expect((target :: Guide.Target).kind).toBe("button")
 	end)
 end)
+
+describe("Flèches : achats utiles d'abord (A68)", function()
+	local buttons = {
+		{ id = "Conveyor", price = 50, x = 0, z = 0 },
+		{ id = "Path", price = 100, x = 0, z = 10 },
+		{ id = "Garage", price = 150, x = 0, z = 20 },
+	}
+	it("préfère le Garage à un achat moins cher", function()
+		expect((Guide.cheapestAffordable(buttons, 200, {}, 999) :: Guide.Button).id).toBe("Garage")
+	end)
+	it("ne propose pas le tapis tant que le silo se vide tout seul", function()
+		expect((Guide.cheapestAffordable(buttons, 120, {}, 5) :: Guide.Button).id).toBe("Path")
+		expect((Guide.cheapestAffordable(buttons, 120, {}, 120) :: Guide.Button).id).toBe("Conveyor")
+	end)
+end)

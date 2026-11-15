@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SocialService = game:GetService("SocialService")
 
+local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -18,6 +19,7 @@ local PANEL = UiConfig.ECONOMY_PANEL
 local BAR = UiConfig.BAG_BAR
 
 local localPlayer = Players.LocalPlayer
+local random = Random.new()
 local screenGui: ScreenGui
 local summary: TextLabel
 local alert: TextLabel
@@ -26,6 +28,9 @@ local goalText: TextLabel
 local inviteText: TextLabel
 
 local GOAL = PANEL.GOAL
+local POP = PANEL.MONEY_POP
+local TweenService = game:GetService("TweenService")
+local lastMoney: number? = nil
 local INVITE = PANEL.INVITE
 
 local function newLabel(parent: Instance): TextLabel
@@ -147,6 +152,33 @@ local function refreshInvite()
 	inviteText.Text = if multiplier > 1 then `👥 Amis {Social.percent(multiplier)}` else "👥 Inviter : +10 %"
 end
 
+-- « +12 $ » vert qui monte et s'efface sous la trésorerie quand l'argent augmente (revenus, récompenses).
+local function popGain(amount: number)
+	local label = newLabel(screenGui)
+	label.AnchorPoint = Vector2.new(0.5, 0)
+	label.Size = UDim2.fromOffset(POP.WIDTH, POP.HEIGHT)
+	label.Position = UDim2.new(0.5, random:NextInteger(-POP.SPREAD, POP.SPREAD), 0, PANEL.TOP_MARGIN + PANEL.HEIGHT)
+	label.TextColor3 = Bricks.rgb(POP.COLOR)
+	label.TextStrokeTransparency = 0
+	label.Text = `+{Format.money(amount)} $`
+	local info = TweenInfo.new(POP.SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local goal =
+		{ Position = label.Position + UDim2.fromOffset(0, POP.RISE), TextTransparency = 1, TextStrokeTransparency = 1 }
+	local tween = TweenService:Create(label, info, goal)
+	tween.Completed:Once(function()
+		label:Destroy()
+	end)
+	tween:Play()
+end
+
+local function onMoneyChanged()
+	local money = numberAttribute(PlayerAttributes.MONEY)
+	if lastMoney and money - lastMoney >= 1 then
+		popGain(money - lastMoney)
+	end
+	lastMoney = money
+end
+
 local function refresh()
 	local silo = numberAttribute(PlayerAttributes.SILO_VALUE)
 	local rate = numberAttribute(PlayerAttributes.CONVEYOR_RATE)
@@ -158,8 +190,12 @@ local function refresh()
 	summary.Text = `💰 {money} $  ·  +{income} $/s  ·  Silo {autonomy}  ·  {prestige}`
 	refreshGoal()
 	refreshInvite()
-	-- L'alerte n'a de sens qu'une fois l'usine lancée (quelque chose a déjà été déposé ou gagné).
-	alert.Visible = silo <= 0 and numberAttribute(PlayerAttributes.MONEY) > 0
+	-- L'alerte n'a de sens qu'une fois l'usine lancée (quelque chose a déjà été déposé ou gagné), et seulement hors
+	-- du champ (A68) : un joueur qui récolte déjà n'a pas besoin qu'on lui crie de retourner récolter.
+	local character = localPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local isInField = root ~= nil and root.Position.X >= MapConfig.MOAT.minX
+	alert.Visible = silo <= 0 and numberAttribute(PlayerAttributes.MONEY) > 0 and not isInField
 end
 
 function EconomyHudController:Init()
@@ -186,6 +222,8 @@ function EconomyHudController:Start()
 	do
 		localPlayer:GetAttributeChangedSignal(name):Connect(refresh)
 	end
+	localPlayer:GetAttributeChangedSignal(PlayerAttributes.MONEY):Connect(onMoneyChanged)
+	localPlayer:GetAttributeChangedSignal(PlayerAttributes.ON_ROAD):Connect(refresh) -- entrée et sortie du champ
 	refresh()
 end
 

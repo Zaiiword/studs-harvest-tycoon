@@ -66,6 +66,23 @@ Ce joueur simulé reste prudent et ne fait jamais de Rebirth : un joueur qui pr�
 
 Les 34 éléments vont de 100 $ à 10 M $, soit environ 33 M $ au total, dont 2,3 M $ jusqu'au toit. Pour raccourcir ou allonger le chemin vers l'étage, modifier les prix de `TycoonConfig.DECORATIONS`, et vérifier la courbe avec `tests/regression/EconomyCurve.spec.luau`.
 
+## Entrée de jeu accélérée (A68)
+
+Un bot a joué les premières minutes en vraie partie dans Studio : la Faux n'arrivait qu'à 5 min 30 et le Moulin pas
+avant 8 min, bien plus tard que la simulation (le joueur simulé ne marche pas sur la route et ne gaspille rien).
+Les prix d'entrée baissent : Faux 75 $, Tondeuse 400 $, Tracteur 6 000 $, Moulin 100 $.
+
+| Étape | Avant | Après (simulation) |
+|---|---|---|
+| Faux (T2) | 2,6 min | 1,3 min |
+| Tondeuse (T3) | 12,6 min | 5,3 min |
+| Tracteur (T4) | 50,6 min | 25,6 min |
+| Double Faucheuse (T5) | 102 min | 79 min |
+| 1er Rebirth possible | 181 min | 157 min |
+
+En partie réelle, compter environ deux fois la durée simulée pour les premiers paliers. Pour voir la courbe après un
+réglage : `lune run tests/tools/simulate.luau`.
+
 ## À surveiller en jeu
 
 Ces points ne sont pas modélisés par la simulation :

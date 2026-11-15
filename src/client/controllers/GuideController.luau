@@ -83,7 +83,9 @@ local function situation(): Guide.Situation
 	local count, capacity = numberAttribute(PlayerAttributes.BAG_COUNT), numberAttribute(PlayerAttributes.BAG_CAPACITY)
 	local character = localPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local silo, rate = numberAttribute(PlayerAttributes.SILO_VALUE), numberAttribute(PlayerAttributes.CONVEYOR_RATE)
 	return {
+		siloSeconds = if silo and rate and rate > 0 then silo / rate else nil,
 		position = if root then { x = root.Position.X, z = root.Position.Z } else nil,
 		money = numberAttribute(PlayerAttributes.MONEY) or 0,
 		isBagFull = count ~= nil and capacity ~= nil and count >= capacity,

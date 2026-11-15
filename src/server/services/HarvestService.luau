@@ -37,6 +37,7 @@ type PlayerState = {
 	backpack: Part?,
 	weld: Weld?,
 	shownStep: number,
+	hasWarnedSiloFull: boolean, -- « silo plein » n'est dit qu'une fois par passage sur la grille (A68)
 }
 
 local BACKPACK = FieldConfig.BACKPACK
@@ -44,6 +45,8 @@ local ATTR = PlayerAttributes
 
 local states: { [Player]: PlayerState } = {}
 local elapsed = 0
+local unloadedRemote: RemoteEvent
+local notifyRemote: RemoteEvent
 
 -- Palier effectif : Garage + avantages Robux (Aimant, Remorque Infinie, Mini-Tracteur Turbo).
 local function tierOf(player: Player): VehicleConfig.TierDef
@@ -151,10 +154,23 @@ local function harvestTick(player: Player, state: PlayerState)
 	state.blockedPlaces = 0
 	if TycoonService.isOnUnloadPad(player, root.Position) then
 		if state.bag.count > 0 then
-			HarvestService.Unloaded:Fire(player, TycoonService.unload(player, state.bag))
+			local accepted = TycoonService.unload(player, state.bag)
+			HarvestService.Unloaded:Fire(player, accepted)
+			if accepted > 0 then
+				unloadedRemote:FireClient(player, accepted)
+			elseif not state.hasWarnedSiloFull then
+				state.hasWarnedSiloFull = true
+				notifyRemote:FireClient(
+					player,
+					"🛢️ Silo plein ! Agrandis-le, ou monte le tapis pour le vider plus vite."
+				)
+			end
 		end
-	elseif not Bag.isFull(state.bag) then
-		cutInFront(player, state, root, tier)
+	else
+		state.hasWarnedSiloFull = false
+		if not Bag.isFull(state.bag) then
+			cutInFront(player, state, root, tier)
+		end
 	end
 	refresh(player, state, humanoid, tier)
 end
@@ -165,6 +181,7 @@ local function onPlayerAdded(player: Player)
 		blockedPlaces = 0,
 		trove = Trove.new(),
 		shownStep = -1,
+		hasWarnedSiloFull = false,
 	}
 	states[player] = state
 	state.trove:Connect(player.CharacterAdded, function(character: Model)
@@ -212,6 +229,8 @@ end
 
 function HarvestService:Init()
 	Remotes.event(Remotes.TELEPORT_HOME).OnServerEvent:Connect(onTeleportHome)
+	unloadedRemote = Remotes.event(Remotes.UNLOADED)
+	notifyRemote = Remotes.event(Remotes.NOTIFY)
 end
 
 function HarvestService:Start()

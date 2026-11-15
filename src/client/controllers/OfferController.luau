@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local MonetizationConfig = require(ReplicatedStorage.Shared.config.MonetizationConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
@@ -117,7 +118,11 @@ local function refresh()
 		revengeButton.Text = `💥 Se venger ! Éjecter {target} ({priceOf("Revenge")} R$)`
 	end
 	local offerLeft = numberAttribute(PlayerAttributes.STARTER_OFFER_UNTIL) - now
-	starterCard.Visible = offerLeft > 0 and not isStarterDismissed
+	-- A68 : l'offre attend que le joueur soit sorti du champ, pour ne pas lui cacher la route du silo.
+	local character = localPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local isInField = root ~= nil and root.Position.X >= MapConfig.MOAT.minX
+	starterCard.Visible = offerLeft > 0 and not isStarterDismissed and not isInField
 	starterTimer.Text = Format.duration(offerLeft)
 end
 
