@@ -638,8 +638,11 @@ local function refresh()
 	local wheelReady = refreshWheel(now)
 	local achievementReady = refreshAchievements()
 	HudButton.setAlert(hud, loginReady or giftReady or questReady or wheelReady or achievementReady)
-	-- La récompense du jour attend : le menu s'ouvre seul, une fois par session, une fois le profil chargé.
-	if loginReady and not hasAutoOpened and attribute(PlayerAttributes.IS_DATA_LOADED) == true then
+	-- La récompense du jour attend : le menu s'ouvre seul, une fois par session, une fois le profil chargé. Jamais à
+	-- la toute première visite (A68) : un nouveau joueur doit d'abord jouer, la pastille « ! » suffit.
+	local lastLoginDay = attribute(PlayerAttributes.LOGIN_LAST_DAY)
+	local isReturning = typeof(lastLoginDay) == "number" and lastLoginDay >= 0
+	if loginReady and isReturning and not hasAutoOpened and attribute(PlayerAttributes.IS_DATA_LOADED) == true then
 		hasAutoOpened = true
 		task.delay(MENU.LOGIN_AUTO_OPEN_DELAY, function()
 			tabs:select(1)

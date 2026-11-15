@@ -2,6 +2,29 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Premier quart d'heure : rythme et sensations (A68)
+
+Parcours d'un nouveau joueur mesuré en partie réelle par un bot (récolte, déchargement, achats en suivant les
+flèches) : la Faux arrivait après 5 min 30, le Moulin jamais avant 8 min, et rien ne se passait à l'écran au
+déchargement ni à l'achat d'un outil.
+
+### Ajouté
+- **Déchargement spectaculaire** : gerbe de briques du joueur jusqu'au silo, « +250 💰 au silo » qui s'envole, son.
+- **Gains visibles** : « +12 $ » vert qui s'envole sous la trésorerie à chaque encaissement.
+- **« NOUVEL OUTIL ! »** : pop-up à l'achat d'un palier au Garage, avec le nouveau sac, la coupe gagnée et, pour un
+  engin, « il t'attend à l'entrée du champ ».
+- « Silo plein ! » quand le silo refuse le sac, au lieu d'un joueur qui attend sur la grille sans comprendre.
+
+### Modifié
+- **Entrée de jeu accélérée** : Faux 150 → 75 $, Tondeuse 1 200 → 400 $, Tracteur 12 500 → 6 000 $, Moulin
+  250 → 100 $. Le reste de la progression ne change pas.
+- Les flèches montrent d'abord le Garage, et le tapis seulement quand le silo déborde (60 s d'autonomie) : le premier
+  achat montré était un niveau de tapis inutile tant que le silo se vide en quelques secondes.
+- L'alerte rouge « Silo vide » ne s'affiche plus dans le champ, où l'on récolte déjà.
+- Le calendrier de connexion ne s'ouvre plus seul à la toute première visite : un nouveau joueur commence par jouer.
+- Le Starter Pack n'apparaît plus avant 2 min de jeu, ni dans le champ : il masquait la route du silo au premier sac
+  plein.
+
 ## Flèches vers le champ pour les débutants (A67)
 
 ### Corrigé

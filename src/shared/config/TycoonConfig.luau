@@ -34,7 +34,7 @@ return Freeze.deep({
 	-- Machines achetées une fois, dans l'ordre ; leurs multiplicateurs se multiplient (A6, CDC §7 : ×1,5 / ×3 / ×8).
 	-- Prix du Four et de l'Usine relevés par l'équilibrage (A51) : l'Usine ×8 à 40 000 $ bouclait le jeu en 1 h.
 	MACHINES = {
-		{ id = "Mill", name = "Moulin à Farine", price = 250, multiplier = 1.5, color = { 255, 255, 255 }, chute = 5 },
+		{ id = "Mill", name = "Moulin à Farine", price = 100, multiplier = 1.5, color = { 255, 255, 255 }, chute = 5 },
 		{ id = "Oven", name = "Four à Pain", price = 20_000, multiplier = 3, color = { 218, 133, 65 }, chute = 5 },
 		{
 			id = "Factory",

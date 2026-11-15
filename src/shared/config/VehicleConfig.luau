@@ -29,7 +29,7 @@ local TIERS: { TierDef } = {
 	{
 		id = 2,
 		name = "Faux en Briques",
-		price = 150,
+		price = 75,
 		hitboxStuds = 7,
 		speed = 18,
 		mass = 15,
@@ -40,7 +40,7 @@ local TIERS: { TierDef } = {
 	{
 		id = 3,
 		name = "Tondeuse Rouge",
-		price = 1_200,
+		price = 400,
 		hitboxStuds = 10,
 		speed = 24,
 		mass = 35,
@@ -51,7 +51,7 @@ local TIERS: { TierDef } = {
 	{
 		id = 4,
 		name = "Tracteur Fermier",
-		price = 12_500,
+		price = 6_000,
 		hitboxStuds = 15,
 		speed = 30,
 		mass = 80,

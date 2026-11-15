@@ -18,20 +18,22 @@ local function within(value: number, low: number, high: number): boolean
 end
 
 describe("Courbe de progression (golden)", function()
-	it("premiers achats rapides : Faux en moins de 6 min (CDC §8 « effet dopamine »)", function()
-		expect(within(minutes(result.tierReachedAt[2]), 2, 6)).toBe(true)
+	-- A68 : premier quart d'heure accéléré (Faux, Tondeuse, Tracteur et Moulin moins chers). Le joueur simulé ne perd
+	-- pas de temps sur les routes : en partie réelle, compter environ deux fois plus pour les premiers paliers.
+	it("premiers achats rapides : Faux en moins de 2 min (« effet dopamine »)", function()
+		expect(within(minutes(result.tierReachedAt[2]), 0.5, 2)).toBe(true)
 	end)
-	it("Tondeuse vers 10-15 min, Tracteur vers 40-60 min", function()
-		expect(within(minutes(result.tierReachedAt[3]), 8, 15)).toBe(true)
-		expect(within(minutes(result.tierReachedAt[4]), 40, 60)).toBe(true)
+	it("Tondeuse vers 4-8 min, Tracteur vers 20-35 min", function()
+		expect(within(minutes(result.tierReachedAt[3]), 4, 8)).toBe(true)
+		expect(within(minutes(result.tierReachedAt[4]), 20, 35)).toBe(true)
 	end)
-	it("Double Faucheuse vers 1 h 30 - 2 h, Moissonneuse XL vers 2 h 30 - 3 h", function()
-		expect(within(minutes(result.tierReachedAt[5]), 90, 120)).toBe(true)
-		expect(within(minutes(result.tierReachedAt[6]), 150, 180)).toBe(true)
+	it("Double Faucheuse vers 1 h 10 - 1 h 40, Moissonneuse XL vers 2 h 10 - 2 h 40", function()
+		expect(within(minutes(result.tierReachedAt[5]), 70, 100)).toBe(true)
+		expect(within(minutes(result.tierReachedAt[6]), 130, 160)).toBe(true)
 	end)
-	it("premier Rebirth possible vers 2 h 30 - 3 h, Cyber-Laser vers 3 h", function()
-		expect(within(minutes(result.rebirthReadyAt), 150, 190)).toBe(true)
-		expect(within(minutes(result.tierReachedAt[7]), 165, 210)).toBe(true)
+	it("premier Rebirth possible vers 2 h 20 - 2 h 50, Cyber-Laser vers 2 h 45", function()
+		expect(within(minutes(result.rebirthReadyAt), 140, 170)).toBe(true)
+		expect(within(minutes(result.tierReachedAt[7]), 150, 180)).toBe(true)
 	end)
 	it(
 		"la grange se bâtit tout du long : façade vers 1 h 15, toit puis machines de l'étage après 3 h (A56)",

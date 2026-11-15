@@ -6,8 +6,8 @@ local VehicleConfig = require("../../src/shared/config/VehicleConfig")
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
 describe("Économie (golden)", function()
-	it("prix des paliers inchangés (CDC §5)", function()
-		local expected = { 0, 150, 1_200, 12_500, 85_000, 450_000, 3_500_000 }
+	it("prix des paliers (CDC §5, entrée revue en A68)", function()
+		local expected = { 0, 75, 400, 6_000, 85_000, 450_000, 3_500_000 }
 		for index, tier in VehicleConfig.TIERS do
 			expect(tier.price).toBe(expected[index])
 		end

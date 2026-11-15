@@ -124,8 +124,11 @@ local function buildCard(parent: Instance, icon: string, text: string, heading: 
 	title.Position = UDim2.new(0, 10, 0.04, 0)
 	local iconLabel = Style.label(card, icon, UDim2.fromScale(1, 0.34))
 	iconLabel.Position = UDim2.fromScale(0, 0.22)
-	local reward = Style.label(card, text, UDim2.new(1, -24, 0.16, 0))
-	reward.Position = UDim2.new(0, 12, 0.57, 0)
+	-- Plusieurs lignes (nouvel outil, A68) : le texte prend plus de hauteur au lieu de rapetisser.
+	local _, breaks = string.gsub(text, "\n", "")
+	local height = math.min(0.16 + breaks * 0.06, 0.26)
+	local reward = Style.label(card, text, UDim2.new(1, -24, height, 0))
+	reward.Position = UDim2.new(0, 12, 0.57 - (height - 0.16) / 2, 0)
 	local close = Style.button(card, { top = SHOP.BUY_TOP, bottom = SHOP.BUY_BOTTOM, edge = SHOP.BUY_STROKE })
 	close.AnchorPoint = Vector2.new(0.5, 1)
 	close.Position = UDim2.new(0.5, 0, 1, -14)

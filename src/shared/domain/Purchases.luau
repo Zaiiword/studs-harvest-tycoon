@@ -54,12 +54,14 @@ function Purchases.countPass(purchases: Purchases, key: string, price: number)
 	end
 end
 
--- Le Starter Pack est proposé une seule fois : dès 4 min de jeu ou au premier sac plein, pendant 15 min.
+-- Le Starter Pack est proposé une seule fois, pendant 15 min : après 4 min de jeu, ou au premier sac plein s'il
+-- arrive après 2 min (A68 : au premier sac plein de la première minute, il coupait la leçon « va décharger »).
 function Purchases.shouldOfferStarter(purchases: Purchases, playedSeconds: number, hasFilledBag: boolean): boolean
 	if purchases.hasStarterPack or purchases.starterOfferedAt > 0 then
 		return false
 	end
-	return hasFilledBag or playedSeconds >= MonetizationConfig.STARTER.OFFER_AFTER_SECONDS
+	local starter = MonetizationConfig.STARTER
+	return (hasFilledBag and playedSeconds >= starter.EARLIEST_SECONDS) or playedSeconds >= starter.OFFER_AFTER_SECONDS
 end
 
 function Purchases.isStarterOfferOpen(purchases: Purchases, now: number): boolean

@@ -25,6 +25,33 @@ Légende :
 4. **Un nouveau joueur n'avait aucune flèche.** ✅ Corrigé (A67).
 5. **Premier Rebirth vers 3 h de jeu.** ⚖️ Voir Progression.
 
+## Parcours d'un nouveau joueur, mesuré (A68)
+
+Un bot a joué 12 minutes en vraie partie dans Studio, comme un joueur qui suit les flèches : il récolte, prend le
+« Retour Base Instantané », décharge et achète. Deux parties, avant et après les corrections A68 :
+
+| Étape | Avant | Après |
+|---|---|---|
+| Faux (premier outil) | 5:32 | 1:16 |
+| Moulin (×1,5 de revenus) | jamais en 8 min | 4:34 |
+| Tondeuse (premier engin) | ~25 min (estimé) | 6:28 |
+| Achats en 12 min | 5 | 15 |
+| Revenu à 12 min | 3 $/s | 9,2 $/s |
+
+Ce qui n'allait pas, et ce qui a été corrigé :
+
+| Problème constaté | Correction |
+|---|---|
+| Premiers achats trop chers pour les gains du début (25 à 34 $ par aller-retour) | Faux 75 $, Tondeuse 400 $, Tracteur 6 000 $, Moulin 100 $ |
+| Les flèches montraient d'abord un niveau de tapis, inutile tant que le silo se vide seul | Garage d'abord ; tapis seulement si le silo a 60 s d'autonomie |
+| Aucun retour au déchargement : la récolte disparaissait sans un bruit | Briques vers le silo, « +X 💰 au silo », son |
+| L'argent montait en silence | « +X $ » vert sous la trésorerie à chaque gain |
+| Acheter un outil ne se fêtait pas | Pop-up « NOUVEL OUTIL ! » avec ce qui change |
+| Alerte rouge « Silo vide » presque en permanence, même en récoltant | Masquée dans le champ |
+| Starter Pack en plein écran au premier sac plein (≈ 20 s de jeu) | Pas avant 2 min, jamais dans le champ |
+| Calendrier de connexion ouvert dès la première visite | Réservé aux joueurs qui reviennent |
+| Silo plein : le joueur restait sur la grille sans comprendre | Message « Silo plein ! » |
+
 ## 1. Premières minutes (onboarding)
 
 | Idée | État | Détail |
@@ -56,7 +83,7 @@ Légende :
 | Gains hors ligne de l'usine | ✅ A60 | Le silo continue d'être vidé 12 h au plus ; pop-up « Bon retour ! ». |
 | Améliorations permanentes en gemmes (sac, coupe, revenus) | ✅ A65 | Donne enfin un usage aux gemmes ; conservées au Rebirth. |
 | Succès permanents payés en gemmes | ✅ A64 | 7 familles, 3 à 5 paliers. |
-| Premier Rebirth plus tôt | ⚖️ | Aujourd'hui vers 3 h (A51). Les simulateurs du top proposent le premier prestige en 20 à 45 min, puis allongent. Mon avis : c'est trop long pour des sessions Roblox de 20-30 min. Mais cela demande de toucher aux prix des paliers du CDC (§5). À trancher. |
+| Premier Rebirth plus tôt | ⚖️ | Vers 2 h 37 en simulation après A68 (3 h avant). Les simulateurs du top proposent le premier prestige en 20 à 45 min, puis allongent. Mon avis : c'est trop long pour des sessions Roblox de 20-30 min. Mais cela demande de toucher aux prix des paliers du CDC (§5). À trancher. |
 | Boutique du Rebirth (jetons de Rebirth → bonus permanents) | ⭐ | Prolonge le prestige ; les gemmes du Rebirth vont aujourd'hui dans les améliorations A65. |
 | Nouvelles zones de champ débloquées au Rebirth (vergers, citrouilles, champ de cristal) | ⭐ | Le plus gros levier de contenu après le premier Rebirth ; la carte en T s'y prête (prolonger la tige). |
 | Potions de boost (×2 argent 10 min, ×2 chance) | ⭐ | Récompense des quêtes, de la roue, et produit Robux. |
@@ -160,6 +187,7 @@ Légende :
 | A64 | Succès permanents |
 | A65 | Améliorations en gemmes |
 | A66 | 6 nouvelles espèces de Pets, index, « Équiper les meilleurs » |
-| A67 | Flèches vers le champ pour les débutants |
+| A67 | Flèches vers le champ pour les débutants, apparition face au champ |
+| A68 | Premier quart d'heure : prix d'entrée, flèches utiles, effets de déchargement et de gain, « Nouvel outil », offres moins envahissantes |
 
 Profil sauvegardé : v6 → v9 (migration automatique, aucun profil existant n'est perdu).

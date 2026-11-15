@@ -16,6 +16,7 @@ export type Situation = {
 	buttons: { Button }, -- boutons achetables de sa base (prix connu)
 	seen: { [string]: boolean }, -- objets déjà montrés (ids de bouton, ou UNLOAD) : on n'y ramène plus
 	position: Point?, -- où se trouve le joueur : un débutant hors du champ y est conduit (A67)
+	siloSeconds: number?, -- autonomie du silo : le tapis n'est utile que s'il ne suit plus la récolte (A68)
 }
 export type Target = { kind: "unload" | "button" | "field", point: Point, id: string? }
 export type Chevron = { x: number, z: number, dirX: number, dirZ: number }
@@ -33,13 +34,26 @@ local MOAT = MapConfig.MOAT
 Guide.UNLOAD = TycoonConfig.GUIDE_UNLOAD_KEY -- clé de la grille de déchargement dans `seen`
 Guide.FIELD = "Field"
 Guide.FIELD_ENTRY_DEPTH = 40 -- studs au-delà du fossé : on arrive en plein Blé Vert (A67)
+Guide.CONVEYOR_BACKLOG_SECONDS = 60 -- A68 : en dessous, le silo se vide avant le retour suivant : un niveau de tapis ne rapporte rien
 
--- Bouton le moins cher que le joueur peut payer tout de suite, parmi ceux pas encore montrés.
-function Guide.cheapestAffordable(buttons: { Button }, money: number, seen: { [string]: boolean }): Button?
+-- Bouton le moins cher que le joueur peut payer tout de suite, parmi ceux pas encore montrés. Le Garage passe avant
+-- tout (un nouvel outil est le plus beau des achats), et le tapis n'est proposé que si le silo déborde (A68).
+function Guide.cheapestAffordable(
+	buttons: { Button },
+	money: number,
+	seen: { [string]: boolean },
+	siloSeconds: number?
+): Button?
 	local best: Button? = nil
 	for _, button in buttons do
-		if not seen[button.id] and button.price <= money and (best == nil or button.price < best.price) then
-			best = button
+		local isUseless = button.id == "Conveyor" and (siloSeconds or math.huge) < Guide.CONVEYOR_BACKLOG_SECONDS
+		if not seen[button.id] and button.price <= money and not isUseless then
+			if button.id == TycoonConfig.GARAGE_NAME then
+				return button
+			end
+			if best == nil or button.price < best.price then
+				best = button
+			end
 		end
 	end
 	return best
@@ -67,7 +81,7 @@ function Guide.target(situation: Situation): Target?
 	if situation.isBagFull and situation.unload and not situation.seen[Guide.UNLOAD] then
 		return { kind = "unload", point = situation.unload, id = Guide.UNLOAD }
 	end
-	local button = Guide.cheapestAffordable(situation.buttons, situation.money, situation.seen)
+	local button = Guide.cheapestAffordable(situation.buttons, situation.money, situation.seen, situation.siloSeconds)
 	if button then
 		return { kind = "button", point = { x = button.x, z = button.z, level = button.level }, id = button.id }
 	end

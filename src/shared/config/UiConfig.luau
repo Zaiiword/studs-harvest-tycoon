@@ -34,6 +34,8 @@ return Freeze.deep({
 			FILL = { 90, 200, 70 },
 			READY = { 255, 200, 40 },
 		},
+		-- Gain qui s'envole sous la trésorerie (A68).
+		MONEY_POP = { WIDTH = 160, HEIGHT = 30, RISE = 40, SECONDS = 1.1, SPREAD = 120, COLOR = { 120, 255, 120 } },
 		-- Pastille d'invitation à droite de la barre d'objectif (A63) : montre le bonus des amis et ouvre l'invitation.
 		INVITE = { WIDTH = 170, TOP = { 120, 200, 255 }, BOTTOM = { 40, 110, 230 } },
 	},
@@ -184,6 +186,24 @@ return Freeze.deep({
 		MARKER_HEIGHT = 9, -- grosse flèche au-dessus de la cible
 		MARKER_SIZE = 90, -- pixels
 		MARKER_BOB = { height = 1.2, speed = 4 },
+	},
+	-- Icône de chaque palier dans la pop-up « NOUVEL OUTIL ! » (A68).
+	TIER_ICONS = { "✋", "🌾", "🚜", "🚜", "🌀", "👑", "⚡" } :: { string },
+	-- Déchargement au silo (A68) : gerbe de briques vers le silo et montant qui s'envole.
+	UNLOAD_FX = {
+		FLIGHT_SECONDS = 0.8,
+		STAGGER = 0.025, -- décalage entre deux briques
+		ARC_HEIGHT = 14,
+		BRICKS_PER_SQRT = 1.5, -- nombre de briques ∝ √valeur, borné
+		MIN_BRICKS = 6,
+		MAX_BRICKS = 40,
+		TEXT_START = 4,
+		TEXT_RISE = 7,
+		TEXT_SECONDS = 1.6,
+		TEXT_WIDTH = 260,
+		TEXT_HEIGHT = 56,
+		TEXT_COLOR = { 255, 220, 60 },
+		SOUND_SPEED = 0.75,
 	},
 	-- Arrivée des briques d'une machine ou d'une décoration achetée (A53).
 	BUILD_FX = {
