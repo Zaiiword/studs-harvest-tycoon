@@ -2,6 +2,7 @@
 -- Habillage de la boutique (CDC §9, §10) : chaque offre vendue a sa carte, et la grille reste lisible.
 local TestKit = require("../TestKit")
 local MonetizationConfig = require("../../src/shared/config/MonetizationConfig")
+local UpgradeConfig = require("../../src/shared/config/UpgradeConfig")
 local UiConfig = require("../../src/shared/config/UiConfig")
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
@@ -29,6 +30,9 @@ describe("Boutique", function()
 			for _, offer in list do
 				known[offer.key] = true
 			end
+		end
+		for _, upgrade in UpgradeConfig.UPGRADES do -- onglet Gemmes (A65)
+			known[upgrade.id] = true
 		end
 		for key in SHOP.CARDS do
 			expect(known[key]).toBe(true)

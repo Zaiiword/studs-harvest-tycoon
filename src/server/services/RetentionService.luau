@@ -10,6 +10,8 @@ local Workspace = game:GetService("Workspace")
 
 local RetentionConfig = require(ReplicatedStorage.Shared.config.RetentionConfig)
 local Retention = require(ReplicatedStorage.Shared.domain.Retention)
+local RewardText = require(ReplicatedStorage.Shared.domain.RewardText)
+local Rewards = require(ReplicatedStorage.Shared.domain.Rewards)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local RateLimiter = require(ReplicatedStorage.Shared.util.RateLimiter)
@@ -36,6 +38,7 @@ local entries: { [Player]: Entry } = {}
 local limiter = RateLimiter.new(5, 2)
 local notify: RemoteEvent
 local wheelResult: RemoteEvent
+local codeResult: RemoteEvent
 local publishElapsed = 0
 
 local function now(): number
@@ -72,20 +75,33 @@ local function publish(player: Player, entry: Entry)
 	)
 	player:SetAttribute(PlayerAttributes.QUEST_PROGRESS, table.concat(progress, ","))
 	player:SetAttribute(PlayerAttributes.QUESTS_CLAIMED, table.concat(claimed, ","))
+	player:SetAttribute(PlayerAttributes.LOGIN_LAST_DAY, entry.state.login.lastDay)
+	player:SetAttribute(PlayerAttributes.LOGIN_STREAK, entry.state.login.streak)
+	local stats, achievements = {}, {}
+	for stat, value in entry.state.stats do
+		table.insert(stats, `{stat}={math.floor(value)}`)
+	end
+	for id, tier in entry.state.achievements do
+		table.insert(achievements, `{id}={tier}`)
+	end
+	player:SetAttribute(PlayerAttributes.STATS, table.concat(stats, ","))
+	player:SetAttribute(PlayerAttributes.ACHIEVEMENTS, table.concat(achievements, ","))
 end
 
 -- Verse une récompense (argent, gemmes ou objet) et prévient le joueur.
+-- Les sommes d'argent suivent la progression du joueur (A59) : on calcule ici le montant réel.
 local function grant(player: Player, reward: RetentionConfig.Reward, source: string)
-	if reward.money then
-		TycoonService.grant(player, reward.money)
+	local resolved = Rewards.resolve(reward, TycoonService.factoryIncome(player))
+	if resolved.money and resolved.money > 0 then
+		TycoonService.grant(player, resolved.money)
 	end
-	if reward.gems then
-		TycoonService.grantGems(player, reward.gems)
+	if resolved.gems then
+		TycoonService.grantGems(player, resolved.gems)
 	end
-	if reward.item then
-		InventoryService.add(player, reward.item, reward.count or 1)
+	if resolved.item then
+		InventoryService.add(player, resolved.item, resolved.count or 1)
 	end
-	notify:FireClient(player, `🎁 {source} : récompense reçue !`)
+	notify:FireClient(player, `🎁 {source} : {RewardText.label(resolved)} !`)
 end
 
 local function record(player: Player, stat: string, amount: number)
@@ -120,7 +136,7 @@ local function onSpinWheel(player: Player)
 		return random:NextNumber()
 	end)
 	wheelResult:FireClient(player, index) -- le client fait tourner la roue jusqu'à cette case
-	grant(player, RetentionConfig.WHEEL[index].reward, `Roue : {RetentionConfig.WHEEL[index].label}`)
+	grant(player, RetentionConfig.WHEEL[index].reward, "Roue de la Fortune")
 	publish(player, entry)
 end
 
@@ -134,6 +150,49 @@ local function onClaimQuest(player: Player, rawId: any)
 		grant(player, reward, "Quête du jour")
 		publish(player, entry)
 	end
+end
+
+local function onClaimLogin(player: Player)
+	local entry = entries[player]
+	if not entry or not limiter:allow(player, os.clock()) then
+		return
+	end
+	local reward = Retention.claimLogin(entry.state, Retention.dayOf(now()))
+	if reward then
+		grant(player, reward, `Connexion, jour {entry.state.login.streak}`)
+		publish(player, entry)
+	end
+end
+
+local function onClaimAchievement(player: Player, rawId: any)
+	local entry = entries[player]
+	if not entry or not limiter:allow(player, os.clock()) then
+		return
+	end
+	local reward = Retention.claimAchievement(entry.state, rawId)
+	if reward then
+		grant(player, reward, "Succès")
+		publish(player, entry)
+	end
+end
+
+local CODE_MESSAGES: { [Retention.CodeResult]: string } = {
+	invalid = "Ce code n'existe pas.",
+	used = "Tu as déjà utilisé ce code.",
+	expired = "Ce code a expiré.",
+	ok = "Code validé !",
+}
+
+local function onRedeemCode(player: Player, raw: any)
+	local entry = entries[player]
+	if not entry or not limiter:allow(player, os.clock()) then
+		return
+	end
+	local reward, result = Retention.redeemCode(entry.state, raw, os.time())
+	if reward then
+		grant(player, reward, "Code")
+	end
+	codeResult:FireClient(player, result == "ok", CODE_MESSAGES[result])
 end
 
 -- Statistique cumulée d'un joueur (statues de classement).
@@ -188,6 +247,10 @@ function RetentionService:Init()
 	Remotes.event(Remotes.CLAIM_GIFT).OnServerEvent:Connect(onClaimGift)
 	Remotes.event(Remotes.SPIN_WHEEL).OnServerEvent:Connect(onSpinWheel)
 	Remotes.event(Remotes.CLAIM_QUEST).OnServerEvent:Connect(onClaimQuest)
+	codeResult = Remotes.event(Remotes.CODE_RESULT)
+	Remotes.event(Remotes.CLAIM_LOGIN).OnServerEvent:Connect(onClaimLogin)
+	Remotes.event(Remotes.CLAIM_ACHIEVEMENT).OnServerEvent:Connect(onClaimAchievement)
+	Remotes.event(Remotes.REDEEM_CODE).OnServerEvent:Connect(onRedeemCode)
 end
 
 function RetentionService:Start()

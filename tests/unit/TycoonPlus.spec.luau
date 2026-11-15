@@ -69,7 +69,7 @@ describe("Profil v6", function()
 			retention = nil :: any,
 			purchases = nil :: any,
 		})
-		expect(data.version).toBe(6)
+		expect(data.version).toBe(Profile.VERSION)
 		local restored = Profile.toTycoon(Profile.sanitize(data))
 		expect(restored.siloLevel).toBe(3)
 		expect(restored.decor.Flag).toBe(true)
@@ -162,5 +162,37 @@ describe("Guidage une seule fois par objet", function()
 		local data = Profile.sanitize({ guided = { "Conveyor", "Unload", "Inconnu" } })
 		expect(#data.guided).toBe(2)
 		expect(Profile.toTycoon(data).guided.Unload).toBe(true)
+	end)
+end)
+
+describe("Guidage du débutant vers le champ (A67)", function()
+	local base = { x = -110, z = -72.5 }
+
+	it("emmène au champ un joueur qui n'a jamais déchargé et n'a rien à acheter", function()
+		local target = Guide.target({
+			money = 0,
+			isBagFull = false,
+			unload = nil,
+			buttons = {},
+			seen = {},
+			position = base,
+		}) :: Guide.Target
+		expect(target.kind).toBe("field")
+		expect(target.point.x > 24).toBe(true) -- au-delà du fossé
+		expect(target.point.z).toBe(-72.5) -- par le pont en face de la base
+	end)
+
+	it("se tait une fois dans le champ, ou après le premier déchargement", function()
+		local inField = { money = 0, isBagFull = false, buttons = {}, seen = {}, position = { x = 200, z = 0 } }
+		expect(Guide.target(inField)).toBe(nil)
+		local veteran =
+			{ money = 0, isBagFull = false, buttons = {}, seen = { [Guide.UNLOAD] = true }, position = base }
+		expect(Guide.target(veteran)).toBe(nil)
+	end)
+
+	it("préfère un achat abordable au champ", function()
+		local buttons = { { id = "Conveyor", price = 50, x = -100, z = -80 } }
+		local target = Guide.target({ money = 60, isBagFull = false, buttons = buttons, seen = {}, position = base })
+		expect((target :: Guide.Target).kind).toBe("button")
 	end)
 end)

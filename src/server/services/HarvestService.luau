@@ -50,10 +50,20 @@ local function tierOf(player: Player): VehicleConfig.TierDef
 	return Perks.tierOf(player)
 end
 
--- Puissance de coupe : celle de l'outil × facteur des Pets équipés (A2, publié par PetService).
+-- Multiplicateur publié en attribut (Pets, améliorations) : 1 s'il est absent ou invalide.
+local function multiplierOf(player: Player, name: string): number
+	local value = player:GetAttribute(name)
+	return if typeof(value) == "number" and value >= 1 then value else 1
+end
+
+-- Puissance de coupe : celle de l'outil × facteur des Pets équipés (A2, publié par PetService) × Lames Affûtées (A65).
 function HarvestService.cutPowerOf(player: Player, tier: VehicleConfig.TierDef): number
-	local multiplier = player:GetAttribute(ATTR.CUT_POWER_MULTIPLIER)
-	return tier.cutPower * (if typeof(multiplier) == "number" and multiplier >= 1 then multiplier else 1)
+	return tier.cutPower * multiplierOf(player, ATTR.CUT_POWER_MULTIPLIER) * multiplierOf(player, ATTR.CUT_UPGRADE)
+end
+
+-- Capacité du sac : celle du palier × Sac XXL (A65).
+local function capacityOf(player: Player, tier: VehicleConfig.TierDef): number
+	return math.floor(tier.capacity * multiplierOf(player, ATTR.BAG_UPGRADE))
 end
 
 local function setIfChanged(player: Player, name: string, value: any)
@@ -137,7 +147,7 @@ local function harvestTick(player: Player, state: PlayerState)
 		return
 	end
 	local tier = tierOf(player)
-	Bag.setCapacity(state.bag, tier.capacity)
+	Bag.setCapacity(state.bag, capacityOf(player, tier))
 	state.blockedPlaces = 0
 	if TycoonService.isOnUnloadPad(player, root.Position) then
 		if state.bag.count > 0 then

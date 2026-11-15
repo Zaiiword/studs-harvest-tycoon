@@ -10,6 +10,7 @@ local Purchases = require("./Purchases")
 local Rebirth = require("./Rebirth")
 local Retention = require("./Retention")
 local Tycoon = require("./Tycoon")
+local Upgrades = require("./Upgrades")
 
 export type Data = {
 	version: number,
@@ -27,6 +28,8 @@ export type Data = {
 	siloLevel: number, -- v6 : agrandissements du silo (A53)
 	decor: { string }, -- v6 : décorations achetées (A53)
 	guided: { string }, -- v6 : objets où les flèches de guidage ne ramènent plus (A53)
+	lastSeenAt: number, -- v7 : heure Unix de la dernière sauvegarde, pour les gains hors ligne (A60)
+	upgrades: Upgrades.Levels, -- v9 : améliorations achetées en gemmes (A65)
 }
 
 -- Ce que les services fournissent pour composer un profil à sauvegarder.
@@ -38,13 +41,17 @@ export type GameParts = {
 	pets: Pets.Collection,
 	retention: Retention.State,
 	purchases: Purchases.Purchases,
+	savedAt: number?, -- heure Unix de la capture (gains hors ligne, A60)
+	upgrades: Upgrades.Levels?, -- améliorations en gemmes (A65)
 }
 
 local Profile = {}
 
--- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases` ; v5 → v6 : `siloLevel`, `decor`, `guided`. Un champ absent reprend sa valeur par défaut :
+-- v1 → v2 : `items` ; v2 → v3 : `pets` ; v3 → v4 : `retention` ; v4 → v5 : `purchases` ; v5 → v6 : `siloLevel`, `decor`, `guided` ;
+-- v6 → v7 : `lastSeenAt` ; v7 → v8 : `retention.login`, `retention.codes` ; v8 → v9 : `upgrades`,
+-- `retention.achievements`. Un champ absent reprend sa valeur par défaut :
 -- la migration est donc faite par `sanitize`, sans code spécifique.
-Profile.VERSION = 6
+Profile.VERSION = 9
 
 local knownMachines: { [string]: boolean } = {}
 for _, list in { TycoonConfig.MACHINES, TycoonConfig.UPPER_MACHINES } do
@@ -78,6 +85,8 @@ function Profile.default(): Data
 		siloLevel = 0,
 		decor = {},
 		guided = {},
+		lastSeenAt = 0,
+		upgrades = {},
 	}
 end
 
@@ -134,6 +143,8 @@ function Profile.sanitize(raw: any): Data
 		siloLevel = number(source.siloLevel, 0, #TycoonConfig.SILO_UPGRADE.PRICES, 0, true),
 		decor = idsOf(source.decor, knownDecor),
 		guided = idsOf(source.guided, knownGuided),
+		lastSeenAt = number(source.lastSeenAt, 0, math.huge - 1, 0, true),
+		upgrades = Upgrades.sanitize(source.upgrades),
 	}
 end
 
@@ -154,6 +165,8 @@ function Profile.fromGame(parts: GameParts): Data
 		siloLevel = state.siloLevel,
 		decor = sortedKeys(state.decor),
 		guided = sortedKeys(state.guided),
+		lastSeenAt = parts.savedAt or 0,
+		upgrades = parts.upgrades,
 	})
 end
 

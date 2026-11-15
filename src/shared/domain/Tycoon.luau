@@ -22,6 +22,8 @@ export type IncomeBonus = {
 	rebirths: number,
 	hasIncomeX2: boolean,
 	boostMultiplier: number?, -- multiplicateur temporaire (récompense du boss Météorite ×3, CDC §6)
+	socialMultiplier: number?, -- amis présents et Roblox Premium (A63)
+	upgradeMultiplier: number?, -- Comptable Génial, amélioration en gemmes (A65)
 }
 
 export type Offer = {
@@ -114,11 +116,16 @@ local function income(state: State, rawPerSecond: number, bonus: IncomeBonus): n
 		petBonuses = bonus.petBonuses,
 		rebirths = bonus.rebirths,
 		hasIncomeX2 = bonus.hasIncomeX2,
-	}) * (bonus.boostMultiplier or 1)
+	}) * (bonus.boostMultiplier or 1) * (bonus.socialMultiplier or 1) * (bonus.upgradeMultiplier or 1)
 end
 
 function Tycoon.incomePerSecond(state: State, bonus: IncomeBonus): number
 	return income(state, if state.silo > 0 then Tycoon.conveyorRate(state) else 0, bonus)
+end
+
+-- Revenu de l'usine à plein régime, même silo vide : référence des récompenses en argent (A59, Rewards).
+function Tycoon.fullIncomePerSecond(state: State, bonus: IncomeBonus): number
+	return income(state, Tycoon.conveyorRate(state), bonus)
 end
 
 -- Fait tourner l'usine pendant `dt` secondes : le tapis vide le silo et le revenu est encaissé.

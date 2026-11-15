@@ -26,12 +26,22 @@ return Freeze.deep({
 		TOP_MARGIN = 12,
 		ALERT_HEIGHT = 28,
 		ALERT_COLOR = { 220, 40, 40 },
+		-- Barre d'objectif sous la trésorerie (A59) : le prochain grand achat et l'épargne déjà réunie.
+		GOAL = {
+			WIDTH = 440,
+			HEIGHT = 28,
+			GAP = 6,
+			FILL = { 90, 200, 70 },
+			READY = { 255, 200, 40 },
+		},
+		-- Pastille d'invitation à droite de la barre d'objectif (A63) : montre le bonus des amis et ouvre l'invitation.
+		INVITE = { WIDTH = 170, TOP = { 120, 200, 255 }, BOTTOM = { 40, 110, 230 } },
 	},
 	-- Bandeau des événements sous la trésorerie (météo, boss, multiplicateur) — CDC §6.
 	EVENT_BANNER = {
 		WIDTH = 520,
 		HEIGHT = 30,
-		TOP = 84,
+		TOP = 122, -- sous la barre d'objectif et l'alerte « silo vide »
 		SPACING = 6,
 		BOSS_BAR_COLOR = { 128, 230, 255 },
 		WEATHER_COLOR = { 245, 205, 48 },
@@ -58,6 +68,11 @@ return Freeze.deep({
 		MAX_COLUMNS = 6,
 		DETAIL_WIDTH = 0.36, -- part de la largeur occupée par la fiche
 		HEADER_HEIGHT = 34, -- bandeau « Équipés 2 / 3 · Bonus ×3,4 »
+		HEADER_SHARE = 0.64, -- part du bandeau laissée au texte ; le reste pour « ⭐ MEILLEURS » (A66)
+		INDEX_MAX_COLUMNS = 7, -- l'index occupe toute la largeur de la fenêtre
+		LOCKED_TOP = { 90, 95, 110 }, -- carte d'un Pet pas encore découvert
+		LOCKED_BOTTOM = { 45, 48, 60 },
+		INDEX_GEMS_COLOR = { 98, 37, 209 },
 		SPIN_SPEED = 1.2, -- rad/s : le Pet de la fiche tourne sur lui-même
 		CAMERA = { fov = 40, distance = 1.9, height = 0.35, side = 0.55 }, -- cadrage des Pets 3D
 		SELECTED_STROKE = { 255, 255, 255 },
@@ -85,6 +100,11 @@ return Freeze.deep({
 	-- Menu de rétention 🎁 (CDC §7.4) : cadeaux de temps de jeu, quêtes du jour, Roue de la Fortune.
 	RETENTION_MENU = {
 		GIFT_COLUMNS = 3,
+		LOGIN_COLUMNS = 4, -- calendrier de connexion : 7 jours sur deux rangées (A61)
+		LOGIN_AUTO_OPEN_DELAY = 3, -- secondes après le chargement du profil
+		CODE_HEIGHT = 56,
+		CODE_OK = { 120, 255, 120 },
+		CODE_ERROR = { 255, 110, 110 },
 		GIFT_HEIGHT = 128,
 		QUEST_HEIGHT = 92,
 		PADDING = 12,
@@ -160,6 +180,7 @@ return Freeze.deep({
 		CHEVRON = { length = 2.4, width = 0.55, thickness = 0.15, angle = 0.75 },
 		BUTTON_COLOR = { 120, 255, 120 },
 		UNLOAD_COLOR = { 255, 220, 60 },
+		FIELD_COLOR = { 90, 220, 255 }, -- débutant : direction le champ (A67)
 		MARKER_HEIGHT = 9, -- grosse flèche au-dessus de la cible
 		MARKER_SIZE = 90, -- pixels
 		MARKER_BOB = { height = 1.2, speed = 4 },
@@ -236,6 +257,10 @@ return Freeze.deep({
 			TripleHatch = { icon = "🥚", top = { 120, 235, 160 }, bottom = { 30, 160, 90 } },
 			Bazooka = { icon = "💥", top = { 255, 150, 80 }, bottom = { 220, 70, 30 } },
 			Meteor = { icon = "☄️", top = { 255, 210, 90 }, bottom = { 190, 110, 20 }, badge = "ÉPIQUE" },
+			-- Améliorations en gemmes (A65).
+			Bag = { icon = "🎒", top = { 120, 220, 255 }, bottom = { 40, 120, 210 } },
+			Blades = { icon = "⚔️", top = { 255, 140, 120 }, bottom = { 190, 50, 60 } },
+			Accountant = { icon = "📈", top = { 140, 240, 150 }, bottom = { 40, 160, 80 }, badge = "REVENUS" },
 		} :: { [string]: { icon: string, top: { number }, bottom: { number }, badge: string? } },
 	},
 	-- Fenêtres de menu « premium » (boutique…) : dégradé, gros contour, croix rouge, ouverture qui rebondit.

@@ -15,8 +15,9 @@ export type Situation = {
 	unload: Point?, -- grille de déchargement de sa base
 	buttons: { Button }, -- boutons achetables de sa base (prix connu)
 	seen: { [string]: boolean }, -- objets déjà montrés (ids de bouton, ou UNLOAD) : on n'y ramène plus
+	position: Point?, -- où se trouve le joueur : un débutant hors du champ y est conduit (A67)
 }
-export type Target = { kind: "unload" | "button", point: Point, id: string? }
+export type Target = { kind: "unload" | "button" | "field", point: Point, id: string? }
 export type Chevron = { x: number, z: number, dirX: number, dirZ: number }
 export type ChevronSpec = {
 	spacing: number, -- studs entre deux chevrons
@@ -30,6 +31,8 @@ local Guide = {}
 local MOAT = MapConfig.MOAT
 
 Guide.UNLOAD = TycoonConfig.GUIDE_UNLOAD_KEY -- clé de la grille de déchargement dans `seen`
+Guide.FIELD = "Field"
+Guide.FIELD_ENTRY_DEPTH = 40 -- studs au-delà du fossé : on arrive en plein Blé Vert (A67)
 
 -- Bouton le moins cher que le joueur peut payer tout de suite, parmi ceux pas encore montrés.
 function Guide.cheapestAffordable(buttons: { Button }, money: number, seen: { [string]: boolean }): Button?
@@ -42,8 +45,24 @@ function Guide.cheapestAffordable(buttons: { Button }, money: number, seen: { [s
 	return best
 end
 
--- Sac plein : décharger d'abord. Sinon : le bouton abordable le moins cher. Sinon : rien à montrer.
--- Chaque objet n'est montré qu'une fois (voir `seen`).
+local function isInField(point: Point): boolean
+	return point.x >= MOAT.maxX
+end
+
+-- Entrée du champ la plus proche : au bout du pont le plus près, en plein Blé Vert.
+function Guide.fieldEntry(from: Point): Point
+	local best, bestGap = nil, math.huge
+	for _, bridge in MapGeometry.bridges() do
+		local gap = math.abs(from.z - bridge.z)
+		if gap < bestGap then
+			best, bestGap = bridge, gap
+		end
+	end
+	return { x = MOAT.maxX + Guide.FIELD_ENTRY_DEPTH, z = (best :: MapGeometry.BridgePlacement).z }
+end
+
+-- Sac plein : décharger d'abord. Sinon : le bouton abordable le moins cher. Sinon, pour un débutant qui n'a encore
+-- jamais déchargé (A67) : le champ. Chaque objet n'est montré qu'une fois (voir `seen`).
 function Guide.target(situation: Situation): Target?
 	if situation.isBagFull and situation.unload and not situation.seen[Guide.UNLOAD] then
 		return { kind = "unload", point = situation.unload, id = Guide.UNLOAD }
@@ -52,11 +71,11 @@ function Guide.target(situation: Situation): Target?
 	if button then
 		return { kind = "button", point = { x = button.x, z = button.z, level = button.level }, id = button.id }
 	end
+	local position = situation.position
+	if position and not situation.seen[Guide.UNLOAD] and not situation.isBagFull and not isInField(position) then
+		return { kind = "field", point = Guide.fieldEntry(position), id = Guide.FIELD }
+	end
 	return nil
-end
-
-local function isInField(point: Point): boolean
-	return point.x >= MOAT.maxX
 end
 
 -- Porte d'une base (ouverte côté champ, DecorConfig.FENCE) : la clôture interdit de couper tout droit.

@@ -125,7 +125,10 @@ local function addSpawn(floor: Part, base: MapGeometry.Placement)
 	spawn.Neutral = true
 	spawn.Duration = 0
 	spawn.Size = Vector3.new(6, MapConfig.SPAWN_HEIGHT, 6)
-	spawn.CFrame = CFrame.new(x, MapConfig.DECK_TOP + MapConfig.SPAWN_HEIGHT / 2, z)
+	-- Tourné vers le champ (A67) : on apparaît face au cœur du jeu et aux flèches, pas face au couvoir.
+	local position = Vector3.new(x, MapConfig.DECK_TOP + MapConfig.SPAWN_HEIGHT / 2, z)
+	local towardField = Vector3.new(math.cos(base.angle), 0, math.sin(base.angle))
+	spawn.CFrame = CFrame.lookAt(position, position + towardField)
 	Bricks.style(spawn, MapConfig.COLORS.Core)
 	spawn.Parent = floor
 end

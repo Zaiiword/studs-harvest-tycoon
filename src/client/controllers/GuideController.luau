@@ -81,7 +81,10 @@ local function situation(): Guide.Situation
 		end
 	end
 	local count, capacity = numberAttribute(PlayerAttributes.BAG_COUNT), numberAttribute(PlayerAttributes.BAG_CAPACITY)
+	local character = localPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	return {
+		position = if root then { x = root.Position.X, z = root.Position.Z } else nil,
 		money = numberAttribute(PlayerAttributes.MONEY) or 0,
 		isBagFull = count ~= nil and capacity ~= nil and count >= capacity,
 		unload = unload,
@@ -173,7 +176,10 @@ local function update(deltaTime: number)
 		hideAll()
 		return
 	end
-	local rgb = if goal.kind == "unload" then GUIDE.UNLOAD_COLOR else GUIDE.BUTTON_COLOR
+	local rgb = if goal.kind == "unload"
+		then GUIDE.UNLOAD_COLOR
+		elseif goal.kind == "field" then GUIDE.FIELD_COLOR
+		else GUIDE.BUTTON_COLOR
 	local color = Bricks.rgb(rgb)
 	local spec = {
 		spacing = GUIDE.SPACING,

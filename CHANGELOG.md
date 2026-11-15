@@ -2,6 +2,72 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Flèches vers le champ pour les débutants (A67)
+
+### Corrigé
+- Un nouveau joueur (0 $, sac vide) n'avait **aucune flèche** : rien d'achetable, rien à décharger. Les flèches,
+  en bleu ciel, le mènent maintenant au champ par le pont le plus proche, jusqu'à son premier déchargement.
+- Le joueur apparaissait face au couvoir, le champ sur le côté : il apparaît maintenant tourné vers le champ.
+
+### Ajouté
+- `docs/AMELIORATIONS.md` : inventaire des améliorations possibles pour viser le top 100, avec ce qui est fait,
+  recommandé, à décider ou déconseillé.
+
+## Pets : nouvelles espèces, index et « Meilleurs » (A66)
+
+### Ajouté
+- **6 nouvelles espèces** en briques : Cochonnet Rose et Lapin Brique (Communs), Mouton Laineux (Rare), Abeille Géante
+  (Épique), Licorne Étoilée (Légendaire), Golem de Cristal (Secret Mythique). 11 espèces au total.
+- **Index** (onglet 📖 du menu 🐾) : 33 entrées (espèce × variante), silhouettes noires pour celles qui manquent ;
+  chaque première obtention rapporte des gemmes (1 à 100 selon la rareté et la variante).
+- Bouton **⭐ MEILLEURS** : équipe d'un clic les Pets au plus gros bonus.
+
+### Modifié
+- Le tirage choisit la rareté selon l'œuf (chances inchangées), puis l'espèce au hasard dans cette rareté.
+
+## Succès et améliorations en gemmes (A64, A65)
+
+### Ajouté
+- **Succès** (onglet 🏆 du menu 🎁) : 7 familles (récolte, Maïs, Diamant, déchargements, éjections, boss, argent
+  gagné) de 3 à 5 paliers chacune, payés en gemmes. Pastille « ! » quand un palier est prêt.
+- **Améliorations en gemmes** (onglet 💎 de la boutique), conservées au Rebirth : Sac XXL (+10 % de places),
+  Lames Affûtées (+15 % de coupe), Comptable Génial (+10 % de revenus), 5 niveaux chacune.
+- Profil v9 (améliorations, paliers de succès).
+
+## Bonus des amis et de Premium (A63)
+
+### Ajouté
+- **+10 % de revenus par ami** présent sur le serveur (4 au plus) et **+10 % pour Roblox Premium**.
+- Pastille « 👥 Inviter » à droite de la barre d'objectif : affiche le bonus en cours et ouvre l'invitation Roblox.
+
+## Connexion quotidienne et codes (A61, A62)
+
+### Ajouté
+- **Calendrier de connexion** sur 7 jours (onglet 📅 du menu 🎁) : argent, gemmes, objets, et un Œuf Légendaire au
+  jour 7. Un jour manqué fait repartir la série au jour 1. Le menu s'ouvre seul quand la récompense du jour attend.
+- **Codes** (onglet 🎟️) : un usage par compte, insensibles à la casse ; codes de lancement BIENVENUE, LEGO, MOISSON.
+  Ajouter un code = une ligne dans `RetentionConfig.CODES` (avec date d'expiration facultative).
+- Profil v8 (série de connexion, codes utilisés).
+
+## Gains hors ligne (A60)
+
+### Ajouté
+- **L'usine tourne pendant l'absence** : à la connexion, le tapis a vidé le silo comme en jeu (12 h au plus), avec les
+  bonus permanents du joueur. Pop-up « Bon retour ! » avec le gain et la durée. Remplir son silo avant de partir
+  devient une vraie stratégie.
+- Profil v7 (heure de la dernière sauvegarde).
+
+## Récompenses à la mesure du joueur et objectif suivant (A59)
+
+### Ajouté
+- **Barre d'objectif** sous la trésorerie : le prochain grand achat (palier du Garage, machine ou Rebirth, le moins
+  cher des trois) et l'argent déjà réuni ; elle devient dorée quand on peut l'acheter.
+
+### Modifié
+- Les récompenses en argent (cadeaux, quêtes, roue) valent **le plus grand** de leur montant d'origine et de quelques
+  minutes de l'usine à plein régime : 500 $ ne voulaient plus rien dire après une heure de jeu. Le menu 🎁 affiche le
+  montant réel, la notification aussi.
+
 ## Classements, tête du joueur et lisibilité (A58)
 
 ### Ajouté

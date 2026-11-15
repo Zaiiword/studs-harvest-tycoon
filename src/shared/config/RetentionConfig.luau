@@ -4,7 +4,8 @@
 local Freeze = require("../util/Freeze")
 
 export type Reward = {
-	money: number?,
+	money: number?, -- montant plancher en $
+	incomeMinutes: number?, -- A59 : ou autant de minutes de l'usine à plein régime, si c'est plus (Rewards)
 	gems: number?,
 	item: string?, -- id d'objet de l'inventaire (sabotage ou Œuf Légendaire)
 	count: number?,
@@ -13,6 +14,18 @@ export type Reward = {
 export type Gift = { minutes: number, reward: Reward }
 
 export type WheelSegment = { label: string, weight: number, reward: Reward, color: { number } }
+
+-- Succès (A64) : une famille par statistique, avec des paliers de plus en plus durs, chacun payé en gemmes.
+export type AchievementDef = {
+	id: string,
+	icon: string,
+	label: string, -- « {n} » est remplacé par l'objectif du palier (« Couper 5 K blés »)
+	stat: string,
+	targets: { number },
+	gems: { number }, -- récompense de chaque palier
+}
+
+export type CodeDef = { code: string, reward: Reward, expiresAt: number? } -- expiresAt : heure Unix, nil = sans fin
 
 export type ScoreboardDef = { id: string, title: string, stat: string, z: number }
 
@@ -27,26 +40,107 @@ export type QuestDef = {
 return Freeze.deep({
 	-- CDC §7.4 : 9 cadeaux qui se débloquent entre 2 et 60 minutes de présence (par session, A44).
 	GIFTS = {
-		{ minutes = 2, reward = { money = 250 } },
-		{ minutes = 5, reward = { money = 1_000 } },
+		{ minutes = 2, reward = { money = 250, incomeMinutes = 1 } },
+		{ minutes = 5, reward = { money = 1_000, incomeMinutes = 2 } },
 		{ minutes = 10, reward = { gems = 3 } },
 		{ minutes = 15, reward = { item = "Mud", count = 2 } },
-		{ minutes = 20, reward = { money = 5_000 } },
+		{ minutes = 20, reward = { money = 5_000, incomeMinutes = 5 } },
 		{ minutes = 30, reward = { gems = 10 } },
 		{ minutes = 40, reward = { item = "Glove", count = 2 } },
-		{ minutes = 50, reward = { money = 25_000 } },
+		{ minutes = 50, reward = { money = 25_000, incomeMinutes = 10 } },
 		{ minutes = 60, reward = { item = "LegendaryEgg", count = 1 } },
 	} :: { Gift },
+
+	-- Connexion quotidienne (A61) : une récompense par jour, de plus en plus belle sur 7 jours d'affilée. Un jour
+	-- manqué fait repartir la série au jour 1 ; après le jour 7, le cycle recommence.
+	LOGIN_REWARDS = {
+		{ money = 500, incomeMinutes = 3 },
+		{ gems = 5 },
+		{ item = "Mud", count = 3 },
+		{ money = 5_000, incomeMinutes = 10 },
+		{ gems = 15 },
+		{ item = "Glove", count = 3 },
+		{ item = "LegendaryEgg", count = 1 },
+	} :: { Reward },
+
+	-- Succès permanents (A64) : objectifs de long terme, qui alimentent les améliorations en gemmes (A65).
+	ACHIEVEMENTS = {
+		{
+			id = "Harvest",
+			icon = "🌾",
+			label = "Couper {n} blés",
+			stat = "harvested",
+			targets = { 500, 5_000, 50_000, 500_000, 5_000_000 },
+			gems = { 5, 10, 20, 40, 80 },
+		},
+		{
+			id = "Corn",
+			icon = "🌽",
+			label = "Couper {n} Maïs Dorés",
+			stat = "corn",
+			targets = { 200, 2_000, 20_000, 200_000 },
+			gems = { 5, 10, 20, 40 },
+		},
+		{
+			id = "Diamond",
+			icon = "💠",
+			label = "Couper {n} Blés Diamant",
+			stat = "diamond",
+			targets = { 100, 1_000, 10_000, 100_000 },
+			gems = { 10, 20, 40, 80 },
+		},
+		{
+			id = "Unload",
+			icon = "📥",
+			label = "Décharger {n} fois au silo",
+			stat = "unloads",
+			targets = { 10, 100, 1_000, 10_000 },
+			gems = { 5, 10, 20, 40 },
+		},
+		{
+			id = "Bumper",
+			icon = "💥",
+			label = "Éjecter {n} rivaux",
+			stat = "ejections",
+			targets = { 5, 50, 500 },
+			gems = { 10, 25, 50 },
+		},
+		{
+			id = "Boss",
+			icon = "☄️",
+			label = "Infliger {n} dégâts au boss",
+			stat = "bossDamage",
+			targets = { 5_000, 50_000, 500_000, 5_000_000 },
+			gems = { 5, 15, 30, 60 },
+		},
+		{
+			id = "Money",
+			icon = "💰",
+			label = "Gagner {n} $ avec l'usine",
+			stat = "earned",
+			targets = { 10_000, 1_000_000, 100_000_000, 10_000_000_000, 1_000_000_000_000 },
+			gems = { 5, 15, 30, 60, 120 },
+		},
+	} :: { AchievementDef },
+
+	-- Codes à saisir dans le menu 🎁 (A62) : un usage par compte. Insensibles à la casse et aux espaces.
+	-- Pour en ajouter un (annonce sur les réseaux, mise à jour), il suffit d'une ligne ici.
+	CODES = {
+		{ code = "BIENVENUE", reward = { money = 1_000, incomeMinutes = 5 } },
+		{ code = "LEGO", reward = { gems = 10 } },
+		{ code = "MOISSON", reward = { item = "Glove", count = 2 } },
+	} :: { CodeDef },
+	CODE_MAX_LENGTH = 24,
 
 	-- Roue de la Fortune : un tour gratuit toutes les 24 h (A45). Chances affichées sur la roue.
 	WHEEL_COOLDOWN_SECONDS = 24 * 3600,
 	WHEEL = {
-		{ label = "500 $", weight = 30, reward = { money = 500 }, color = { 75, 151, 75 } },
-		{ label = "2 000 $", weight = 22, reward = { money = 2_000 }, color = { 13, 105, 172 } },
+		{ label = "500 $", weight = 30, reward = { money = 500, incomeMinutes = 1 }, color = { 75, 151, 75 } },
+		{ label = "2 000 $", weight = 22, reward = { money = 2_000, incomeMinutes = 3 }, color = { 13, 105, 172 } },
 		{ label = "5 💎", weight = 18, reward = { gems = 5 }, color = { 98, 37, 209 } },
 		{ label = "2 🟫", weight = 10, reward = { item = "Mud", count = 2 }, color = { 105, 64, 40 } },
 		{ label = "🥊", weight = 8, reward = { item = "Glove", count = 1 }, color = { 196, 40, 28 } },
-		{ label = "10 000 $", weight = 7, reward = { money = 10_000 }, color = { 245, 205, 48 } },
+		{ label = "10 000 $", weight = 7, reward = { money = 10_000, incomeMinutes = 10 }, color = { 245, 205, 48 } },
 		{ label = "20 💎", weight = 3, reward = { gems = 20 }, color = { 255, 89, 89 } },
 		{
 			label = "🥚 Légendaire",
@@ -59,7 +153,13 @@ return Freeze.deep({
 	-- Quêtes de destruction (CDC §7.4) : 3 quêtes par jour, tirées du catalogue selon la date (A46).
 	QUESTS_PER_DAY = 3,
 	QUESTS = {
-		{ id = "Harvest", label = "Couper 300 blés", stat = "harvested", target = 300, reward = { money = 2_000 } },
+		{
+			id = "Harvest",
+			label = "Couper 300 blés",
+			stat = "harvested",
+			target = 300,
+			reward = { money = 2_000, incomeMinutes = 4 },
+		},
 		{ id = "Corn", label = "Couper 80 Maïs Dorés", stat = "corn", target = 80, reward = { gems = 5 } },
 		{ id = "Diamond", label = "Couper 25 Blés Diamant", stat = "diamond", target = 25, reward = { gems = 10 } },
 		{
@@ -74,7 +174,7 @@ return Freeze.deep({
 			label = "Décharger 8 fois au silo",
 			stat = "unloads",
 			target = 8,
-			reward = { money = 3_000 },
+			reward = { money = 3_000, incomeMinutes = 6 },
 		},
 		{
 			id = "Boss",

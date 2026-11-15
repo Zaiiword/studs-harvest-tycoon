@@ -7,6 +7,7 @@ local PetConfig = require("../config/PetConfig")
 export type Collection = {
 	owned: { [string]: number },
 	equipped: { string },
+	discovered: { [string]: boolean }, -- index (A66) : clés déjà obtenues au moins une fois
 }
 
 local Pets = {}
@@ -16,10 +17,11 @@ local speciesById: { [string]: PetConfig.SpeciesDef } = {}
 local raritiesById: { [string]: PetConfig.RarityDef } = {}
 local variantsById: { [string]: PetConfig.VariantDef } = {}
 local eggsById: { [string]: PetConfig.EggDef } = {}
-local speciesByRarity: { [string]: PetConfig.SpeciesDef } = {}
+local speciesByRarity: { [string]: { PetConfig.SpeciesDef } } = {}
 for _, species in PetConfig.SPECIES do
 	speciesById[species.id] = species
-	speciesByRarity[species.rarity] = species
+	speciesByRarity[species.rarity] = speciesByRarity[species.rarity] or {}
+	table.insert(speciesByRarity[species.rarity], species)
 end
 for _, rarity in PetConfig.RARITIES do
 	raritiesById[rarity.id] = rarity
@@ -77,7 +79,8 @@ function Pets.isEggVisible(eggId: string, tier: number, rebirths: number): boole
 	return tier >= (unlock.minTier or math.huge) or rebirths >= (unlock.minRebirths or math.huge)
 end
 
--- Tire un Pet (variante normale) selon la table de chances de l'œuf. Le générateur est injecté.
+-- Tire un Pet (variante normale) selon la table de chances de l'œuf : la rareté d'abord, puis l'espèce au hasard
+-- parmi celles de cette rareté (A66), avec le même nombre tiré (sa position dans la tranche de la rareté).
 function Pets.roll(egg: PetConfig.EggDef, rng: () -> number): string
 	local total = 0
 	for _, weight in egg.odds do
@@ -85,21 +88,52 @@ function Pets.roll(egg: PetConfig.EggDef, rng: () -> number): string
 	end
 	local pick = rng() * total
 	local chosen: string? = nil
+	local share = 0 -- position du tirage dans la tranche de la rareté choisie, dans [0, 1)
 	for _, rarity in PetConfig.RARITIES do -- ordre fixe : tirage reproductible
 		local weight = egg.odds[rarity.id] or 0
 		if weight > 0 then
 			chosen = rarity.id
+			share = math.clamp(pick / weight, 0, 0.999999)
 			if pick < weight then
 				break
 			end
 			pick -= weight
 		end
 	end
-	return Pets.key(speciesByRarity[chosen :: string].id, "Normal")
+	local pool = speciesByRarity[chosen :: string]
+	return Pets.key(pool[math.floor(share * #pool) + 1].id, "Normal")
+end
+
+-- Toutes les entrées de l'index (A66) : chaque espèce dans chaque variante, de la plus commune à la plus rare.
+function Pets.indexKeys(): { string }
+	local keys: { string } = {}
+	for _, rarity in PetConfig.RARITIES do
+		for _, species in speciesByRarity[rarity.id] or {} do
+			for _, variant in PetConfig.VARIANTS do
+				table.insert(keys, Pets.key(species.id, variant.id))
+			end
+		end
+	end
+	return keys
+end
+
+-- Gemmes gagnées à la première obtention d'une clé (A66).
+function Pets.indexGems(key: string): number
+	local _, variant = Pets.parse(key)
+	return (PetConfig.INDEX_GEMS[Pets.rarityOf(key).id] or 0) * (if variant then variant.multiplier else 1)
+end
+
+-- Marque une clé comme découverte. Renvoie vrai si c'est une nouveauté.
+function Pets.discover(collection: Collection, key: string): boolean
+	if collection.discovered[key] or not Pets.isKnown(key) then
+		return false
+	end
+	collection.discovered[key] = true
+	return true
 end
 
 function Pets.newCollection(): Collection
-	return { owned = {}, equipped = {} }
+	return { owned = {}, equipped = {}, discovered = {} }
 end
 
 function Pets.total(collection: Collection): number
@@ -115,6 +149,7 @@ function Pets.add(collection: Collection, key: string): boolean
 		return false
 	end
 	collection.owned[key] = (collection.owned[key] or 0) + 1
+	Pets.discover(collection, key)
 	return true
 end
 
@@ -175,7 +210,29 @@ function Pets.fuse(collection: Collection, key: string): string?
 		Pets.unequip(collection, key)
 	end
 	collection.owned[fused] = (collection.owned[fused] or 0) + 1
+	Pets.discover(collection, fused)
 	return fused
+end
+
+-- « Équiper les meilleurs » : les Pets au plus gros bonus, autant d'exemplaires qu'on en possède.
+function Pets.equipBest(collection: Collection)
+	local keys: { string } = {}
+	for key in collection.owned do
+		table.insert(keys, key)
+	end
+	table.sort(keys, function(a, b)
+		local bonusA, bonusB = Pets.bonusOf(a), Pets.bonusOf(b)
+		return if bonusA ~= bonusB then bonusA > bonusB else a < b
+	end)
+	collection.equipped = {}
+	for _, key in keys do
+		for _ = 1, collection.owned[key] do
+			if #collection.equipped >= PetConfig.MAX_EQUIPPED then
+				return
+			end
+			table.insert(collection.equipped, key)
+		end
+	end
 end
 
 -- Bonus des Pets équipés, pour Formulas.petFactor (A1) : revenus de l'usine et puissance de coupe (A2).
@@ -205,6 +262,17 @@ function Pets.sanitize(raw: any): Collection
 			end
 		end
 	end
+	-- Index (A66) : ce qui a été découvert, plus tout ce qu'on possède (profils d'avant l'index).
+	if typeof(source.discovered) == "table" then
+		for key, value in source.discovered do
+			if value == true then
+				Pets.discover(collection, key)
+			end
+		end
+	end
+	for key in collection.owned do
+		Pets.discover(collection, key)
+	end
 	return collection
 end
 
@@ -229,6 +297,26 @@ function Pets.decodeOwned(text: any): { [string]: number }
 		end
 	end
 	return owned
+end
+
+-- Contrat réseau : l'index est publié dans un attribut texte « clé,clé » (A66).
+function Pets.encodeDiscovered(discovered: { [string]: boolean }): string
+	local keys: { string } = {}
+	for key in discovered do
+		table.insert(keys, key)
+	end
+	table.sort(keys)
+	return table.concat(keys, ",")
+end
+
+function Pets.decodeDiscovered(text: any): { [string]: boolean }
+	local discovered: { [string]: boolean } = {}
+	for key in string.gmatch(if typeof(text) == "string" then text else "", "[^,]+") do
+		if Pets.isKnown(key) then
+			discovered[key] = true
+		end
+	end
+	return discovered
 end
 
 -- Contrat réseau : les Pets équipés sont publiés dans un attribut texte « clé,clé,clé ».
