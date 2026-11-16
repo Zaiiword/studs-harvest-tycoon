@@ -315,6 +315,7 @@ local function applyProfile(player: Player, entry: Entry, data: Profile.Data)
 	entry.isLive = false
 	entry.state = Profile.toTycoon(data)
 	entry.progress = Profile.toProgress(data)
+	Rebirth.syncPrices(entry.state, entry.progress)
 	syncMachines(entry, false)
 	syncDecor(player, entry, false)
 	entry.unloadPad:SetAttribute("Guided", entry.state.guided[TycoonConfig.GUIDE_UNLOAD_KEY] == true)

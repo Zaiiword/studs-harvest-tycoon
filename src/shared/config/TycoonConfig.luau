@@ -51,7 +51,7 @@ return Freeze.deep({
 		{
 			id = "Dryer",
 			name = "Séchoir à Grains",
-			price = 1_500_000,
+			price = 5_000_000,
 			multiplier = 1.5,
 			color = { 90, 150, 200 },
 			size = 8,
@@ -60,7 +60,7 @@ return Freeze.deep({
 		{
 			id = "Press",
 			name = "Presse à Flocons",
-			price = 6_000_000,
+			price = 25_000_000,
 			multiplier = 2,
 			color = { 200, 90, 60 },
 			size = 8,
@@ -69,7 +69,7 @@ return Freeze.deep({
 		{
 			id = "Packer",
 			name = "Emballeuse Dorée",
-			price = 20_000_000,
+			price = 100_000_000,
 			multiplier = 3,
 			color = { 245, 205, 48 },
 			size = 8,

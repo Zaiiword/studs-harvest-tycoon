@@ -14,6 +14,9 @@ export type State = {
 	siloLevel: number, -- agrandissements du silo achetés (A53)
 	decor: { [string]: boolean }, -- décorations achetées (A53)
 	guided: { [string]: boolean }, -- boutons déjà achetés une fois (et déchargement fait) : plus de flèches (A53)
+	-- A70 : facteur de prix du Garage, des machines et du tapis, fixé par le nombre de Rebirths (Rebirth.syncPrices).
+	-- Absent = 1. Jamais sauvegardé : il se recalcule depuis la progression.
+	priceScale: number?,
 }
 
 -- Bonus extérieurs à l'usine (Pets au Sprint 6, Rebirths au Sprint 4, Gamepass au Sprint 8).
@@ -145,9 +148,14 @@ function Tycoon.autonomySeconds(state: State): number
 	return state.silo / Tycoon.conveyorRate(state)
 end
 
+-- Prix après inflation de prestige (A70). Ce qui survit au Rebirth (silo, ferme) n'y est pas soumis.
+local function scaled(state: State, price: number): number
+	return math.floor(price * (state.priceScale or 1) + 0.5)
+end
+
 local function conveyorOffer(state: State): Offer
 	local isMaxed = state.conveyorLevel >= CONVEYOR.MAX_LEVEL
-	local price = Formulas.tycoonButtonPrice(CONVEYOR.BASE_PRICE, state.conveyorLevel - 1)
+	local price = scaled(state, Formulas.tycoonButtonPrice(CONVEYOR.BASE_PRICE, state.conveyorLevel - 1))
 	return {
 		id = "Conveyor",
 		label = `{CONVEYOR.NAME} niv. {state.conveyorLevel + 1}`,
@@ -161,12 +169,12 @@ local function siloOffer(state: State): Offer
 	return { id = SILO_UPGRADE.ID, label = label, price = price }
 end
 
-local function garageOffer(tier: number): Offer
+local function garageOffer(state: State, tier: number): Offer
 	local nextTier = VehicleConfig.TIERS[tier + 1]
 	if not nextTier then
 		return { id = TycoonConfig.GARAGE_NAME, label = "Palier maximal", price = nil }
 	end
-	return { id = TycoonConfig.GARAGE_NAME, label = nextTier.name, price = nextTier.price }
+	return { id = TycoonConfig.GARAGE_NAME, label = nextTier.name, price = scaled(state, nextTier.price) }
 end
 
 -- Étage où se trouve un joueur (0 ou 1), d'après sa hauteur au-dessus du pont de la base.
@@ -206,7 +214,7 @@ function Tycoon.offer(state: State, buttonId: string, tier: number): Offer
 		return conveyorOffer(state)
 	end
 	if buttonId == TycoonConfig.GARAGE_NAME then
-		return garageOffer(tier)
+		return garageOffer(state, tier)
 	end
 	if buttonId == SILO_UPGRADE.ID then
 		return siloOffer(state)
@@ -217,7 +225,8 @@ function Tycoon.offer(state: State, buttonId: string, tier: number): Offer
 	end
 	local machine = machinesById[buttonId]
 	assert(machine, `bouton inconnu : {buttonId}`)
-	return { id = machine.id, label = machine.name, price = if state.machines[machine.id] then nil else machine.price }
+	local price = if state.machines[machine.id] then nil else scaled(state, machine.price)
+	return { id = machine.id, label = machine.name, price = price }
 end
 
 -- Achète ce que propose le bouton si le joueur en a les moyens. Le Garage renvoie le nouveau palier.

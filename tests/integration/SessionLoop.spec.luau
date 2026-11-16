@@ -35,7 +35,7 @@ describe("Session joueur", function()
 		for _, machine in TycoonConfig.MACHINES do
 			state.machines[machine.id] = true
 		end
-		state.money = 1_000_000
+		state.money = Rebirth.cost(progress)
 		expect(Rebirth.apply(state, progress)).toBe(true)
 		Tycoon.deposit(state, 40)
 		local parts = {
@@ -51,7 +51,7 @@ describe("Session joueur", function()
 
 		local restored = serverStore(fake, "srv-2", clock):load("player_1").data :: Profile.Data
 		expect(restored.rebirths).toBe(1)
-		expect(restored.gems).toBe(10)
+		expect(restored.gems).toBe(25)
 		expect(restored.silo).toBe(40)
 		expect(#restored.machines).toBe(0)
 		expect(restored.items.LegendaryEgg).toBe(1)

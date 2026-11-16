@@ -39,6 +39,11 @@ function Rebirth.canRebirth(state: Tycoon.State, progress: Progress): boolean
 	return Rebirth.isTycoonComplete(state) and state.money >= Rebirth.cost(progress)
 end
 
+-- A70 : aligne les prix de l'usine sur le nombre de Rebirths. À appeler au chargement du profil et après un Rebirth.
+function Rebirth.syncPrices(state: Tycoon.State, progress: Progress)
+	state.priceScale = Formulas.prestigePriceScale(progress.rebirths)
+end
+
 -- A9 : 10 gemmes au premier Rebirth, 20 au deuxième, etc.
 function Rebirth.gemsFor(progress: Progress): number
 	return EconomyConfig.GEMS_PER_REBIRTH * (progress.rebirths + 1)
@@ -54,6 +59,7 @@ function Rebirth.apply(state: Tycoon.State, progress: Progress): boolean
 	state.money = TycoonConfig.STARTING_MONEY
 	state.conveyorLevel = 1
 	state.machines = {}
+	Rebirth.syncPrices(state, progress)
 	return true
 end
 

@@ -44,6 +44,11 @@ function Formulas.rebirthCost(rebirths: number): number
 	return EconomyConfig.REBIRTH_BASE_COST * EconomyConfig.REBIRTH_COST_GROWTH ^ rebirths
 end
 
+-- A70 : facteur appliqué aux prix du Garage, des machines et du tapis après `rebirths` Rebirths.
+function Formulas.prestigePriceScale(rebirths: number): number
+	return EconomyConfig.REBIRTH_PRICE_GROWTH ^ math.max(0, rebirths)
+end
+
 -- Décision A15 : Titan et Rebirth sont multiplicatifs ; le Rebirth n'est compté qu'ici.
 function Formulas.effectiveMass(tierMass: number, rebirths: number, hasTitan: boolean): number
 	local titan = if hasTitan then VehicleConfig.TITAN_MASS_MULTIPLIER else 1

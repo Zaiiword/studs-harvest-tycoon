@@ -252,10 +252,15 @@ return Freeze.deep({
 		FLOAT_POOL = 24,
 		FLOAT_RISE = 4,
 		FLOAT_SECONDS = 0.8,
-		SHAKE_PER_CUT = 0.08, -- « trauma » ajouté par coupe, pondéré par la taille de l'outil
+		-- Tremblement de caméra, calmé en A70 : la récolte courante ne fait qu'un frémissement plafonné ; les vraies
+		-- secousses sont réservées aux blés géants ou arc-en-ciel et à l'éjection.
+		SHAKE_PER_CUT = 0.03, -- « trauma » ajouté par coupe, pondéré par la taille de l'outil
+		SHAKE_HARVEST_CAP = 0.3, -- plafond du trauma dû aux coupes ordinaires (l'angle suit le carré : 9 % du maximum)
+		SHAKE_ON_CRITICAL = 0.55,
 		SHAKE_ON_EJECT = 0.9,
 		SHAKE_DECAY = 2.5, -- par seconde
-		SHAKE_MAX_ANGLE = 0.03, -- radians
+		SHAKE_MAX_ANGLE = 0.022, -- radians
+		SHAKE_SPEED = 26, -- vitesse du bruit : plus bas, la secousse est plus ronde
 		BIGGEST_HITBOX = 38, -- hitbox du Tier 7 : tremblement maximal par coupe
 		BOUNCE_SCALE = 0.88,
 		BOUNCE_SECONDS = 0.25,

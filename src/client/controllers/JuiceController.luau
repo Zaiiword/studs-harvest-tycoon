@@ -96,8 +96,15 @@ local function onCellCut(index: number, slot: number, x: number, z: number)
 	end
 	local text, color = cutText(index)
 	float(x, z, text, color)
+	local cell = FieldController.grid():cell(index)
+	if cell and cell.rarity ~= Rarity.NORMAL then
+		trauma = math.min(1, trauma + JUICE.SHAKE_ON_CRITICAL)
+		return
+	end
+	-- Coupe ordinaire : un frémissement, qui ne s'accumule pas au-delà du plafond.
 	local tier = Perks.tierOf(localPlayer)
-	trauma = math.min(1, trauma + JUICE.SHAKE_PER_CUT * tier.hitboxStuds / JUICE.BIGGEST_HITBOX)
+	local added = JUICE.SHAKE_PER_CUT * tier.hitboxStuds / JUICE.BIGGEST_HITBOX
+	trauma = math.max(trauma, math.min(JUICE.SHAKE_HARVEST_CAP, trauma + added))
 end
 
 -- Éjection du joueur local : forte secousse et « swoosh ».
@@ -117,7 +124,7 @@ local function shakeCamera(deltaTime: number)
 	end
 	local camera = Workspace.CurrentCamera
 	local strength = trauma * trauma * JUICE.SHAKE_MAX_ANGLE
-	local t = os.clock() * 40
+	local t = os.clock() * JUICE.SHAKE_SPEED
 	camera.CFrame *= CFrame.Angles(
 		math.noise(t, 1) * strength,
 		math.noise(t, 2) * strength,

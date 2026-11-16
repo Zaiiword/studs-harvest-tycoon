@@ -7,7 +7,8 @@ local Freeze = require("../util/Freeze")
 return Freeze.deep({
 	STUDS_COLOR_MAP = "", -- rbxassetid://... texture à tenons (CDC §2)
 	STUDS_NORMAL_MAP = "",
-	HARVEST_POP_SOUND = "rbxasset://sounds/electronicpingshort.wav", -- « Pop » de brique (CDC §2)
+	-- « Pop » de brique (CDC §2). A70 : un tic doux au lieu du tintement électronique, insupportable en rafale.
+	HARVEST_POP_SOUND = "rbxasset://sounds/volume_slider.ogg",
 	UI_CLICK_SOUND = "rbxasset://sounds/button.wav", -- clic des boutons « Studs Pop » (CDC §10)
 	ROBUX_ICON = "rbxasset://textures/ui/common/robux.png", -- icône Robux du client (repli sur « R$ » si absente)
 	EJECT_SOUND = "", -- éjection (CDC §5) : swoosh.wav n'est pas disponible, à choisir dans le Creator Store
