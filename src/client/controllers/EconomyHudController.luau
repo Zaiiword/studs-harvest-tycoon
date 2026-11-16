@@ -119,7 +119,7 @@ local function buildPanel()
 	alert.Size = UDim2.fromOffset(PANEL.WIDTH, PANEL.ALERT_HEIGHT)
 	alert.TextColor3 = Bricks.rgb(PANEL.ALERT_COLOR)
 	alert.TextStrokeTransparency = 0
-	alert.Text = "Silo vide : l'usine est à l'arrêt, retourne récolter !"
+	alert.Text = "🌾 Silo vide : retourne récolter pour relancer l'usine"
 	buildGoal(goalTop)
 	buildInvite(goalTop)
 end
@@ -157,7 +157,9 @@ local function popGain(amount: number)
 	local label = newLabel(screenGui)
 	label.AnchorPoint = Vector2.new(0.5, 0)
 	label.Size = UDim2.fromOffset(POP.WIDTH, POP.HEIGHT)
-	label.Position = UDim2.new(0.5, random:NextInteger(-POP.SPREAD, POP.SPREAD), 0, PANEL.TOP_MARGIN + PANEL.HEIGHT)
+	-- Sous la barre d'objectif : par-dessus, le gain masquait le nom et le prix du prochain achat.
+	local top = PANEL.TOP_MARGIN + PANEL.HEIGHT + PANEL.GOAL.GAP + PANEL.GOAL.HEIGHT
+	label.Position = UDim2.new(0.5, random:NextInteger(-POP.SPREAD, POP.SPREAD), 0, top)
 	label.TextColor3 = Bricks.rgb(POP.COLOR)
 	label.TextStrokeTransparency = 0
 	label.Text = `+{Format.money(amount)} $`

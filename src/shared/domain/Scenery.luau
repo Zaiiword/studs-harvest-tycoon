@@ -42,6 +42,7 @@ local WALL = DecorConfig.STEM_WALL
 local WALL_OUTER = MapConfig.CELL_SIZE / 2 + WALL.THICKNESS
 local SQUARE_REACH = math.sqrt(2) -- une plaque carrée tournée déborde de √2 fois son demi-côté
 local PARK_MILLER, PARK_MODULUS = 16807, 2147483647
+local FIT_STEP = 0.85 -- un relief qui déborde est rétréci par paliers de 15 %
 
 -- Générateur de Park-Miller : entiers exacts en double précision, donc identique sur toutes les machines.
 function Scenery.rng(seed: number): Rng
@@ -103,6 +104,19 @@ function Scenery.isClear(x: number, z: number, margin: number): boolean
 	return false
 end
 
+-- Plus grand rayon, au plus `radius`, pour lequel une plaque carrée posée en (x, z) ne touche aucune zone de jeu.
+-- nil si même `smallest` déborde : près du fossé, une berge n'a pas la place pour une montagne.
+local function fit(x: number, z: number, radius: number, smallest: number): number?
+	local fitted = radius
+	while fitted >= smallest do
+		if Scenery.isClear(x, z, fitted * SQUARE_REACH) then
+			return fitted
+		end
+		fitted *= FIT_STEP
+	end
+	return nil
+end
+
 local function tiersFor(rng: Rng, low: number, high: number): number
 	return low + pick(rng, high - low + 1) - 1
 end
@@ -133,30 +147,39 @@ function Scenery.hills(): { Hill }
 		bankRow(rng, frame, hillConfig.NEAR, function(u, v, radius)
 			local x, z = Scenery.bankPoint(frame, u, v)
 			count += 1
-			local reach = (v - SceneryConfig.BANK.GAP) / SQUARE_REACH -- ne touche jamais le mur
-			table.insert(hills, {
-				kind = "hill",
-				x = x,
-				z = z,
-				radius = math.min(radius, reach),
-				tiers = tiersFor(rng, hillConfig.MIN_TIERS, hillConfig.MAX_TIERS),
-				yaw = between(rng, 0, 90),
-				feature = if count % hillConfig.WINDMILL_EVERY == 0 then "windmill" else "trees",
-				side = side,
-			})
+			local tiers = tiersFor(rng, hillConfig.MIN_TIERS, hillConfig.MAX_TIERS)
+			local yaw = between(rng, 0, 90)
+			local fitted = fit(x, z, radius, hillConfig.NEAR.minScale / 2)
+			if fitted then
+				table.insert(hills, {
+					kind = "hill",
+					x = x,
+					z = z,
+					radius = fitted,
+					tiers = tiers,
+					yaw = yaw,
+					feature = if count % hillConfig.WINDMILL_EVERY == 0 then "windmill" else "trees",
+					side = side,
+				})
+			end
 		end)
 		bankRow(rng, frame, mountainConfig.FAR, function(u, v, radius)
 			local x, z = Scenery.bankPoint(frame, u, v)
-			table.insert(hills, {
-				kind = "mountain",
-				x = x,
-				z = z,
-				radius = radius,
-				tiers = tiersFor(rng, mountainConfig.MIN_TIERS, mountainConfig.MAX_TIERS),
-				yaw = between(rng, 0, 90),
-				feature = nil,
-				side = side,
-			})
+			local tiers = tiersFor(rng, mountainConfig.MIN_TIERS, mountainConfig.MAX_TIERS)
+			local yaw = between(rng, 0, 90)
+			local fitted = fit(x, z, radius, mountainConfig.FAR.minScale / 2)
+			if fitted then
+				table.insert(hills, {
+					kind = "mountain",
+					x = x,
+					z = z,
+					radius = fitted,
+					tiers = tiers,
+					yaw = yaw,
+					feature = nil,
+					side = side,
+				})
+			end
 		end)
 	end
 	return hills

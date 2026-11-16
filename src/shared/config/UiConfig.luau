@@ -25,7 +25,7 @@ return Freeze.deep({
 		HEIGHT = 40,
 		TOP_MARGIN = 12,
 		ALERT_HEIGHT = 28,
-		ALERT_COLOR = { 220, 40, 40 },
+		ALERT_COLOR = { 255, 200, 60 }, -- ambre (A69) : un rappel, pas une erreur ; le silo d'un débutant est souvent vide
 		-- Barre d'objectif sous la trésorerie (A59) : le prochain grand achat et l'épargne déjà réunie.
 		GOAL = {
 			WIDTH = 440,
@@ -55,6 +55,7 @@ return Freeze.deep({
 		BUY_HEIGHT = 22,
 		PADDING = 8,
 		RIGHT_MARGIN = 12,
+		MIN_TIER = 3, -- la barre apparaît avec la Tondeuse, premier engin capable de chocs (A69)
 		COLOR = { 27, 42, 53 },
 		BUY_COLOR = { 98, 37, 209 },
 		TOAST_SECONDS = 2.5,
@@ -91,13 +92,26 @@ return Freeze.deep({
 		EGG_ODDS_ROW = 24,
 	},
 	-- Éclosion : l'œuf tremble, puis le Pet est révélé.
+	-- Éclosion (A69) : œuf 3D qui tremble, éclair, puis Pet qui tourne devant des rayons de sa rareté.
 	HATCH = {
-		EGG_SIZE = 160,
+		STAGE_SIZE = 300,
+		STAGE_Y = 0.56, -- sous la trésorerie et la barre d'objectif : le titre ne les recouvre pas
+		DISPLAY_ORDER = 20, -- par-dessus les menus : on ouvre souvent un œuf depuis le menu des Pets
 		REVEAL_WIDTH = 640,
 		REVEAL_HEIGHT = 60,
-		SHAKE_SECONDS = 1.2,
-		SHAKE_DEGREES = 18,
+		SHAKE_SECONDS = 1.3,
+		SHAKE_DEGREES = 22,
+		SHAKE_SPEED = 22, -- rad/s
 		REVEAL_SECONDS = 3,
+		FLASH_SECONDS = 0.5,
+		EGG_POP = 0.3, -- échelle de départ de l'œuf, qui grossit d'un coup
+		REVEAL_POP = 0.5,
+		POP_SECONDS = 0.35,
+		RAYS = 9,
+		RAY_WIDTH = 22,
+		RAY_LENGTH = 1.9, -- en fractions de la scène
+		RAY_SPIN = 40, -- degrés/s
+		PET_SPIN = 1.6, -- rad/s
 	},
 	-- Menu de rétention 🎁 (CDC §7.4) : cadeaux de temps de jeu, quêtes du jour, Roue de la Fortune.
 	RETENTION_MENU = {

@@ -12,6 +12,8 @@ export type Piece = {
 	material: string?,
 }
 
+export type EggLook = { spots: number, spotColor: { number }, beltColor: { number }?, glowColor: { number } }
+
 local BLACK, WHITE = { 27, 42, 53 }, { 248, 248, 248 }
 local PINK, DARK_PINK = { 255, 170, 190 }, { 240, 120, 155 }
 
@@ -174,9 +176,39 @@ return Freeze.deep({
 		EGG_SIZE = { 5, 6.5, 5 },
 		BASE_COLOR = { 122, 82, 52 },
 		STRAW_COLOR = { 236, 196, 84 },
+		STRAW_DARK_COLOR = { 214, 170, 66 },
 		RIM_COLOR = { 15, 35, 90 },
 		RIM_HEIGHT = 0.3, -- au-dessus des dalles du couvoir : deux faces au même niveau scintillent
+		-- Nid (A69) : une couronne de brins de paille autour de l'œuf, qui flotte au-dessus d'un halo lumineux.
+		NEST_TWIGS = 10,
+		NEST_RADIUS = 3.1,
+		EGG_HOVER = 0.9, -- hauteur de l'œuf au-dessus de la paille
+		HALO_DIAMETER = 6.4,
+		LIGHT_RANGE = 14,
+		LIGHT_BRIGHTNESS = 1.1,
+		SPARKLE_TEXTURE = "rbxasset://textures/particles/sparkles_main.dds",
+		SPARKLE_RATE = 7,
+		BOB = { height = 0.35, period = 2.6, tilt = 5 },
 	},
+	-- Motifs des œufs (A69) : taches en relief, ceinture pour les œufs précieux, couleur du halo.
+	EGG_REFLECTANCE = 0.06,
+	EGG_LOOKS = {
+		Default = { spots = 9, spotColor = { 200, 200, 210 }, glowColor = { 255, 255, 255 } },
+		BasicEgg = { spots = 9, spotColor = { 150, 205, 255 }, glowColor = { 170, 220, 255 } },
+		FarmEgg = { spots = 9, spotColor = { 75, 170, 80 }, glowColor = { 255, 225, 110 } },
+		RebirthEgg = {
+			spots = 11,
+			spotColor = { 120, 230, 255 },
+			beltColor = { 255, 215, 70 },
+			glowColor = { 190, 120, 255 },
+		},
+		LegendaryEgg = {
+			spots = 11,
+			spotColor = { 255, 250, 220 },
+			beltColor = { 220, 40, 40 },
+			glowColor = { 255, 190, 60 },
+		},
+	} :: { [string]: EggLook },
 	-- Couvoir : terrasse dallée le long de la clôture sud, haie à l'arrière et enseigne (A57). Coordonnées locales.
 	HATCHERY = {
 		MIN_X = 8,

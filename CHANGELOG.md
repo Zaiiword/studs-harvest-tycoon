@@ -2,6 +2,38 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Un monde autour de la ferme (A69)
+
+La carte était une plaque posée sur une mer vide : ciel sans nuage, rien à l'horizon, sol uni, œufs réduits à une
+sphère blanche. Elle est maintenant au fond d'une vallée.
+
+### Ajouté
+- **Berges et relief** : deux plateaux herbeux longent le champ, avec collines en gradins, moulins qui tournent,
+  forêts (pins, feuillus, pommiers, cerisiers en fleurs, arbres d'automne) et montagnes enneigées au loin.
+- **Volcan du Météore** derrière l'arène du boss : cratère de lave, coulées lumineuses, fumée.
+- **Mer vivante** : plage en marches de sable derrière les bases (parasols, serviettes, ballons), îles à palmiers,
+  phare, voiliers qui tanguent.
+- **Ciel** : nuages en briques qui dérivent, montgolfières.
+- **Rivière** : canards qui nagent en rond et nénuphars dans le fossé.
+- **Jardins** dans les allées entre les bases et derrière elles (arbres, buissons, fleurs, rochers, champignons,
+  bottes de foin), et un lampadaire devant chaque allée.
+- **Falaises** : un socle de terre sous tout le sol, pour que la carte ne soit plus une plaque sur du vide.
+- **Bandes de tonte** : une bande de sol sur deux est un peu plus sombre, sur toute la carte.
+- **Pollen** qui flotte dans le champ autour de la caméra.
+- **Œufs refaits** : coquille ovale à taches en relief, ceinture pour les œufs précieux, reflet, nid de paille, halo
+  lumineux et étincelles de la couleur de l'œuf ; l'œuf flotte et se dandine.
+- **Éclosion en 3D** : l'œuf apparaît à l'écran et tremble de plus en plus fort, éclair blanc, puis le Pet tourne
+  devant des rayons de la couleur de sa rareté, avec une note plus aiguë pour les Pets rares.
+
+### Modifié
+- **Lumière** : soleil d'après-midi (ombres plus longues), ombres légèrement bleutées, horizon doré.
+- La mer s'étend plus loin que les îles et les montagnes.
+- La barre des objets de sabotage n'apparaît qu'à partir de la Tondeuse, ou dès qu'on possède une gemme ou un objet.
+- L'alerte « Silo vide » passe du rouge à l'ambre, avec un texte qui dit quoi faire plutôt que ce qui ne va pas.
+
+### Corrigé
+- Le « +X $ » qui s'envole recouvrait le nom et le prix de l'objectif en cours : il part maintenant de dessous.
+
 ## Premier quart d'heure : rythme et sensations (A68)
 
 Parcours d'un nouveau joueur mesuré en partie réelle par un bot (récolte, déchargement, achats en suivant les
