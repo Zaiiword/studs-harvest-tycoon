@@ -16,12 +16,24 @@ local function applyLighting()
 	Lighting.Brightness = config.BRIGHTNESS
 	Lighting.ColorShift_Top = Bricks.rgb(config.COLOR_SHIFT_TOP)
 	Lighting.OutdoorAmbient = Bricks.rgb(config.OUTDOOR_AMBIENT)
+	Lighting.Ambient = Bricks.rgb(config.AMBIENT)
 	Lighting.ClockTime = config.CLOCK_TIME
+	Lighting.GeographicLatitude = config.GEOGRAPHIC_LATITUDE
+	Lighting.ShadowSoftness = config.SHADOW_SOFTNESS
+	Lighting.EnvironmentDiffuseScale = config.ENVIRONMENT_DIFFUSE
+	Lighting.EnvironmentSpecularScale = config.ENVIRONMENT_SPECULAR
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Density = RenderConfig.ATMOSPHERE.DENSITY
 	atmosphere.Haze = RenderConfig.ATMOSPHERE.HAZE
 	atmosphere.Color = Bricks.rgb(RenderConfig.ATMOSPHERE.COLOR)
+	atmosphere.Decay = Bricks.rgb(RenderConfig.ATMOSPHERE.DECAY)
+	atmosphere.Glare = RenderConfig.ATMOSPHERE.GLARE
 	atmosphere.Parent = Lighting
+	local sky = Lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky")
+	sky.SunAngularSize = RenderConfig.SKY.SUN_SIZE
+	sky.MoonAngularSize = RenderConfig.SKY.MOON_SIZE
+	sky.StarCount = RenderConfig.SKY.STARS
+	sky.Parent = Lighting
 end
 
 -- Sans texture configurée, on garde les surfaces Studs/Inlet natives (voir Bricks et décision A25).

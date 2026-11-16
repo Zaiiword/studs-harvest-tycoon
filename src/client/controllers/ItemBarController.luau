@@ -98,6 +98,38 @@ local function buildSlot(column: Frame, item: SabotageConfig.ItemDef, index: num
 	refreshCount(item.id)
 end
 
+-- La barre de sabotage n'apparaît qu'une fois utile (A69) : dès la Tondeuse (les chocs demandent un engin), ou dès
+-- qu'on possède une gemme ou un objet. Avant, un débutant voyait quatre cases « x0 » à prix en gemmes sans rien
+-- pouvoir en faire.
+local function isBarUseful(): boolean
+	local tier = localPlayer:GetAttribute(PlayerAttributes.TIER)
+	local gems = localPlayer:GetAttribute(PlayerAttributes.GEMS)
+	if (typeof(tier) == "number" and tier >= ITEM_BAR.MIN_TIER) or (typeof(gems) == "number" and gems > 0) then
+		return true
+	end
+	for _, item in SabotageConfig.ITEMS do
+		local count = localPlayer:GetAttribute(PlayerAttributes.ITEM_PREFIX .. item.id)
+		if typeof(count) == "number" and count > 0 then
+			return true
+		end
+	end
+	return false
+end
+
+local function watchUsefulness(column: Frame)
+	local function refresh()
+		column.Visible = isBarUseful()
+	end
+	local names = { PlayerAttributes.TIER, PlayerAttributes.GEMS }
+	for _, item in SabotageConfig.ITEMS do
+		table.insert(names, PlayerAttributes.ITEM_PREFIX .. item.id)
+	end
+	for _, name in names do
+		localPlayer:GetAttributeChangedSignal(name):Connect(refresh)
+	end
+	refresh()
+end
+
 local function buildBar(remotes: { [string]: RemoteEvent })
 	local column = Instance.new("Frame")
 	column.BackgroundTransparency = 1
@@ -112,6 +144,7 @@ local function buildBar(remotes: { [string]: RemoteEvent })
 	for index, item in SabotageConfig.ITEMS do
 		buildSlot(column, item, index, remotes)
 	end
+	watchUsefulness(column)
 end
 
 local function buildToast()

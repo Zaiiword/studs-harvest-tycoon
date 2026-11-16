@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
+local SceneryConfig = require(ReplicatedStorage.Shared.config.SceneryConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
 local MapGeometry = require(ReplicatedStorage.Shared.domain.MapGeometry)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -47,10 +48,31 @@ local function slab(spec: SlabSpec, parent: Instance): Part
 	return part
 end
 
+-- Bandes de tonte (A69) : une bande de sol sur deux est un peu plus sombre, sur toute la carte.
+local function isShadedStripe(x: number): boolean
+	return math.floor((x - MapConfig.MAP_LATTICE.minX) / SceneryConfig.STRIPE.WIDTH) % 2 == 1
+end
+
+-- Socle de terre sous une brique de sol (A69) : vu du fossé ou de la plage, la carte a des falaises, pas un bord
+-- de plaque posé sur du vide.
+local function foundation(run: MapGeometry.FloorRun, parent: Instance)
+	local config = SceneryConfig.FOUNDATION
+	local top = MapConfig.FLOOR_TOP - MapConfig.GROUND_THICKNESS
+	local part = Instance.new("Part")
+	part.Name = "Earth"
+	part.Anchored = true
+	part.Size = Vector3.new(run.sizeX, config.DEPTH, run.sizeZ)
+	part.CFrame = CFrame.new(run.x, top - config.DEPTH / 2, run.z)
+	Bricks.style(part, config.COLOR)
+	part.TopSurface = Enum.SurfaceType.Smooth -- face cachée sous le sol
+	part.Parent = parent
+end
+
 local function buildFloor(map: Folder)
 	local floor = newFolder("Floor", map)
+	local earth = newFolder("Earth", map)
 	for k, run in MapGeometry.floorRuns() do
-		slab({
+		local part = slab({
 			name = `{run.zone}{k}`,
 			x = run.x,
 			z = run.z,
@@ -60,6 +82,11 @@ local function buildFloor(map: Folder)
 			sizeZ = run.sizeZ,
 			color = run.zone,
 		}, floor)
+		if isShadedStripe(run.x) then
+			local shade = SceneryConfig.STRIPE.SHADE
+			part.Color = Color3.new(part.Color.R * shade, part.Color.G * shade, part.Color.B * shade)
+		end
+		foundation(run, earth)
 	end
 end
 

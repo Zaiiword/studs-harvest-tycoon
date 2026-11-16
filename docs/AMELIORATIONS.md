@@ -52,6 +52,25 @@ Ce qui n'allait pas, et ce qui a été corrigé :
 | Calendrier de connexion ouvert dès la première visite | Réservé aux joueurs qui reviennent |
 | Silo plein : le joueur restait sur la grille sans comprendre | Message « Silo plein ! » |
 
+## Le jeu peut-il devenir viral ? (avis du 16/11/2026)
+
+En l'état, non. Ce n'est pas une question de qualité : la boucle fonctionne, les systèmes de rétention sont là et
+la carte est maintenant belle. Il manque ce qui fait qu'un jeu Roblox se propage :
+
+| Ce qui manque | Pourquoi ça bloque | Qui peut le faire |
+|---|---|---|
+| **L'anglais** | Tout le jeu est en français : cela exclut la très grande majorité des joueurs Roblox. | 🧑 Creator Hub → Localisation : capture automatique des textes et traduction automatique. Puis titre, description et icône en anglais. |
+| **Une accroche en une phrase** | « Tycoon de récolte avec tracteur » décrit un genre, pas une envie. Ce que les autres jeux de ferme n'ont pas : les engins qui se rentrent dedans dans un champ partagé. | À décider : l'icône et les miniatures doivent montrer ce moment-là. |
+| **Un moment que les joueurs filment** | Se faire éjecter ne coûte rien à la victime (choix assumé). Sans enjeu, pas de vidéo, pas de rivalité. | ⚖️ À décider : la victime lâche une part de son sac, ramassable par tous. Risque : frustration des plus jeunes. |
+| **Du rare qui s'échange** | Les Pets ont des raretés et un index, mais aucun échange : rien ne circule entre joueurs. | ⭐ Échange de Pets entre joueurs. Gros chantier, à sécuriser. |
+| **Du son** | Aucune musique, deux sons pour tout le jeu. La satisfaction d'une récolte passe pour moitié par l'oreille. | 🧑 Choisir musique et sons dans le Creator Store. |
+| **Des raisons de revenir à heure fixe** | Calendrier et gains hors ligne existent ; il n'y a ni marchand qui passe, ni stock limité, ni événement de week-end. | ⭐ Marchand ambulant, objectif commun du serveur, événements saisonniers. |
+| **De la profondeur** | Premier Rebirth vers 2 h 37, puis la même boucle. Les jeux qui durent ont des dizaines d'heures et une mise à jour par semaine. | ⭐ Nouvelles zones, paliers après le Rebirth. |
+| **Des chiffres** | Personne n'a encore mesuré combien de joueurs restent 10 minutes ou reviennent le lendemain. Sans cela, on règle à l'aveugle. | 🧑 Publier, puis une petite campagne de pub pour amener les mille premiers joueurs. |
+
+Ordre conseillé : anglais et son d'abord (peu d'effort, effet immédiat), publication et mesure, puis accroche et
+enjeu des chocs selon ce que montrent les chiffres.
+
 ## 1. Premières minutes (onboarding)
 
 | Idée | État | Détail |
@@ -166,12 +185,15 @@ Ce qui n'allait pas, et ce qui a été corrigé :
 | Cosmétiques d'engins (peintures, traînées) | ⭐ | Bon produit Robux sans effet sur l'équilibre. |
 | Badges | 🧑 | Aucun badge : à créer sur le Creator Hub (premier blé, Tracteur, Rebirth, Mythique…). |
 | Icône et miniatures du jeu | 🧑 | Décisives pour le taux de clic dans les recommandations. |
+| Paysage autour de la carte (berges, collines, volcan, plage, îles, ciel) | ✅ A69 | Tout est généré par le code, rien n'est posé à la main. |
+| Œufs en 3D et éclosion animée | ✅ A69 | |
+| Musique et vrais sons | 🧑 | Le jeu est presque muet : pas de musique, et deux sons d'origine Roblox (un clic, un tintement) pour tout le reste. À choisir dans le Creator Store, puis renseigner `AssetIds`. |
 
 ## 11. Technique
 
 | Idée | État | Détail |
 |---|---|---|
-| Tests Lune (unitaires, intégration, non-régression) | ✅ | 345 avant cette passe, 399 après. |
+| Tests Lune (unitaires, intégration, non-régression) | ✅ | 345 avant cette passe, 422 après. |
 | Mesures de jeu (AnalyticsService : entonnoir, économie) | ⭐ | Pour juger les changements sur le temps passé en jeu, pas à l'intuition. |
 | Test de charge à 8 joueurs | ⭐ | Studio, Test → 8 joueurs : vérifier le champ, les Pets et les chocs. |
 
@@ -189,5 +211,6 @@ Ce qui n'allait pas, et ce qui a été corrigé :
 | A66 | 6 nouvelles espèces de Pets, index, « Équiper les meilleurs » |
 | A67 | Flèches vers le champ pour les débutants, apparition face au champ |
 | A68 | Premier quart d'heure : prix d'entrée, flèches utiles, effets de déchargement et de gain, « Nouvel outil », offres moins envahissantes |
+| A69 | Paysage complet autour de la carte, lumière d'après-midi, œufs en 3D, éclosion animée, HUD allégé pour les débutants |
 
 Profil sauvegardé : v6 → v9 (migration automatique, aucun profil existant n'est perdu).
