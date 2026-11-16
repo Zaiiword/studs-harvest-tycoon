@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local PetConfig = require(ReplicatedStorage.Shared.config.PetConfig)
+local IconConfig = require(ReplicatedStorage.Shared.config.IconConfig)
 local PetVisualConfig = require(ReplicatedStorage.Shared.config.PetVisualConfig)
 local SceneryConfig = require(ReplicatedStorage.Shared.config.SceneryConfig)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -29,7 +30,7 @@ local function vector(values: { number }): Vector3
 end
 
 local function priceText(egg: PetConfig.EggDef): string
-	return `{Format.money(egg.price)} {if egg.currency == "gems" then "💎" else "$"}`
+	return `{Format.money(egg.price)} {if egg.currency == "gems" then "gemmes" else "$"}`
 end
 
 local function decorBlock(parent: Instance, spec: Build.BlockSpec): Part
@@ -188,7 +189,7 @@ function PetModels.dispenser(parent: Instance?, egg: PetConfig.EggDef, placement
 	body:SetAttribute(SceneryConfig.BOB_ROAM, 0)
 	CollectionService:AddTag(body, SceneryConfig.BOB_TAG)
 	body.Parent = model
-	local label = TycoonButtons.label(shell, "🥚", DISPENSER.EGG_SIZE[2] / 2 + EGG_LABEL_GAP)
+	local label = TycoonButtons.label(shell, IconConfig.EGG_PREFIX .. egg.id, DISPENSER.EGG_SIZE[2] / 2 + EGG_LABEL_GAP)
 	TycoonButtons.paint(label, "egg", egg.name, priceText(egg))
 	model.PrimaryPart = shell
 	model.Parent = parent

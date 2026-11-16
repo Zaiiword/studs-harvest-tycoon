@@ -5,6 +5,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
+local IconConfig = require(ReplicatedStorage.Shared.config.IconConfig)
+local BrickIcon = require(ReplicatedStorage.Shared.util.BrickIcon)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Build = require(script.Parent.Build)
@@ -27,7 +29,7 @@ local STYLE = TycoonConfig.PAD_STYLE
 local LAYOUT = TycoonConfig.LAYOUT
 local FONT = (Enum.Font :: any)[UiConfig.FONT] :: Enum.Font
 local RIM_COLOR = UiConfig.WINDOW.STROKE_COLOR
-local ICON_SHARE = 0.3 -- part du panneau occupée par l'icône
+local ICON_SHARE = 0.34 -- part du panneau occupée par l'icône
 local PANEL_STROKE = 4
 local TEXT_STROKE = 2 -- un contour plus épais mange les petites lettres
 
@@ -45,7 +47,8 @@ local function text(parent: Instance, size: UDim2, position: UDim2): TextLabel
 	return label
 end
 
--- Panneau flottant : icône à gauche, nom et prix à droite, sur un dégradé de la couleur de l'état.
+-- Panneau flottant : icône en briques à gauche (IconConfig, A72), nom et prix à droite, sur un dégradé de la
+-- couleur de l'état.
 function TycoonButtons.label(part: BasePart, icon: string, heightAbove: number): Label
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "Panel"
@@ -67,7 +70,7 @@ function TycoonButtons.label(part: BasePart, icon: string, heightAbove: number):
 	gradient.Rotation = 90
 	gradient.Parent = panel
 	panel.Parent = gui
-	text(panel, UDim2.fromScale(ICON_SHARE, 0.9), UDim2.fromScale(0.02, 0.05)).Text = icon
+	BrickIcon.new(panel, icon, UDim2.fromScale(ICON_SHARE, 0.96)).Position = UDim2.fromScale(0.01, 0.02)
 	local title = text(panel, UDim2.fromScale(1 - ICON_SHARE - 0.05, 0.48), UDim2.fromScale(ICON_SHARE, 0.06))
 	local price = text(panel, UDim2.fromScale(1 - ICON_SHARE - 0.05, 0.4), UDim2.fromScale(ICON_SHARE, 0.54))
 	gui.Parent = part
@@ -123,7 +126,8 @@ function TycoonButtons.build(buttonId: string, origin: CFrame): Pad
 	})
 	local ring = buildRing(model, origin, STYLE.RIM_HEIGHT + LAYOUT.PAD_THICKNESS + 0.05)
 	model.PrimaryPart = top
-	local label = TycoonButtons.label(top, STYLE.ICONS[buttonId] or "⭐", STYLE.LABEL_HEIGHT_ABOVE)
+	local icon = IconConfig.BUTTONS[buttonId] or IconConfig.DEFAULT_BUTTON
+	local label = TycoonButtons.label(top, icon, STYLE.LABEL_HEIGHT_ABOVE)
 	return {
 		model = model,
 		top = top,

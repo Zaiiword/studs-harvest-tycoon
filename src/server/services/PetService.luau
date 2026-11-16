@@ -76,7 +76,7 @@ local function rewardDiscovery(player: Player, key: string, wasDiscovered: boole
 	end
 	local species, variant = Pets.parse(key)
 	local variantName = if variant and variant.name ~= "" then ` {variant.name}` else ""
-	notify:FireClient(player, `📖 Nouveau dans l'index : {(species :: any).name}{variantName} (+{gems} 💎)`)
+	notify:FireClient(player, `Nouveau dans l'index : {(species :: any).name}{variantName} (+{gems} gemmes)`)
 end
 
 local function nextRoll(): number

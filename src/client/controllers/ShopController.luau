@@ -14,6 +14,7 @@ local UpgradeConfig = require(ReplicatedStorage.Shared.config.UpgradeConfig)
 local Upgrades = require(ReplicatedStorage.Shared.domain.Upgrades)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
+local BrickIcon = require(ReplicatedStorage.Shared.util.BrickIcon)
 local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -28,7 +29,7 @@ local ShopController = {}
 
 type Offer = { key: string, name: string, description: string, price: number }
 type Card = {
-	icon: TextLabel,
+	icon: Frame,
 	description: TextLabel,
 	buy: TextButton,
 	gradient: UIGradient,
@@ -40,7 +41,7 @@ type Card = {
 local SHOP = UiConfig.SHOP
 local WINDOW = UiConfig.WINDOW
 local HUD = UiConfig.HUD_BUTTON
-local DEFAULT_LOOK = { icon = "⭐", top = WINDOW.TOP, bottom = WINDOW.BOTTOM, badge = nil :: string? }
+local DEFAULT_LOOK = { icon = "star", top = WINDOW.TOP, bottom = WINDOW.BOTTOM, badge = nil :: string? }
 local SHOP_PRODUCTS = { Bazooka = true, Meteor = true } -- les autres produits sont proposés en contexte
 local DESCRIPTION_STROKE = 1.5
 local NAME_TEXT_SIZE = 26
@@ -124,7 +125,7 @@ local function buildCard(page: ScrollingFrame, order: number, offer: Offer): Car
 	Style.gradient(card, look.top, look.bottom)
 	Style.stroke(card, WINDOW.STROKE_COLOR, UiConfig.STROKE_THICKNESS)
 	Style.shine(card)
-	local icon = Style.label(card, look.icon, UDim2.fromScale(1, 0.34))
+	local icon = BrickIcon.new(card, look.icon, UDim2.fromScale(1, 0.36))
 	icon.Position = UDim2.fromScale(0, 0.06)
 	local name = Style.label(card, offer.name, UDim2.new(1, -16, 0.17, 0))
 	name.Position = UDim2.new(0, 8, 0.41, 0)
@@ -162,7 +163,7 @@ local function refreshPasses()
 		card.buy.Active = not isOwned
 		if isOwned then
 			card.robux.Visible = false
-			card.price.Text = "✔ POSSÉDÉ"
+			card.price.Text = "POSSÉDÉ"
 		else
 			setPrice(card)
 		end
@@ -221,7 +222,7 @@ local function refreshUpgrades()
 		local top = if canBuy then SHOP.BUY_TOP else SHOP.OWNED_TOP
 		local bottom = if canBuy then SHOP.BUY_BOTTOM else SHOP.OWNED_BOTTOM
 		card.gradient.Color = ColorSequence.new(Bricks.rgb(top), Bricks.rgb(bottom))
-		card.price.Text = if price then `💎 {price}` else "✔ MAX"
+		card.price.Text = if price then `{price} gemmes` else "MAX"
 	end
 end
 
@@ -229,7 +230,6 @@ local function buildUpgrades(page: ScrollingFrame)
 	local buy = Remotes.event(Remotes.BUY_UPGRADE)
 	for order, def in UpgradeConfig.UPGRADES do
 		local card = buildCard(page, order, { key = def.id, name = def.name, description = def.description, price = 0 })
-		card.icon.Text = def.icon
 		card.buy.Activated:Connect(function()
 			buy:FireServer(def.id)
 		end)
@@ -285,13 +285,13 @@ function ShopController:Init()
 	screenGui.ResetOnSpawn = false
 	screenGui.IgnoreGuiInset = true -- le fond assombri couvre tout l'écran
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	window = Window.new(screenGui, "Shop", "🛒 BOUTIQUE")
+	window = Window.new(screenGui, "Shop", "BOUTIQUE")
 	window.onOpen = function()
 		show(nil)
 	end
 	-- Gros bouton 🛒 du HUD, qui frétille en permanence pour attirer l'œil.
 	local hud = HudButton.new(screenGui, {
-		icon = "🛒",
+		icon = "shop",
 		caption = "BOUTIQUE",
 		top = HUD.SHOP_TOP,
 		bottom = HUD.SHOP_BOTTOM_COLOR,
@@ -306,9 +306,9 @@ end
 function ShopController:Start()
 	local tabs = Tabs.new(window.body)
 	local passes, products, upgrades = gridPage(), gridPage(), gridPage()
-	tabs:add("⭐ GAMEPASSES", passes)
-	tabs:add("💥 OBJETS", products)
-	tabs:add("💎 GEMMES", upgrades)
+	tabs:add("GAMEPASSES", passes)
+	tabs:add("OBJETS", products)
+	tabs:add("GEMMES", upgrades)
 	buildPasses(passes)
 	buildProducts(products)
 	buildUpgrades(upgrades)

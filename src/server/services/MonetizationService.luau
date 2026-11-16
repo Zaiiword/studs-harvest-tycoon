@@ -88,12 +88,12 @@ local function revenge(player: Player)
 			attacker = player,
 		}
 		if BumperService.eject(target, ejection) then
-			notify:FireClient(player, "💥 Vengeance accomplie !")
+			notify:FireClient(player, "Vengeance accomplie !")
 			return
 		end
 	end
 	InventoryService.add(player, "Bazooka", 1)
-	notify:FireClient(player, "Cible introuvable ou protégée : +1 tir de Bazooka 🚀")
+	notify:FireClient(player, "Cible introuvable ou protégée : +1 tir de Bazooka")
 end
 
 local function starterPack(player: Player)
@@ -103,7 +103,7 @@ local function starterPack(player: Player)
 	TycoonService.grant(player, STARTER.MONEY)
 	PetService.grantPet(player, STARTER.PET)
 	publish(player)
-	notify:FireClient(player, "🎉 Starter Pack : Mini-Tracteur Turbo, Pet Épique et 10 000 $ !")
+	notify:FireClient(player, "Starter Pack : Mini-Tracteur Turbo, Pet Épique et 10 000 $ !")
 end
 
 local GRANTS: { [string]: Grant } = {
@@ -114,9 +114,7 @@ local GRANTS: { [string]: Grant } = {
 		local isNow = EventService.summonMeteor(player.DisplayName)
 		notify:FireClient(
 			player,
-			if isNow
-				then "☄️ Météorite invoquée !"
-				else "☄️ Ta Météorite tombera juste après le boss actuel."
+			if isNow then "Météorite invoquée !" else "Ta Météorite tombera juste après le boss actuel."
 		)
 	end,
 	Revenge = revenge,

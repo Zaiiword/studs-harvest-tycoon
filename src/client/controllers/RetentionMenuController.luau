@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 
 local RetentionConfig = require(ReplicatedStorage.Shared.config.RetentionConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
+local BrickIcon = require(ReplicatedStorage.Shared.util.BrickIcon)
 local Retention = require(ReplicatedStorage.Shared.domain.Retention)
 local RewardText = require(ReplicatedStorage.Shared.domain.RewardText)
 local Rewards = require(ReplicatedStorage.Shared.domain.Rewards)
@@ -29,7 +30,7 @@ local RetentionMenuController = {}
 
 type State = "ready" | "wait" | "done"
 type Tile = { gradient: UIGradient, status: TextLabel, pulse: UIScale, state: State }
-type QuestRow = { icon: TextLabel, title: TextLabel, fill: Frame, count: TextLabel, claim: TextButton, tile: Tile }
+type QuestRow = { icon: Frame, title: TextLabel, fill: Frame, count: TextLabel, claim: TextButton, tile: Tile }
 
 local MENU = UiConfig.RETENTION_MENU
 local WINDOW = UiConfig.WINDOW
@@ -45,7 +46,7 @@ local DIVIDER_WIDTH = 3
 local CHIP_SIZE = UDim2.fromScale(0.34, 0.12)
 local HUB_SIZE = 0.2
 local POINTER_SIZE = 0.16
-local DEFAULT_QUEST_ICON = "🎯"
+local DEFAULT_QUEST_ICON = "target"
 
 local COLORS: { [State]: { top: { number }, bottom: { number } } } = {
 	ready = { top = MENU.READY_TOP, bottom = MENU.READY_BOTTOM },
@@ -124,7 +125,7 @@ local function buildLoginDay(page: ScrollingFrame, index: number, reward: Retent
 	card.LayoutOrder = index
 	local day = Style.label(card, `JOUR {index}`, UDim2.new(1, -12, 0.18, 0))
 	day.Position = UDim2.new(0, 6, 0.03, 0)
-	local icon = Style.label(card, RewardText.icon(reward), UDim2.fromScale(1, 0.3))
+	local icon = BrickIcon.new(card, RewardText.icon(reward), UDim2.fromScale(1, 0.3))
 	icon.Position = UDim2.fromScale(0, 0.2)
 	local amount = Style.label(card, rewardLabel(reward), UDim2.new(1, -12, 0.18, 0))
 	amount.Position = UDim2.new(0, 6, 0.5, 0)
@@ -172,7 +173,7 @@ local function buildCodes(): Frame
 	local padding = Instance.new("UIPadding")
 	padding.PaddingTop = UDim.new(0, PAD * 2)
 	padding.Parent = page
-	local title = Style.label(page, "🎟️ Entre un code pour recevoir un cadeau !", UDim2.new(0.9, 0, 0, 40))
+	local title = Style.label(page, "Entre un code pour recevoir un cadeau !", UDim2.new(0.9, 0, 0, 40))
 	title.LayoutOrder = 1
 	codeBox = Instance.new("TextBox")
 	codeBox.LayoutOrder = 2
@@ -223,7 +224,7 @@ end
 local function buildGift(page: ScrollingFrame, index: number, gift: RetentionConfig.Gift)
 	local card = candy(page, "wait")
 	card.LayoutOrder = index
-	local icon = Style.label(card, RewardText.icon(gift.reward), UDim2.fromScale(1, 0.38))
+	local icon = BrickIcon.new(card, RewardText.icon(gift.reward), UDim2.fromScale(1, 0.38))
 	icon.Position = UDim2.fromScale(0, 0.04)
 	local reward = Style.label(card, rewardLabel(gift.reward), UDim2.new(1, -12, 0.22, 0))
 	reward.Position = UDim2.new(0, 6, 0.42, 0)
@@ -287,7 +288,7 @@ local function buildQuestRow(page: ScrollingFrame, order: number)
 	Style.gradient(row, MENU.QUEST_TOP, MENU.QUEST_BOTTOM)
 	Style.stroke(row, WINDOW.STROKE_COLOR, UiConfig.STROKE_THICKNESS)
 	row.Parent = page
-	local icon = Style.label(row, DEFAULT_QUEST_ICON, UDim2.new(0, MENU.QUEST_HEIGHT - PAD, 1, -PAD))
+	local icon = BrickIcon.new(row, DEFAULT_QUEST_ICON, UDim2.new(0, MENU.QUEST_HEIGHT - PAD, 1, -PAD))
 	icon.Position = UDim2.fromOffset(PAD / 2, PAD / 2)
 	local title = Style.label(row, "", UDim2.new(0.62, -MENU.QUEST_HEIGHT, 0.4, 0))
 	title.Position = UDim2.new(0, MENU.QUEST_HEIGHT, 0.1, 0)
@@ -342,7 +343,7 @@ local function buildAchievements(): ScrollingFrame
 	for order, def in RetentionConfig.ACHIEVEMENTS do
 		buildQuestRow(page, order)
 		local row = table.remove(questRows) :: QuestRow -- même ligne que les quêtes, rangée à part
-		row.icon.Text = def.icon
+		BrickIcon.set(row.icon, def.icon)
 		row.claim.Activated:Connect(function()
 			remotes.achievement:FireServer(def.id)
 		end)
@@ -423,7 +424,7 @@ local function buildWheelDisc(page: Frame)
 	local hub = circle(face, HUB_SIZE)
 	Style.gradient(hub, MENU.WHEEL_RIM_TOP, MENU.WHEEL_RIM_BOTTOM)
 	Style.stroke(hub, WINDOW.STROKE_COLOR, 2)
-	Style.label(hub, "⭐", UDim2.fromScale(0.7, 0.7)).Position = UDim2.fromScale(0.15, 0.15)
+	BrickIcon.new(hub, "star", UDim2.fromScale(0.8, 0.8)).Position = UDim2.fromScale(0.1, 0.1)
 	pointer = Style.label(rim, "▼", UDim2.fromScale(POINTER_SIZE, POINTER_SIZE))
 	pointer.AnchorPoint = Vector2.new(0.5, 0.6)
 	pointer.Position = UDim2.fromScale(0.5, 0)
@@ -546,7 +547,7 @@ local function refreshGifts(now: number): boolean
 			setState(tile, "ready", "RÉCLAMER !")
 			hasReady = true
 		else
-			setState(tile, "wait", `⏱ {Format.duration(gift.minutes * 60 - session)}`)
+			setState(tile, "wait", `dans {Format.duration(gift.minutes * 60 - session)}`)
 		end
 	end
 	return hasReady
@@ -562,7 +563,7 @@ local function refreshQuests(now: number): boolean
 	for k, quest in Retention.questsForDay(Retention.dayOf(now)) do
 		local row = questRows[k]
 		local done = math.min(progress[quest.id] or 0, quest.target)
-		row.icon.Text = MENU.QUEST_ICONS[quest.id] or DEFAULT_QUEST_ICON
+		BrickIcon.set(row.icon, MENU.QUEST_ICONS[quest.id] or DEFAULT_QUEST_ICON)
 		row.title.Text = quest.label
 		row.fill.Size = UDim2.fromScale(done / quest.target, 1)
 		row.count.Text = `{done} / {quest.target}`
@@ -574,7 +575,7 @@ local function refreshQuests(now: number): boolean
 			setState(row.tile, "ready", `RÉCLAMER\n{reward}`)
 			hasReady = true
 		else
-			setState(row.tile, "wait", `🎁 {reward}`)
+			setState(row.tile, "wait", reward)
 		end
 		row.claim:SetAttribute("QuestId", quest.id)
 	end
@@ -605,10 +606,10 @@ local function refreshAchievements(): boolean
 		if status.isMaxed then
 			setState(row.tile, "done", "✔ TERMINÉ")
 		elseif status.isClaimable then
-			setState(row.tile, "ready", `RÉCLAMER\n{status.gems} 💎`)
+			setState(row.tile, "ready", `RÉCLAMER\n{status.gems} gemmes`)
 			hasReady = true
 		else
-			setState(row.tile, "wait", `🎁 {status.gems} 💎`)
+			setState(row.tile, "wait", `{status.gems} gemmes`)
 		end
 	end
 	return hasReady
@@ -623,9 +624,9 @@ local function refreshWheel(now: number): boolean
 	local readyAt = attribute(PlayerAttributes.WHEEL_READY_AT)
 	local wait = if typeof(readyAt) == "number" then readyAt - now else 0
 	if wait > 0 then
-		setState(spinTile, "done", `⏱ {Format.duration(wait)}`)
+		setState(spinTile, "done", `dans {Format.duration(wait)}`)
 	else
-		setState(spinTile, "ready", "🎡 TOURNER !")
+		setState(spinTile, "ready", "TOURNER !")
 	end
 	return wait <= 0
 end
@@ -678,18 +679,18 @@ function RetentionMenuController:Init()
 	screenGui.ResetOnSpawn = false
 	screenGui.IgnoreGuiInset = true -- le fond assombri couvre tout l'écran
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	window = Window.new(screenGui, "Rewards", "🎁 RÉCOMPENSES")
+	window = Window.new(screenGui, "Rewards", "RÉCOMPENSES")
 	window.onOpen = refresh
 	tabs = Tabs.new(window.body)
-	tabs:add("📅 JOUR", buildLogin())
-	tabs:add("🎁 CADEAUX", buildGifts())
-	tabs:add("📜 QUÊTES", buildQuests())
-	tabs:add("🏆 SUCCÈS", buildAchievements())
-	tabs:add("🎡 ROUE", buildWheel())
-	tabs:add("🎟️ CODES", buildCodes())
+	tabs:add("JOUR", buildLogin())
+	tabs:add("CADEAUX", buildGifts())
+	tabs:add("QUÊTES", buildQuests())
+	tabs:add("SUCCÈS", buildAchievements())
+	tabs:add("ROUE", buildWheel())
+	tabs:add("CODES", buildCodes())
 	tabs:select(2)
 	hud = HudButton.new(screenGui, {
-		icon = "🎁",
+		icon = "gift",
 		caption = "CADEAUX",
 		top = HUD.GIFTS_TOP,
 		bottom = HUD.GIFTS_BOTTOM_COLOR,

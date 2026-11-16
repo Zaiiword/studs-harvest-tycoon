@@ -176,10 +176,7 @@ local function harvestTick(player: Player, state: PlayerState)
 				unloadedRemote:FireClient(player, accepted)
 			elseif not state.hasWarnedSiloFull then
 				state.hasWarnedSiloFull = true
-				notifyRemote:FireClient(
-					player,
-					"🛢️ Silo plein ! Agrandis-le, ou monte le tapis pour le vider plus vite."
-				)
+				notifyRemote:FireClient(player, "Silo plein ! Agrandis-le, ou monte le tapis pour le vider plus vite.")
 			end
 		end
 	else

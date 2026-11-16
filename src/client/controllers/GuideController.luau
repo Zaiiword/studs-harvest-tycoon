@@ -203,7 +203,7 @@ local function paintToggle()
 	local top = if isEnabled then HUD.GUIDE_ON_TOP else OFF.OWNED_TOP
 	local bottom = if isEnabled then HUD.GUIDE_ON_BOTTOM else OFF.OWNED_BOTTOM
 	gradient.Color = ColorSequence.new(Bricks.rgb(top), Bricks.rgb(bottom))
-	hud.icon.Text = if isEnabled then "➡️" else "🚫"
+	HudButton.setIcon(hud, if isEnabled then "guide" else "guideOff")
 	hud.caption.Text = if isEnabled then "FLÈCHES" else "FLÈCHES OFF"
 end
 
@@ -225,7 +225,7 @@ function GuideController:Start()
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = true
 	hud = HudButton.new(gui, {
-		icon = "➡️",
+		icon = "guide",
 		caption = "FLÈCHES",
 		top = HUD.GUIDE_ON_TOP,
 		bottom = HUD.GUIDE_ON_BOTTOM,

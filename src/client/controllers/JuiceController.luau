@@ -79,7 +79,7 @@ end
 local function cutText(index: number): (string, { number })
 	local cell = FieldController.grid():cell(index)
 	if not cell then
-		return "+🌾", { 255, 255, 255 }
+		return "+1", { 255, 255, 255 }
 	end
 	local rarity = Rarity.byId(cell.rarity)
 	local value = FieldConfig.WHEAT_ZONES[cell.zone].value * rarity.valueMultiplier
@@ -88,7 +88,7 @@ local function cutText(index: number): (string, { number })
 	elseif cell.rarity == Rarity.GIANT then
 		return `CRITIQUE ×{rarity.valueMultiplier} !`, JUICE.CRITICAL_COLOR
 	end
-	return `+{value} 🌾`, { 255, 255, 255 }
+	return `+{value}`, { 255, 255, 255 }
 end
 
 local function onCellCut(index: number, slot: number, x: number, z: number)
@@ -164,7 +164,7 @@ function JuiceController:Start()
 	end)
 	-- Butin d'un choc ramassé (A71) : le gain s'envole du tas, comme pour une coupe.
 	Remotes.event(Remotes.SPILL_PICKED_UP).OnClientEvent:Connect(function(x: number, z: number, places: number)
-		float(x, z, `+{places} 🌾`, BumperConfig.SPILL.PICKUP_COLOR)
+		float(x, z, `+{places}`, BumperConfig.SPILL.PICKUP_COLOR)
 		play("reward")
 	end)
 	RunService:BindToRenderStep("JuiceShake", Enum.RenderPriority.Camera.Value + 1, shakeCamera)

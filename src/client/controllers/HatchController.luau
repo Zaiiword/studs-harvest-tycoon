@@ -238,7 +238,7 @@ local function announce(displayName: string, key: string)
 	local channels = TextChatService:FindFirstChild("TextChannels")
 	local general = channels and channels:FindFirstChild("RBXGeneral")
 	if general and general:IsA("TextChannel") then
-		pcall(general.DisplaySystemMessage, general, `🌈 {displayName} a obtenu un {rarityText} {nameText}`)
+		pcall(general.DisplaySystemMessage, general, `{displayName} a obtenu un {rarityText} {nameText}`)
 	end
 end
 

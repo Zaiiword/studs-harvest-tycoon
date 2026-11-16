@@ -119,7 +119,7 @@ local function buildPanel()
 	alert.Size = UDim2.fromOffset(PANEL.WIDTH, PANEL.ALERT_HEIGHT)
 	alert.TextColor3 = Bricks.rgb(PANEL.ALERT_COLOR)
 	alert.TextStrokeTransparency = 0
-	alert.Text = "🌾 Silo vide : retourne récolter pour relancer l'usine"
+	alert.Text = "Silo vide : retourne récolter pour relancer l'usine"
 	buildGoal(goalTop)
 	buildInvite(goalTop)
 end
@@ -142,14 +142,14 @@ local function refreshGoal()
 	goalFill.Size = UDim2.fromScale(ratio, 1)
 	goalFill.BackgroundColor3 = Bricks.rgb(if ratio >= 1 then GOAL.READY else GOAL.FILL)
 	goalText.Text = if ratio >= 1
-		then `🎯 {label} : achète-le !`
-		else `🎯 {label} · {Format.money(money)} / {Format.money(price)} $`
+		then `{label} : achète-le !`
+		else `{label} · {Format.money(money)} / {Format.money(price)} $`
 end
 
 local function refreshInvite()
 	local boost = localPlayer:GetAttribute(PlayerAttributes.SOCIAL_BOOST)
 	local multiplier = if typeof(boost) == "number" then boost else 1
-	inviteText.Text = if multiplier > 1 then `👥 Amis {Social.percent(multiplier)}` else "👥 Inviter : +10 %"
+	inviteText.Text = if multiplier > 1 then `Amis {Social.percent(multiplier)}` else "Inviter : +10 %"
 end
 
 -- « +12 $ » vert qui monte et s'efface sous la trésorerie quand l'argent augmente (revenus, récompenses).
@@ -188,8 +188,8 @@ local function refresh()
 	local money = Format.money(numberAttribute(PlayerAttributes.MONEY))
 	local income = Format.money(numberAttribute(PlayerAttributes.INCOME_PER_SECOND))
 	local prestige =
-		`♻️ {numberAttribute(PlayerAttributes.REBIRTHS)}  💎 {numberAttribute(PlayerAttributes.GEMS)}`
-	summary.Text = `💰 {money} $  ·  +{income} $/s  ·  Silo {autonomy}  ·  {prestige}`
+		`Rebirths {numberAttribute(PlayerAttributes.REBIRTHS)}  ·  {numberAttribute(PlayerAttributes.GEMS)} gemmes`
+	summary.Text = `{money} $  ·  +{income} $/s  ·  Silo {autonomy}  ·  {prestige}`
 	refreshGoal()
 	refreshInvite()
 	-- L'alerte n'a de sens qu'une fois l'usine lancée (quelque chose a déjà été déposé ou gagné), et seulement hors

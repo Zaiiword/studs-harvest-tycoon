@@ -123,8 +123,8 @@ local function onEjected(attacker: Player, victim: Player)
 		})
 	end
 	local amount = Format.money(places)
-	notify:FireClient(victim, `💥 {attacker.DisplayName} t'a fait lâcher {amount} de blé ! Reprends-le vite.`)
-	notify:FireClient(attacker, `💥 {victim.DisplayName} a lâché {amount} de blé : ramasse-le !`)
+	notify:FireClient(victim, `{attacker.DisplayName} t'a fait lâcher {amount} de blé ! Reprends-le vite.`)
+	notify:FireClient(attacker, `{victim.DisplayName} a lâché {amount} de blé : ramasse-le !`)
 end
 
 local function collect(drop: Drop, now: number)

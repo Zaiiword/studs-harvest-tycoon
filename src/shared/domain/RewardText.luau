@@ -8,7 +8,8 @@ local Format = require("../util/Format")
 
 local RewardText = {}
 
-local MONEY_ICON, GEMS_ICON, EGG_ICON, GIFT_ICON = "💰", "💎", "🥚", "🎁"
+-- Identifiants d'icônes en briques (IconConfig, A72).
+local MONEY_ICON, GEMS_ICON, EGG_ICON, GIFT_ICON = "coin", "gem", "egg:", "gift"
 
 local function itemLook(id: string): (string, string)
 	for _, item in SabotageConfig.ITEMS do
@@ -18,7 +19,7 @@ local function itemLook(id: string): (string, string)
 	end
 	for _, egg in PetConfig.EGGS do
 		if egg.id == id then
-			return EGG_ICON, egg.name
+			return EGG_ICON .. egg.id, egg.name
 		end
 	end
 	return GIFT_ICON, id
@@ -33,12 +34,12 @@ function RewardText.icon(reward: RetentionConfig.Reward): string
 	return (itemLook(reward.item or ""))
 end
 
--- Texte court : « 5 K $ », « 10 💎 », « 2 × Gant de Boxe ».
+-- Texte court : « 5 K $ », « 10 gemmes », « 2 × Gant de Boxe ».
 function RewardText.label(reward: RetentionConfig.Reward): string
 	if reward.money then
 		return `{Format.money(reward.money)} $`
 	elseif reward.gems then
-		return `{reward.gems} {GEMS_ICON}`
+		return `{reward.gems} gemmes`
 	end
 	local _, name = itemLook(reward.item or "")
 	return `{reward.count or 1} × {name}`

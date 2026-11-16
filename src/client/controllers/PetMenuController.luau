@@ -8,6 +8,8 @@ local RunService = game:GetService("RunService")
 
 local PetConfig = require(ReplicatedStorage.Shared.config.PetConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
+local IconConfig = require(ReplicatedStorage.Shared.config.IconConfig)
+local BrickIcon = require(ReplicatedStorage.Shared.util.BrickIcon)
 local Formulas = require(ReplicatedStorage.Shared.domain.Formulas)
 local Pets = require(ReplicatedStorage.Shared.domain.Pets)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
@@ -221,7 +223,7 @@ local function buildDetail(parent: Frame)
 	rarityText.Position = UDim2.fromOffset(4, 2)
 	local stats = Style.label(frame, "", UDim2.new(1, -2 * PAD, 0.07, 0))
 	stats.Position = UDim2.new(0, PAD, 0.63, 0)
-	local hint = Style.label(frame, "👈 Choisis un Pet", UDim2.new(1, -2 * PAD, 0.1, 0))
+	local hint = Style.label(frame, "Choisis un Pet", UDim2.new(1, -2 * PAD, 0.1, 0))
 	hint.Position = UDim2.new(0, PAD, 0.6, 0)
 	local equip = newCandy(frame, "ÉQUIPER", function()
 		actionRemote:FireServer("equip", selected)
@@ -332,7 +334,7 @@ local function buildPetsPage(): Frame
 	header = Style.label(page, "", UDim2.new(listWidth * MENU.HEADER_SHARE, -PAD, 0, MENU.HEADER_HEIGHT))
 	header.Position = UDim2.fromOffset(PAD, 0)
 	-- « Équiper les meilleurs » (A66) : le serveur choisit les Pets au plus gros bonus.
-	local best = newCandy(page, "⭐ MEILLEURS", function()
+	local best = newCandy(page, "MEILLEURS", function()
 		actionRemote:FireServer("best")
 	end)
 	best.button.Position = UDim2.new(listWidth * MENU.HEADER_SHARE, 0, 0, 2)
@@ -347,8 +349,11 @@ local function buildPetsPage(): Frame
 	grid.Position = UDim2.fromOffset(0, MENU.HEADER_HEIGHT)
 	grid.Size = UDim2.new(1 - MENU.DETAIL_WIDTH, 0, 1, -MENU.HEADER_HEIGHT)
 	grid.Parent = page
-	empty =
-		Style.label(page, "Pas encore de Pet !\nVa aux distributeurs d'œufs 🥚", UDim2.new(0.6, -2 * PAD, 0.3, 0))
+	empty = Style.label(
+		page,
+		"Pas encore de Pet !\nVa aux distributeurs d'œufs du couvoir",
+		UDim2.new(0.6, -2 * PAD, 0.3, 0)
+	)
 	empty.Position = UDim2.new(0, PAD, 0.3, 0)
 	buildDetail(page)
 	return page
@@ -383,7 +388,7 @@ local function buildIndexCard(key: string, order: number, isFound: boolean)
 	local name = Style.label(card, text, UDim2.new(1, -8, 0.26, 0))
 	name.Position = UDim2.new(0, 4, 0.72, 0)
 	if not isFound then
-		badge(card, `+{Pets.indexGems(key)}💎`, MENU.INDEX_GEMS_COLOR, UDim2.new(1, -22, 0, 14))
+		badge(card, `+{Pets.indexGems(key)} gem.`, MENU.INDEX_GEMS_COLOR, UDim2.new(1, -22, 0, 14))
 	end
 end
 
@@ -401,7 +406,7 @@ local function refreshIndex()
 		found += if isFound then 1 else 0
 		buildIndexCard(key, order, isFound)
 	end
-	indexHeader.Text = `📖 Index : {found} / {#keys}  ·  chaque découverte rapporte des 💎`
+	indexHeader.Text = `Index : {found} / {#keys}  ·  chaque découverte rapporte des gemmes`
 end
 
 local function buildIndexPage(): Frame
@@ -428,7 +433,7 @@ local function priceText(egg: PetConfig.EggDef): string
 	if egg.currency == "money" then
 		return `{Format.money(egg.price)} $`
 	elseif egg.currency == "gems" then
-		return `{egg.price} 💎`
+		return `{egg.price} gemmes`
 	end
 	return "Gagné contre le boss"
 end
@@ -471,7 +476,7 @@ local function buildEggCard(page: ScrollingFrame, order: number, egg: PetConfig.
 	Style.stroke(card, WINDOW.STROKE_COLOR, UiConfig.STROKE_THICKNESS)
 	Style.shine(card)
 	card.Parent = page
-	Style.label(card, "🥚", UDim2.fromScale(1, 0.18)).Position = UDim2.fromScale(0, 0.02)
+	BrickIcon.new(card, IconConfig.EGG_PREFIX .. egg.id, UDim2.fromScale(1, 0.2)).Position = UDim2.fromScale(0, 0.01)
 	local name = Style.label(card, egg.name, UDim2.new(1, -16, 0.1, 0))
 	name.Position = UDim2.new(0, 8, 0.2, 0)
 	local stock = Style.label(card, priceText(egg), UDim2.new(1, -16, 0.08, 0))
@@ -532,15 +537,15 @@ function PetMenuController:Init()
 	screenGui.ResetOnSpawn = false
 	screenGui.IgnoreGuiInset = true -- le fond assombri couvre tout l'écran
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	window = Window.new(screenGui, "Pets", "🐾 MES PETS")
+	window = Window.new(screenGui, "Pets", "MES PETS")
 	window.onOpen = refresh
 	local tabs = Tabs.new(window.body)
-	tabs:add("🐾 PETS", buildPetsPage())
-	tabs:add("🥚 ŒUFS", buildEggsPage())
-	tabs:add("📖 INDEX", buildIndexPage())
+	tabs:add("PETS", buildPetsPage())
+	tabs:add("ŒUFS", buildEggsPage())
+	tabs:add("INDEX", buildIndexPage())
 	tabs:select(1)
 	local hud = HudButton.new(screenGui, {
-		icon = "🐾",
+		icon = "paw",
 		caption = "PETS",
 		top = HUD.PETS_TOP,
 		bottom = HUD.PETS_BOTTOM_COLOR,

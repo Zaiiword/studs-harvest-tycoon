@@ -5,13 +5,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
+local BrickIcon = require(ReplicatedStorage.Shared.util.BrickIcon)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Style = require(script.Parent.Style)
 
 local HudButton = {}
 
 export type Spec = { icon: string, caption: string, top: { number }, bottom: { number }, fromBottom: number }
-export type HudButton = { button: TextButton, icon: TextLabel, caption: TextLabel, alert: Frame, wiggles: boolean }
+-- `icon` : identifiant d'une icône en briques (IconConfig).
+export type HudButton = { button: TextButton, icon: Frame, caption: TextLabel, alert: Frame, wiggles: boolean }
 
 local HUD = UiConfig.HUD_BUTTON
 local ALERT_SIZE = 26
@@ -60,8 +62,8 @@ function HudButton.new(parent: Instance, spec: Spec): HudButton
 	button.Position = UDim2.new(0, HUD.LEFT, 1, -spec.fromBottom)
 	button.Size = UDim2.fromOffset(HUD.SIZE, HUD.SIZE)
 	Style.shine(button)
-	local icon = Style.label(button, spec.icon, UDim2.fromScale(0.8, 0.7))
-	icon.Position = UDim2.fromScale(0.1, 0.02)
+	local icon = BrickIcon.new(button, spec.icon, UDim2.fromScale(0.86, 0.76))
+	icon.Position = UDim2.fromScale(0.07, 0)
 	local caption = Style.label(button, spec.caption, UDim2.fromScale(1.25, 0.32))
 	caption.AnchorPoint = Vector2.new(0.5, 0.5)
 	caption.Position = UDim2.fromScale(0.5, 0.92)
@@ -73,6 +75,11 @@ function HudButton.new(parent: Instance, spec: Spec): HudButton
 		RunService.RenderStepped:Connect(animate)
 	end
 	return hud
+end
+
+-- Change l'icône du bouton (bouton à deux états).
+function HudButton.setIcon(hud: HudButton, icon: string)
+	BrickIcon.set(hud.icon, icon)
 end
 
 -- Pastille « ! » et frétillement quand une récompense attend (ou en permanence pour la boutique).

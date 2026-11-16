@@ -67,7 +67,7 @@ return Freeze.deep({
 	ACHIEVEMENTS = {
 		{
 			id = "Harvest",
-			icon = "🌾",
+			icon = "wheat",
 			label = "Couper {n} blés",
 			stat = "harvested",
 			targets = { 500, 5_000, 50_000, 500_000, 5_000_000 },
@@ -75,7 +75,7 @@ return Freeze.deep({
 		},
 		{
 			id = "Corn",
-			icon = "🌽",
+			icon = "corn",
 			label = "Couper {n} Maïs Dorés",
 			stat = "corn",
 			targets = { 200, 2_000, 20_000, 200_000 },
@@ -83,7 +83,7 @@ return Freeze.deep({
 		},
 		{
 			id = "Diamond",
-			icon = "💠",
+			icon = "diamondWheat",
 			label = "Couper {n} Blés Diamant",
 			stat = "diamond",
 			targets = { 100, 1_000, 10_000, 100_000 },
@@ -91,7 +91,7 @@ return Freeze.deep({
 		},
 		{
 			id = "Unload",
-			icon = "📥",
+			icon = "silo",
 			label = "Décharger {n} fois au silo",
 			stat = "unloads",
 			targets = { 10, 100, 1_000, 10_000 },
@@ -99,7 +99,7 @@ return Freeze.deep({
 		},
 		{
 			id = "Bumper",
-			icon = "💥",
+			icon = "boom",
 			label = "Éjecter {n} rivaux",
 			stat = "ejections",
 			targets = { 5, 50, 500 },
@@ -107,7 +107,7 @@ return Freeze.deep({
 		},
 		{
 			id = "Boss",
-			icon = "☄️",
+			icon = "meteor",
 			label = "Infliger {n} dégâts au boss",
 			stat = "bossDamage",
 			targets = { 5_000, 50_000, 500_000, 5_000_000 },
@@ -115,7 +115,7 @@ return Freeze.deep({
 		},
 		{
 			id = "Money",
-			icon = "💰",
+			icon = "coin",
 			label = "Gagner {n} $ avec l'usine",
 			stat = "earned",
 			targets = { 10_000, 1_000_000, 100_000_000, 10_000_000_000, 1_000_000_000_000 },
@@ -137,13 +137,13 @@ return Freeze.deep({
 	WHEEL = {
 		{ label = "500 $", weight = 30, reward = { money = 500, incomeMinutes = 1 }, color = { 75, 151, 75 } },
 		{ label = "2 000 $", weight = 22, reward = { money = 2_000, incomeMinutes = 3 }, color = { 13, 105, 172 } },
-		{ label = "5 💎", weight = 18, reward = { gems = 5 }, color = { 98, 37, 209 } },
-		{ label = "2 🟫", weight = 10, reward = { item = "Mud", count = 2 }, color = { 105, 64, 40 } },
-		{ label = "🥊", weight = 8, reward = { item = "Glove", count = 1 }, color = { 196, 40, 28 } },
+		{ label = "5 gemmes", weight = 18, reward = { gems = 5 }, color = { 98, 37, 209 } },
+		{ label = "2 Boues", weight = 10, reward = { item = "Mud", count = 2 }, color = { 105, 64, 40 } },
+		{ label = "Gant", weight = 8, reward = { item = "Glove", count = 1 }, color = { 196, 40, 28 } },
 		{ label = "10 000 $", weight = 7, reward = { money = 10_000, incomeMinutes = 10 }, color = { 245, 205, 48 } },
-		{ label = "20 💎", weight = 3, reward = { gems = 20 }, color = { 255, 89, 89 } },
+		{ label = "20 gemmes", weight = 3, reward = { gems = 20 }, color = { 255, 89, 89 } },
 		{
-			label = "🥚 Légendaire",
+			label = "Œuf Légendaire",
 			weight = 2,
 			reward = { item = "LegendaryEgg", count = 1 },
 			color = { 255, 176, 0 },
@@ -189,18 +189,18 @@ return Freeze.deep({
 	STATS = { "harvested", "corn", "diamond", "ejections", "unloads", "bossDamage", "earned" } :: { string },
 	-- Devant les bases centrales, face aux ponts : tout le monde passe devant (coordonnées monde).
 	STATUES = {
-		{ id = "Money", label = "💰 Top $", stat = "earned", x = -10, z = 0 },
-		{ id = "Harvest", label = "🌾 Top Récolte", stat = "harvested", x = -10, z = -40 },
-		{ id = "Bumper", label = "💥 Roi du Pare-Chocs", stat = "ejections", x = -10, z = 40 },
+		{ id = "Money", label = "Top $", stat = "earned", x = -10, z = 0 },
+		{ id = "Harvest", label = "Top Récolte", stat = "harvested", x = -10, z = -40 },
+		{ id = "Bumper", label = "Roi du Pare-Chocs", stat = "ejections", x = -10, z = 40 },
 	},
 	STATUE_CLEARANCE = 15, -- aucun arbre à moins de 15 studs d'une statue
 	-- Tableaux de scores (A58), côté fossé, le long du boulevard ; « level » et « robux » viennent d'ailleurs que STATS.
 	SCOREBOARDS = {
-		{ id = "Harvest", title = "🌾 ROIS DE LA RÉCOLTE", stat = "harvested", z = -48 },
-		{ id = "Money", title = "💰 LES PLUS RICHES", stat = "earned", z = -24 },
-		{ id = "Level", title = "🏆 PLUS HAUT NIVEAU", stat = "level", z = 0 },
-		{ id = "Robux", title = "💎 MÉCÈNES ROBUX", stat = "robux", z = 24 },
-		{ id = "Bumper", title = "💥 ROIS DU PARE-CHOCS", stat = "ejections", z = 48 },
+		{ id = "Harvest", title = "ROIS DE LA RÉCOLTE", stat = "harvested", z = -48 },
+		{ id = "Money", title = "LES PLUS RICHES", stat = "earned", z = -24 },
+		{ id = "Level", title = "PLUS HAUT NIVEAU", stat = "level", z = 0 },
+		{ id = "Robux", title = "MÉCÈNES ROBUX", stat = "robux", z = 24 },
+		{ id = "Bumper", title = "ROIS DU PARE-CHOCS", stat = "ejections", z = 48 },
 	} :: { ScoreboardDef },
 	SCOREBOARD_SIZE = 10,
 	LEADERBOARD_REFRESH_SECONDS = 120,
