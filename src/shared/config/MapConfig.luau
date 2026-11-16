@@ -63,7 +63,7 @@ return Freeze.deep({
 	FLOOR_TOP = 0,
 	DECK_TOP = 0.4, -- ponts et bases, légèrement au-dessus du sol pour éviter le z-fighting
 	WATER_TOP = -10, -- plan d'eau sous toute la carte : y tomber renvoie à sa base (A27)
-	WATER_MARGIN = 400,
+	WATER_MARGIN = 900, -- la mer dépasse les îles et les montagnes du paysage (A69)
 	WATER_TILE_SIZE = 2000, -- une pièce Roblox ne dépasse pas 2 048 studs par côté
 	SPAWN_HEIGHT = 1,
 	RETURN_DROP_HEIGHT = 4, -- un joueur tombé à l'eau réapparaît 4 studs au-dessus de son spawn
@@ -81,6 +81,6 @@ return Freeze.deep({
 		Core = { 196, 40, 28 },
 		Bridge = { 196, 40, 28 },
 		Base = { 88, 162, 72 }, -- herbe : les bases sont des fermes (A56)
-		Water = { 4, 175, 236 },
+		Water = { 22, 160, 232 },
 	} :: { [string]: { number } },
 })

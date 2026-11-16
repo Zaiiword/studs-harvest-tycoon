@@ -312,6 +312,18 @@ return Freeze.deep({
 		CLOSE_SECONDS = 0.15,
 		OPEN_FROM_SCALE = 0.6,
 	},
+	-- Pollen qui flotte dans le champ, autour de la caméra (A69).
+	POLLEN = {
+		TEXTURE = "rbxasset://textures/particles/sparkles_main.dds",
+		AREA = 150, -- côté de la zone d'émission, en studs
+		HEIGHT = 22,
+		AHEAD = 45, -- centre de la zone, devant la caméra
+		RATE = 14,
+		LIFETIME = 7,
+		SIZE = 0.45,
+		TRANSPARENCY = 0.35,
+		COLOR = { 255, 244, 190 },
+	},
 	-- Panneau de test (Studio uniquement).
 	DEV_PANEL = {
 		BUTTON_WIDTH = 96,
