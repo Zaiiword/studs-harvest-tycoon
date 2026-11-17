@@ -1,7 +1,7 @@
 --!strict
 -- Prestige (CDC §7.3, décisions A8, A9, A15, A37), sans API Roblox.
--- Condition : toutes les machines achetées ET argent ≥ 1e6 × 3^r. Effet : argent, machines, niveau du tapis et
--- véhicule remis à zéro ; +1 Rebirth (+50 % de revenus, +15 % de masse) et 10 × (r + 1) gemmes.
+-- Condition : toutes les machines achetées ET argent ≥ coût (Formulas.rebirthCost). Effet : argent, silo, machines,
+-- niveau du tapis et véhicule remis à zéro ; +1 Rebirth (+50 % de revenus, +15 % de masse) et 10 × (r + 1) gemmes.
 local EconomyConfig = require("../config/EconomyConfig")
 local TycoonConfig = require("../config/TycoonConfig")
 local Formulas = require("./Formulas")
@@ -49,7 +49,8 @@ function Rebirth.gemsFor(progress: Progress): number
 	return EconomyConfig.GEMS_PER_REBIRTH * (progress.rebirths + 1)
 end
 
--- Applique le Rebirth si possible. Le silo est conservé (A37) : c'est du blé déjà récolté.
+-- Applique le Rebirth si possible. A73 (revient sur A37) : le silo est vidé ; sinon on repartait avec des heures
+-- de production d'avance, sans avoir à récolter. Son niveau d'agrandissement est conservé.
 function Rebirth.apply(state: Tycoon.State, progress: Progress): boolean
 	if not Rebirth.canRebirth(state, progress) then
 		return false
@@ -59,6 +60,7 @@ function Rebirth.apply(state: Tycoon.State, progress: Progress): boolean
 	state.money = TycoonConfig.STARTING_MONEY
 	state.conveyorLevel = 1
 	state.machines = {}
+	state.silo = 0
 	Rebirth.syncPrices(state, progress)
 	return true
 end

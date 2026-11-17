@@ -92,9 +92,10 @@ function Tycoon.machineMultiplier(state: State): number
 	return multiplier
 end
 
--- Capacité du silo à un niveau d'agrandissement donné (A53) : ×2 par niveau.
+-- Capacité du silo à un niveau d'agrandissement donné (A53, A73).
 function Tycoon.siloCapacityAt(level: number): number
-	return TycoonConfig.SILO_CAPACITY * SILO_UPGRADE.CAPACITY_GROWTH ^ level
+	local capacities = SILO_UPGRADE.CAPACITIES
+	return capacities[math.clamp(level + 1, 1, #capacities)]
 end
 
 function Tycoon.siloCapacity(state: State): number

@@ -10,29 +10,55 @@ local Rewards = require("../../src/shared/domain/Rewards")
 local Tycoon = require("../../src/shared/domain/Tycoon")
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
-describe("Rewards (A59)", function()
-	it("garde le montant plancher tant que l'usine rapporte peu", function()
-		expect(Rewards.moneyOf({ money = 2_000, incomeMinutes = 4 }, 5)).toBe(2_000)
+local function context(income: number, rebirths: number?, goalPrice: number?): Rewards.Context
+	return { income = income, rebirths = rebirths or 0, goalPrice = goalPrice or 0 }
+end
+
+describe("Rewards (A59, A73)", function()
+	it("garde le montant plancher tant que l'usine rapporte peu, avant le premier Rebirth", function()
+		expect(Rewards.moneyOf({ money = 2_000, incomeMinutes = 4 }, context(5))).toBe(2_000)
 	end)
 	it("vaut des minutes d'usine à plein régime quand c'est plus", function()
-		expect(Rewards.moneyOf({ money = 2_000, incomeMinutes = 4 }, 100)).toBe(24_000)
+		expect(Rewards.moneyOf({ money = 2_000, incomeMinutes = 4 }, context(100))).toBe(24_000)
 	end)
 	it("ignore un revenu absent, nul ou invalide", function()
 		local reward = { money = 500, incomeMinutes = 1 }
-		expect(Rewards.moneyOf(reward, 0)).toBe(500)
-		expect(Rewards.moneyOf(reward, 0 / 0)).toBe(500)
-		expect(Rewards.moneyOf(reward, math.huge)).toBe(500)
+		expect(Rewards.moneyOf(reward, context(0))).toBe(500)
+		expect(Rewards.moneyOf(reward, context(0 / 0))).toBe(500)
+		expect(Rewards.moneyOf(reward, context(math.huge))).toBe(500)
+	end)
+	it("ne paie jamais plus de la moitié du prochain achat", function()
+		local reward = { money = 2_000, incomeMinutes = 10 }
+		expect(Rewards.moneyOf(reward, context(1_000, 2, 15_000))).toBe(7_500)
+		expect(Rewards.moneyOf(reward, context(1, 2, 15_000))).toBe(600)
+	end)
+	it("supprime le plancher fixe après un Rebirth : plus de premiers outils rachetés d'un coup", function()
+		local reward = { money = 25_000, incomeMinutes = 10 }
+		expect(Rewards.moneyOf(reward, context(0, 0, 0))).toBe(25_000)
+		expect(Rewards.moneyOf(reward, context(0, 1, 188))).toBe(0)
+		expect(Rewards.moneyOf(reward, context(3, 1, 188))).toBe(94)
+	end)
+	it("lit le contexte dans les attributs du joueur", function()
+		local fake = {
+			GetAttribute = function(_, name: string): any
+				return ({ Rebirths = 2, GoalPrice = 400 })[name]
+			end,
+		}
+		local read = Rewards.contextOf(fake :: any, 12)
+		expect(read.income).toBe(12)
+		expect(read.rebirths).toBe(2)
+		expect(read.goalPrice).toBe(400)
 	end)
 	it("ne touche ni aux gemmes ni aux objets", function()
-		local resolved = Rewards.resolve({ gems = 5 }, 1_000_000)
+		local resolved = Rewards.resolve({ gems = 5 }, context(1_000_000))
 		expect(resolved.gems).toBe(5)
 		expect(resolved.money).toBe(nil)
-		local egg = Rewards.resolve({ item = "LegendaryEgg", count = 1 }, 1_000_000)
+		local egg = Rewards.resolve({ item = "LegendaryEgg", count = 1 }, context(1_000_000))
 		expect(egg.item).toBe("LegendaryEgg")
 		expect(egg.money).toBe(nil)
 	end)
 	it("affiche le montant réel", function()
-		expect(RewardText.label(Rewards.resolve({ money = 1_000, incomeMinutes = 2 }, 1_000))).toBe("120 K $")
+		expect(RewardText.label(Rewards.resolve({ money = 1_000, incomeMinutes = 2 }, context(1_000)))).toBe("120 K $")
 	end)
 	it("indexe toutes les récompenses en argent de la rétention sur le revenu", function()
 		local function check(reward: RetentionConfig.Reward)

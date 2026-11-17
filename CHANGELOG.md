@@ -2,6 +2,19 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Silo, Rebirth et récompenses : fin des raccourcis (A73)
+
+Retour du porteur de projet : le silo de départ avalait le sac de la Cyber-Laser, on gardait son blé au Rebirth (plus
+besoin de récolter), et on récupérait 80 K $ de récompenses juste après le reset.
+
+### Modifié
+- **Silo** : 1 000 $ bruts au départ (250 000 avant), puis 4 K, 15 K, 60 K, 250 K et 1 M (5 niveaux, de 800 $ à
+  3 M $). Le sac de la Double Faucheuse ne rentre plus sans agrandissement ; un silo plus grand donne aussi plus
+  d'autonomie à l'usine, en jeu comme hors ligne. Le remplissage s'affiche dans la barre du haut.
+- **Rebirth** : le silo est vidé (son niveau est conservé). On ne repart plus avec des heures de production d'avance.
+- **Récompenses en argent** : au plus la moitié du prochain achat, et plus de montant fixe minimum après le premier
+  Rebirth. Elles aident sans faire sauter les premiers outils d'une nouvelle partie.
+
 ## Fin de partie plus longue, chocs qui comptent, icônes en briques (A70 à A72)
 
 Retour du porteur de projet : 3 Rebirths en moins d'une heure, « ting » insupportable en récolte dense, caméra qui

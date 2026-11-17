@@ -83,10 +83,11 @@ end
 
 -- (Le rebond des boutons occupe leur UIScale : la respiration se fait sur un enfant.)
 -- Change l'état d'une tuile (couleurs, texte) ; les tuiles prêtes « respirent » (voir animate).
--- Une récompense en argent vaut au moins quelques minutes de l'usine (A59) : même calcul que le serveur.
+-- Une récompense en argent vaut quelques minutes de l'usine (A59, A73) : même calcul que le serveur.
 local function rewardLabel(reward: RetentionConfig.Reward): string
 	local income = attribute(PlayerAttributes.FACTORY_INCOME)
-	return RewardText.label(Rewards.resolve(reward, if typeof(income) == "number" then income else 0))
+	local context = Rewards.contextOf(localPlayer, if typeof(income) == "number" then income else 0)
+	return RewardText.label(Rewards.resolve(reward, context))
 end
 
 local function segmentLabel(segment: RetentionConfig.WheelSegment): string

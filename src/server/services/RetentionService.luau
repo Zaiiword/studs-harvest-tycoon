@@ -91,7 +91,7 @@ end
 -- Verse une récompense (argent, gemmes ou objet) et prévient le joueur.
 -- Les sommes d'argent suivent la progression du joueur (A59) : on calcule ici le montant réel.
 local function grant(player: Player, reward: RetentionConfig.Reward, source: string)
-	local resolved = Rewards.resolve(reward, TycoonService.factoryIncome(player))
+	local resolved = Rewards.resolve(reward, Rewards.contextOf(player, TycoonService.factoryIncome(player)))
 	if resolved.money and resolved.money > 0 then
 		TycoonService.grant(player, resolved.money)
 	end

@@ -2,6 +2,7 @@
 -- Options de l'usine (A53) : silo agrandissable, sauvegarde et flèches de guidage. Plan de la ferme : Farm.spec.
 local TestKit = require("../TestKit")
 local TycoonConfig = require("../../src/shared/config/TycoonConfig")
+local VehicleConfig = require("../../src/shared/config/VehicleConfig")
 local Guide = require("../../src/shared/domain/Guide")
 local Profile = require("../../src/shared/domain/Profile")
 local Rebirth = require("../../src/shared/domain/Rebirth")
@@ -11,20 +12,33 @@ local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 local SILO = TycoonConfig.SILO_UPGRADE
 
 describe("Silo Géant", function()
-	it("double la capacité à chaque niveau acheté", function()
+	it("agrandit le silo niveau par niveau (A73)", function()
 		local state = Tycoon.new()
 		state.money = 1e9
 		state.machines.Mill = true -- le silo n'apparaît qu'après le Moulin
-		expect(Tycoon.siloCapacity(state)).toBe(TycoonConfig.SILO_CAPACITY)
+		expect(Tycoon.siloCapacity(state)).toBe(SILO.CAPACITIES[1])
 		expect(Tycoon.offer(state, SILO.ID, 1).price).toBe(SILO.PRICES[1])
 		expect(Tycoon.buy(state, SILO.ID, 1).isPurchased).toBe(true)
-		expect(Tycoon.siloCapacity(state)).toBe(TycoonConfig.SILO_CAPACITY * 2)
+		expect(Tycoon.siloCapacity(state)).toBe(SILO.CAPACITIES[2])
 		expect(Tycoon.offer(state, SILO.ID, 1).price).toBe(SILO.PRICES[2])
+	end)
+	it("a une capacité de plus par prix, toujours croissante (A73)", function()
+		expect(#SILO.CAPACITIES).toBe(#SILO.PRICES + 1)
+		for level = 2, #SILO.CAPACITIES do
+			expect(SILO.CAPACITIES[level] > SILO.CAPACITIES[level - 1]).toBe(true)
+		end
+	end)
+	it("ne laisse pas entrer le sac de la Double Faucheuse sans agrandissement (A73)", function()
+		local state = Tycoon.new()
+		expect(Tycoon.siloCapacity(state) >= VehicleConfig.TIERS[4].capacity).toBe(true)
+		expect(Tycoon.siloCapacity(state) < VehicleConfig.TIERS[5].capacity).toBe(true)
+		state.siloLevel = #SILO.PRICES
+		expect(Tycoon.siloCapacity(state) >= VehicleConfig.TIERS[#VehicleConfig.TIERS].capacity * 10).toBe(true)
 	end)
 
 	it("laisse le silo accepter plus de blé une fois agrandi", function()
 		local state = Tycoon.new()
-		state.silo = TycoonConfig.SILO_CAPACITY
+		state.silo = Tycoon.siloCapacity(state)
 		expect(Tycoon.deposit(state, 100)).toBe(0)
 		state.siloLevel = 1
 		expect(Tycoon.deposit(state, 100)).toBe(100)

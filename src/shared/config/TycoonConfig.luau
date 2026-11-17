@@ -21,7 +21,6 @@ export type DecorDef = { id: string, name: string, price: number, fadesInside: b
 
 return Freeze.deep({
 	STARTING_MONEY = 0,
-	SILO_CAPACITY = 250_000, -- A16 : le silo garde un plafond, même avec la Remorque Infinie
 
 	-- Tapis roulant : le niveau 1 est offert, chaque niveau multiplie le débit (A33).
 	CONVEYOR = {
@@ -77,13 +76,15 @@ return Freeze.deep({
 		},
 	} :: { MachineDef },
 	UPPER_REQUIRES = { machine = "Factory", decor = "Roof" }, -- ce qui ouvre la chaîne de l'étage
-	-- Silo agrandissable (A53) : chaque niveau double sa capacité. Le niveau est conservé au Rebirth (comme le
-	-- contenu du silo, A37). Plus de capacité = plus d'autonomie de l'usine entre deux récoltes.
+	-- Silo agrandissable (A53, revu en A73) : chaque niveau a sa capacité, en $ bruts. Le silo de départ tient
+	-- quelques sacs des premiers outils ; dès la Double Faucheuse, un sac ne rentre plus sans agrandissement. Un silo
+	-- plus grand, c'est aussi plus d'autonomie : l'usine tourne plus longtemps sans toi, et hors ligne (A60).
+	-- Le niveau est conservé au Rebirth, pas le contenu (A73).
 	SILO_UPGRADE = {
 		ID = "SiloUpgrade",
 		NAME = "Silo Géant",
-		PRICES = { 5_000, 60_000, 600_000, 6_000_000 },
-		CAPACITY_GROWTH = 2,
+		CAPACITIES = { 1_000, 4_000, 15_000, 60_000, 250_000, 1_000_000 }, -- niveau 0 (de départ) à 5
+		PRICES = { 800, 6_000, 50_000, 400_000, 3_000_000 }, -- prix des niveaux 1 à 5
 		REQUIRES = "Mill", -- n'apparaît qu'après le premier achat important
 	},
 	-- Plan de construction de la ferme (A56) : un seul bouton à la fois, dans cet ordre. On pose le terrain, on bâtit

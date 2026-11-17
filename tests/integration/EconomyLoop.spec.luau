@@ -38,7 +38,7 @@ describe("Boucle économique", function()
 		local grid, bag, state =
 			FieldGrid.new(FakeRng.constant(0.5)), Bag.new(VehicleConfig.TIERS[1].capacity), Tycoon.new()
 		fillBag(grid, bag)
-		local _, value = Bag.withdraw(bag, TycoonConfig.SILO_CAPACITY - state.silo)
+		local _, value = Bag.withdraw(bag, Tycoon.siloCapacity(state) - state.silo)
 		Tycoon.deposit(state, value)
 		expect(state.silo).toBe(VehicleConfig.TIERS[1].capacity) -- Blé Vert : 1 $ brut par brin
 		runFactory(state, 60)

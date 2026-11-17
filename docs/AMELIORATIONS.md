@@ -215,5 +215,6 @@ enjeu des chocs selon ce que montrent les chiffres.
 | A70 | Fin de partie allongée (Rebirth 500 M, prix × 2,5 par Rebirth), son de récolte et caméra adoucis |
 | A71 | Un joueur éjecté lâche 30 % de son sac en tas ramassables |
 | A72 | Icônes en briques 3D à la place des emojis |
+| A73 | Silo limitant et agrandissable, vidé au Rebirth ; récompenses plafonnées |
 
 Profil sauvegardé : v6 → v9 (migration automatique, aucun profil existant n'est perdu).
