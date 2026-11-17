@@ -177,6 +177,8 @@ function Profile.toTycoon(data: Data): Tycoon.State
 		state.machines[id] = true
 	end
 	state.siloLevel = data.siloLevel
+	-- A73 : le silo a rétréci ; un ancien profil garde ce qui tient dans son niveau actuel.
+	state.silo = math.min(state.silo, Tycoon.siloCapacityAt(state.siloLevel))
 	for _, id in data.decor do
 		state.decor[id] = true
 	end

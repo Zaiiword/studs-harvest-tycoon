@@ -16,7 +16,7 @@ describe("Tycoon", function()
 		it("accepte une valeur brute jusqu'à sa capacité (A5, A16)", function()
 			local state = Tycoon.new()
 			expect(Tycoon.deposit(state, 100)).toBe(100)
-			state.silo = TycoonConfig.SILO_CAPACITY - 10
+			state.silo = Tycoon.siloCapacity(state) - 10
 			expect(Tycoon.deposit(state, 100)).toBe(10)
 		end)
 	end)

@@ -185,11 +185,14 @@ local function refresh()
 	local silo = numberAttribute(PlayerAttributes.SILO_VALUE)
 	local rate = numberAttribute(PlayerAttributes.CONVEYOR_RATE)
 	local autonomy = if rate > 0 then Format.duration(silo / rate) else "—"
+	-- Remplissage du silo (A73) : sa taille compte, le joueur doit la voir.
+	local capacity = numberAttribute(PlayerAttributes.SILO_CAPACITY)
+	local fill = if capacity > 0 then ` ({math.floor(math.min(silo / capacity, 1) * 100 + 0.5)} %)` else ""
 	local money = Format.money(numberAttribute(PlayerAttributes.MONEY))
 	local income = Format.money(numberAttribute(PlayerAttributes.INCOME_PER_SECOND))
 	local prestige =
 		`Rebirths {numberAttribute(PlayerAttributes.REBIRTHS)}  ·  {numberAttribute(PlayerAttributes.GEMS)} gemmes`
-	summary.Text = `{money} $  ·  +{income} $/s  ·  Silo {autonomy}  ·  {prestige}`
+	summary.Text = `{money} $  ·  +{income} $/s  ·  Silo {autonomy}{fill}  ·  {prestige}`
 	refreshGoal()
 	refreshInvite()
 	-- L'alerte n'a de sens qu'une fois l'usine lancée (quelque chose a déjà été déposé ou gagné), et seulement hors
@@ -214,6 +217,7 @@ function EconomyHudController:Start()
 			PlayerAttributes.MONEY,
 			PlayerAttributes.INCOME_PER_SECOND,
 			PlayerAttributes.SILO_VALUE,
+			PlayerAttributes.SILO_CAPACITY,
 			PlayerAttributes.CONVEYOR_RATE,
 			PlayerAttributes.REBIRTHS,
 			PlayerAttributes.GEMS,

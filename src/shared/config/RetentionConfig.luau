@@ -5,7 +5,7 @@ local Freeze = require("../util/Freeze")
 
 export type Reward = {
 	money: number?, -- montant plancher en $
-	incomeMinutes: number?, -- A59 : ou autant de minutes de l'usine à plein régime, si c'est plus (Rewards)
+	incomeMinutes: number?, -- A59 : ou autant de minutes de l'usine à plein régime (Rewards ; plafonné en A73)
 	gems: number?,
 	item: string?, -- id d'objet de l'inventaire (sabotage ou Œuf Légendaire)
 	count: number?,

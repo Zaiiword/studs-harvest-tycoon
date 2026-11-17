@@ -56,6 +56,7 @@ EconomySim.REAL = {
 
 local CELL = MapConfig.CELL_SIZE
 local TICK = FieldConfig.HARVEST_INTERVAL
+local SILO_MARGIN = 2 -- silo visé : deux sacs pleins
 local FARM_BUDGET = 0.15 -- part de la trésorerie qu'il consacre à l'élément suivant de la ferme
 
 -- Blés coupés par seconde dans une zone : rangées couvertes × avancée, limité par les PV (coups par brin).
@@ -99,6 +100,12 @@ local function shop(state: Tycoon.State, tierId: number): number
 	local garage = Tycoon.buy(state, TycoonConfig.GARAGE_NAME, tierId)
 	if garage.newTier then
 		return garage.newTier
+	end
+	-- A73 : un sac qui ne rentre plus dans le silo, c'est de la récolte perdue : on l'agrandit d'abord.
+	if Tycoon.siloCapacity(state) < VehicleConfig.TIERS[tierId].capacity * SILO_MARGIN then
+		if Tycoon.buy(state, TycoonConfig.SILO_UPGRADE.ID, tierId).isPurchased then
+			return tierId
+		end
 	end
 	for _, list in { TycoonConfig.MACHINES, TycoonConfig.UPPER_MACHINES } do
 		for _, machine in list do
