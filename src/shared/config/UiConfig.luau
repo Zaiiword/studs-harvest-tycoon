@@ -308,6 +308,7 @@ return Freeze.deep({
 	},
 	-- Fenêtres de menu « premium » (boutique…) : dégradé, gros contour, croix rouge, ouverture qui rebondit.
 	WINDOW = {
+		DISPLAY_ORDER = 10, -- au-dessus du HUD (0), sous l'éclosion (20)
 		SCALE = { 0.9, 0.86 }, -- part de l'écran occupée, bornée par MAX_SIZE
 		MAX_SIZE = { 820, 560 },
 		HEADER_HEIGHT = 64,

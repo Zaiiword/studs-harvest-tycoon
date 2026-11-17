@@ -2,6 +2,10 @@
 -- Icône en briques (A72) : construit la sculpture d'IconConfig et la montre en 3D dans un ViewportFrame.
 -- Sert au client (HUD, menus, pop-up) comme au serveur (panneaux des boutons au sol). Une icône inconnue donne un
 -- cadre vide plutôt qu'une erreur : un oubli de config ne doit jamais casser une fenêtre.
+local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
 local IconConfig = require("../config/IconConfig")
 local PetConfig = require("../config/PetConfig")
 local PetVisualConfig = require("../config/PetVisualConfig")
@@ -11,9 +15,14 @@ local EggModel = require("./EggModel")
 local BrickIcon = {}
 
 BrickIcon.VIEW_NAME = "IconView"
+BrickIcon.ID_ATTRIBUTE = "IconId"
+-- Icône posée par le serveur (panneaux des boutons au sol) : une Camera n'est jamais répliquée, donc chaque client
+-- construit lui-même la sculpture et sa caméra (BrickIconController).
+BrickIcon.REMOTE_TAG = "BrickIcon"
 
 local CAMERA = IconConfig.CAMERA
 local SMOOTH = Enum.SurfaceType.Smooth
+local MIN_VISIBLE_PIXELS = 2
 
 local function vector(values: { number }): Vector3
 	return Vector3.new(values[1], values[2], values[3])
@@ -95,12 +104,7 @@ local function fill(view: ViewportFrame, id: string)
 	view.CurrentCamera = camera
 end
 
--- Cadre transparent de taille `size`, qui contient l'icône (toujours carrée, centrée). Se place comme un label.
-function BrickIcon.new(parent: Instance, id: string, size: UDim2): Frame
-	local holder = Instance.new("Frame")
-	holder.Name = "Icon"
-	holder.BackgroundTransparency = 1
-	holder.Size = size
+local function newView(holder: Instance): ViewportFrame
 	local view = Instance.new("ViewportFrame")
 	view.Name = BrickIcon.VIEW_NAME
 	view.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -114,21 +118,81 @@ function BrickIcon.new(parent: Instance, id: string, size: UDim2): Frame
 	square.AspectRatio = 1
 	square.Parent = view
 	view.Parent = holder
-	fill(view, id)
-	holder:SetAttribute("IconId", id)
+	return view
+end
+
+-- Cadre transparent de taille `size`, qui contient l'icône (toujours carrée, centrée). Se place comme un label.
+-- Côté serveur, le cadre reste vide : un ViewportFrame répliqué n'affiche rien, même rempli par le client.
+function BrickIcon.new(parent: Instance, id: string, size: UDim2): Frame
+	local holder = Instance.new("Frame")
+	holder.Name = "Icon"
+	holder.BackgroundTransparency = 1
+	holder.Size = size
+	holder:SetAttribute(BrickIcon.ID_ATTRIBUTE, id)
+	if RunService:IsServer() then
+		CollectionService:AddTag(holder, BrickIcon.REMOTE_TAG)
+	else
+		fill(newView(holder), id)
+	end
 	holder.Parent = parent
 	return holder
 end
 
+-- Construit, côté client, l'icône d'un cadre posé par le serveur. Un ViewportFrame ne se dessine que lorsque son
+-- contenu change : créé hors de l'écran (taille nulle), il resterait vide. On le redessine donc à chaque fois qu'il
+-- réapparaît à l'écran.
+-- Un ViewportFrame ne s'affiche pas dans un BillboardGui rangé dans le monde, seulement dans le PlayerGui : le panneau
+-- y est déplacé, toujours accroché à sa pièce. Le serveur continue de le mettre à jour (même instance) ; il est
+-- détruit si sa pièce quitte le monde (achat, streaming).
+local function liftBillboard(holder: Instance)
+	local gui = holder:FindFirstAncestorOfClass("BillboardGui")
+	local localPlayer = Players.LocalPlayer
+	local playerGui = localPlayer and localPlayer:FindFirstChildOfClass("PlayerGui")
+	if not gui or not playerGui or gui:IsDescendantOf(playerGui) then
+		return
+	end
+	local anchor = gui.Adornee or gui.Parent
+	if not anchor or not anchor:IsA("PVInstance") then
+		return
+	end
+	gui.Adornee = anchor
+	gui.ResetOnSpawn = false
+	gui.Parent = playerGui
+	anchor.AncestryChanged:Connect(function()
+		if not anchor:IsDescendantOf(game) then
+			gui:Destroy()
+		end
+	end)
+end
+
+function BrickIcon.hydrate(holder: Instance)
+	local id = holder:GetAttribute(BrickIcon.ID_ATTRIBUTE)
+	if typeof(id) ~= "string" or holder:FindFirstChild(BrickIcon.VIEW_NAME) then
+		return
+	end
+	liftBillboard(holder)
+	local view = newView(holder)
+	fill(view, id)
+	local wasVisible = view.AbsoluteSize.X >= MIN_VISIBLE_PIXELS
+	view:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+		local isVisible = view.AbsoluteSize.X >= MIN_VISIBLE_PIXELS
+		if isVisible and not wasVisible then
+			local current = holder:GetAttribute(BrickIcon.ID_ATTRIBUTE)
+			fill(view, if typeof(current) == "string" then current else id)
+		end
+		wasVisible = isVisible
+	end)
+end
+
 -- Remplace l'icône d'un cadre créé par BrickIcon.new (bouton à deux états, par exemple).
 function BrickIcon.set(holder: Frame, id: string)
-	if holder:GetAttribute("IconId") == id then
+	if holder:GetAttribute(BrickIcon.ID_ATTRIBUTE) == id then
 		return
 	end
 	local view = holder:FindFirstChild(BrickIcon.VIEW_NAME)
 	if view and view:IsA("ViewportFrame") then
 		fill(view, id)
-		holder:SetAttribute("IconId", id)
+		holder:SetAttribute(BrickIcon.ID_ATTRIBUTE, id)
 	end
 end
 

@@ -2,6 +2,29 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Fin de partie plus longue, chocs qui comptent, icônes en briques (A70 à A72)
+
+Retour du porteur de projet : 3 Rebirths en moins d'une heure, « ting » insupportable en récolte dense, caméra qui
+tremble trop, icônes laides et « qui font IA ».
+
+### Modifié
+- **Rythme** : le début ne change pas (Faux, Tondeuse, Tracteur), mais le Rebirth coûte 500 M $ (au lieu de 1 M),
+  ×4 à chaque fois, et les prix du Garage, des machines et du tapis sont multipliés par 2,5 à chaque Rebirth. La
+  Moissonneuse Dorée passe à 900 K $, la Cyber-Laser à 12 M $, les machines de l'étage à 5, 25 et 100 M $. Les
+  gemmes du Rebirth passent de 10 à 25 × (r + 1). Simulation d'un joueur qui ouvre des œufs et prend le Retour
+  Base : premier Rebirth vers 54 min (16 avant), puis 42 et 69 min de plus (15 et 10 avant).
+- **Son de récolte** : un tic doux au lieu du tintement électronique, au plus 8 par seconde, de plus en plus
+  discret quand la récolte est dense, et une note qui varie à peine.
+- **Caméra** : la récolte ordinaire ne fait plus qu'un frémissement plafonné ; les secousses sont réservées aux
+  blés géants et arc-en-ciel et aux éjections.
+- **Icônes** : tous les emojis du jeu sont remplacés par de petites sculptures en briques en 3D (boutons du HUD,
+  boutique, récompenses, quêtes, succès, objets, boutons au sol, pop-up). Les textes n'ont plus d'emojis.
+- Les fenêtres passent toujours au-dessus de la trésorerie et de l'objectif.
+
+### Ajouté
+- **Butin des chocs** : un joueur éjecté lâche 30 % de son sac en 5 tas dorés que tout le monde peut ramasser,
+  lui compris après 2,5 s. Rien ne tombe d'un sac presque vide.
+
 ## Un monde autour de la ferme (A69)
 
 La carte était une plaque posée sur une mer vide : ciel sans nuage, rien à l'horizon, sol uni, œufs réduits à une
