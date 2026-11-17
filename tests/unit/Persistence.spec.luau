@@ -2,6 +2,7 @@
 -- Rebirth, format du profil et ProfileStore (verrou de session, réessais).
 local TestKit = require("../TestKit")
 local FakeDataStore = require("../helpers/FakeDataStore")
+local EconomyConfig = require("../../src/shared/config/EconomyConfig")
 local TycoonConfig = require("../../src/shared/config/TycoonConfig")
 local Pets = require("../../src/shared/domain/Pets")
 local Profile = require("../../src/shared/domain/Profile")
@@ -27,13 +28,13 @@ describe("Rebirth", function()
 		state.money = 1e9
 		expect(Rebirth.canRebirth(state, Rebirth.newProgress())).toBe(false)
 	end)
-	it("exige 1e6 × 3^r $ (CDC §8)", function()
+	it("exige 500 M × 4^r $ (A70)", function()
 		local progress = { rebirths = 2, gems = 0 }
-		expect(Rebirth.canRebirth(completeTycoon(8_999_999), progress)).toBe(false)
-		expect(Rebirth.canRebirth(completeTycoon(9_000_000), progress)).toBe(true)
+		expect(Rebirth.canRebirth(completeTycoon(7_999_999_999), progress)).toBe(false)
+		expect(Rebirth.canRebirth(completeTycoon(8_000_000_000), progress)).toBe(true)
 	end)
 	it("remet l'usine à zéro mais garde le silo (A37)", function()
-		local state = completeTycoon(1_000_000)
+		local state = completeTycoon(Rebirth.cost(Rebirth.newProgress()))
 		state.silo, state.conveyorLevel = 500, 7
 		local progress = Rebirth.newProgress()
 		expect(Rebirth.apply(state, progress)).toBe(true)
@@ -42,11 +43,31 @@ describe("Rebirth", function()
 		expect(next(state.machines)).toBe(nil)
 		expect(state.silo).toBe(500)
 	end)
-	it("donne 10 × (r + 1) gemmes et un Rebirth de plus (A9)", function()
+	it("donne 25 × (r + 1) gemmes et un Rebirth de plus (A9, A70)", function()
 		local progress = { rebirths = 1, gems = 5 }
-		Rebirth.apply(completeTycoon(3_000_000), progress)
+		Rebirth.apply(completeTycoon(Rebirth.cost(progress)), progress)
 		expect(progress.rebirths).toBe(2)
-		expect(progress.gems).toBe(25)
+		expect(progress.gems).toBe(55)
+	end)
+	it("renchérit le Garage, les machines et le tapis à chaque Rebirth, pas la ferme ni le silo (A70)", function()
+		local fresh, veteran = Tycoon.new(), Tycoon.new()
+		Rebirth.syncPrices(veteran, { rebirths = 2, gems = 0 })
+		local scale = EconomyConfig.REBIRTH_PRICE_GROWTH ^ 2
+		for _, id in { TycoonConfig.GARAGE_NAME, "Conveyor", "Mill" } do
+			local base = Tycoon.offer(fresh, id, 1).price :: number
+			expect(Tycoon.offer(veteran, id, 1).price).toBe(math.floor(base * scale + 0.5))
+		end
+		expect(Tycoon.offer(veteran, "Path", 1).price).toBe(Tycoon.offer(fresh, "Path", 1).price)
+		fresh.machines.Mill, veteran.machines.Mill = true, true
+		local silo = TycoonConfig.SILO_UPGRADE.ID
+		expect(Tycoon.offer(veteran, silo, 1).price).toBe(Tycoon.offer(fresh, silo, 1).price)
+	end)
+	it("applique les nouveaux prix dès le Rebirth", function()
+		local progress = Rebirth.newProgress()
+		local state = completeTycoon(Rebirth.cost(progress))
+		local before = Tycoon.offer(Tycoon.new(), "Mill", 1).price :: number
+		Rebirth.apply(state, progress)
+		expect(Tycoon.offer(state, "Mill", 1).price).toBe(math.floor(before * EconomyConfig.REBIRTH_PRICE_GROWTH + 0.5))
 	end)
 	it("augmente les revenus de 50 % par Rebirth (CDC §7)", function()
 		local state = Tycoon.new()

@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 
 local AssetIds = require(ReplicatedStorage.Shared.config.AssetIds)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
+local BrickIcon = require(ReplicatedStorage.Shared.util.BrickIcon)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Style = require(script.Parent.Style)
 
@@ -109,7 +110,7 @@ local function burstConfetti(parent: Instance)
 	end
 end
 
-local function buildCard(parent: Instance, icon: string, text: string, heading: string): (Frame, TextLabel, TextButton)
+local function buildCard(parent: Instance, icon: string, text: string, heading: string): (Frame, Frame, TextButton)
 	local card = Instance.new("Frame")
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	card.Position = UDim2.fromScale(0.5, 0.5)
@@ -122,7 +123,7 @@ local function buildCard(parent: Instance, icon: string, text: string, heading: 
 	card.Parent = parent
 	local title = Style.label(card, heading, UDim2.new(1, -20, 0.18, 0))
 	title.Position = UDim2.new(0, 10, 0.04, 0)
-	local iconLabel = Style.label(card, icon, UDim2.fromScale(1, 0.34))
+	local iconLabel = BrickIcon.new(card, icon, UDim2.fromScale(1, 0.36))
 	iconLabel.Position = UDim2.fromScale(0, 0.22)
 	-- Plusieurs lignes (nouvel outil, A68) : le texte prend plus de hauteur au lieu de rapetisser.
 	local _, breaks = string.gsub(text, "\n", "")
@@ -138,7 +139,8 @@ local function buildCard(parent: Instance, icon: string, text: string, heading: 
 	return card, iconLabel, close
 end
 
--- Montre le lot gagné ; un nouvel appel remplace la pop-up en cours. `heading` remplace « 🎉 GAGNÉ ! 🎉 ».
+-- Montre le lot gagné ; un nouvel appel remplace la pop-up en cours. `icon` : icône en briques (IconConfig).
+-- `heading` remplace « GAGNÉ ! ».
 function RewardPopup.show(icon: string, text: string, heading: string?)
 	token += 1
 	local myToken = token
@@ -155,7 +157,7 @@ function RewardPopup.show(icon: string, text: string, heading: string?)
 	scale.Scale = 0
 	scale.Parent = stage
 	local halo = buildRays(stage)
-	local _, iconLabel, close = buildCard(stage, icon, text, heading or "🎉 GAGNÉ ! 🎉")
+	local _, iconLabel, close = buildCard(stage, icon, text, heading or "GAGNÉ !")
 	burstConfetti(stage)
 	TweenService:Create(scale, POP, { Scale = 1 }):Play()
 	local clock = 0

@@ -36,12 +36,12 @@ local function onBuy(player: Player, rawId: any)
 		return
 	end
 	if not TycoonService.spendGems(player, price) then
-		notify:FireClient(player, `Il te faut {price} 💎 pour {def.name}.`)
+		notify:FireClient(player, `Il te faut {price} gemmes pour {def.name}.`)
 		return
 	end
 	levels[def.id] = (levels[def.id] or 0) + 1
 	publish(player)
-	notify:FireClient(player, `{def.icon} {def.name} niveau {levels[def.id]} !`)
+	notify:FireClient(player, `{def.name} niveau {levels[def.id]} !`)
 end
 
 function UpgradeService.restore(player: Player, levels: Upgrades.Levels)

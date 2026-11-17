@@ -348,7 +348,7 @@ local function facade()
 	end
 	add(PALETTE.WHITE, { 1, 1.2, half * 2 + 2.4 }, { x, height + 0.6, 0 })
 	local board = add(PALETTE.WOOD, { 0.6, 3, 20 }, { BARN.FRONT_X + 0.3, height + 3, 0 }, { name = "Sign" })
-	board.signs = { { face = "Right", text = "🌾 FERME DE {owner}" } }
+	board.signs = { { face = "Right", text = "FERME DE {owner}" } }
 end
 
 -- Battants ouverts contre la façade : panneau rouge, cadre blanc et croix de Saint-André.
@@ -936,8 +936,8 @@ local function arch()
 		{ name = "Beam", tilt = { 0, HALF_TURN, 0 } }
 	)
 	beam.signs = {
-		{ face = "Front", text = "🌾 FERME DE {owner} 🌾" },
-		{ face = "Back", text = "🌾 FERME DE {owner} 🌾" },
+		{ face = "Front", text = "FERME DE {owner}" },
+		{ face = "Back", text = "FERME DE {owner}" },
 	}
 	neon(PALETTE.NEON_PINK, { 2.2, 0.3, half * 2 + 2 }, { x, height, 0 }, 8)
 end

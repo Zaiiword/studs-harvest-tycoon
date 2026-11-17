@@ -14,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 local EventConfig = require(ReplicatedStorage.Shared.config.EventConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local TycoonConfig = require(ReplicatedStorage.Shared.config.TycoonConfig)
+local IconConfig = require(ReplicatedStorage.Shared.config.IconConfig)
 local Bag = require(ReplicatedStorage.Shared.domain.Bag)
 local Goal = require(ReplicatedStorage.Shared.domain.Goal)
 local Offline = require(ReplicatedStorage.Shared.domain.Offline)
@@ -130,7 +131,7 @@ local function rebirthView(entry: Entry): TycoonButtons.View
 	return {
 		state = if Rebirth.canRebirth(entry.state, entry.progress) then "rebirth" else "expensive",
 		title = title,
-		price = `{Format.money(cost)} $ · +{Rebirth.gemsFor(entry.progress)} 💎`,
+		price = `{Format.money(cost)} $ · +{Rebirth.gemsFor(entry.progress)} gemmes`,
 	}
 end
 
@@ -200,7 +201,7 @@ end
 local function buildMachine(entry: Entry, machine: TycoonConfig.MachineDef, isPurchase: boolean)
 	local origin = originAt(entry, LAYOUT.MACHINES[machine.id])
 	local main = TycoonModels.machine(machine, origin)
-	local label = TycoonButtons.label(main, PAD_STYLE.ICONS[machine.id] or "⭐", 0)
+	local label = TycoonButtons.label(main, IconConfig.BUTTONS[machine.id] or IconConfig.DEFAULT_BUTTON, 0)
 	local spec = LAYOUT.MACHINE_LABEL
 	local front = (machine.size or LAYOUT.MACHINE_SIZE) / 2 + spec.FRONT
 	local gui = label.gui :: BillboardGui
@@ -287,7 +288,7 @@ local function buildUnloadPad(player: Player, entry: Entry)
 	unloadPad:SetAttribute("OwnerId", player.UserId)
 	entry.unloadPad = unloadPad
 	CollectionService:AddTag(unloadPad, TycoonConfig.UNLOAD_TAG)
-	local label = TycoonButtons.label(unloadPad, "📥", PAD_STYLE.LABEL_HEIGHT_ABOVE)
+	local label = TycoonButtons.label(unloadPad, "unload", PAD_STYLE.LABEL_HEIGHT_ABOVE)
 	TycoonButtons.paint(label, "unload", "DÉCHARGER ICI", "Vide ton sac au silo")
 end
 
@@ -315,6 +316,7 @@ local function applyProfile(player: Player, entry: Entry, data: Profile.Data)
 	entry.isLive = false
 	entry.state = Profile.toTycoon(data)
 	entry.progress = Profile.toProgress(data)
+	Rebirth.syncPrices(entry.state, entry.progress)
 	syncMachines(entry, false)
 	syncDecor(player, entry, false)
 	entry.unloadPad:SetAttribute("Guided", entry.state.guided[TycoonConfig.GUIDE_UNLOAD_KEY] == true)

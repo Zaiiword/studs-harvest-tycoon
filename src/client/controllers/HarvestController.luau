@@ -37,6 +37,8 @@ local flights: { Flight } = {}
 local popSound: Sound? = nil
 local popPitch = 1
 local lastPopAt = -math.huge
+local lastCutAt = -math.huge
+local cutRate = 0 -- coupes par seconde, lissées : sert à baisser le volume quand la récolte est dense
 local predictElapsed = 0
 
 local function rootOf(player: Player?): BasePart?
@@ -93,15 +95,25 @@ local function animateFlights(now: number)
 end
 
 local function playPop()
-	if not popSound then
+	local sound = popSound
+	if not sound then
 		return
 	end
 	local now = os.clock()
+	-- Cadence lissée : chaque coupe compte, même celles qu'on n'entend pas.
+	local fade = math.exp(-(now - lastCutAt) / FieldConfig.POP_RATE_SMOOTHING)
+	cutRate = cutRate * fade + 1 / FieldConfig.POP_RATE_SMOOTHING
+	lastCutAt = now
+	if now - lastPopAt < FieldConfig.POP_MIN_INTERVAL then
+		return -- une moissonneuse coupe des dizaines de brins par seconde : on n'en fait pas une rafale
+	end
 	local isCombo = now - lastPopAt < FieldConfig.POP_COMBO_RESET_SECONDS
 	popPitch = if isCombo then math.min(FieldConfig.POP_PITCH_MAX, popPitch + FieldConfig.POP_PITCH_STEP) else 1
 	lastPopAt = now
-	popSound.PlaybackSpeed = popPitch
-	SoundService:PlayLocalSound(popSound)
+	local jitter = FieldConfig.POP_PITCH_JITTER
+	sound.PlaybackSpeed = popPitch + random:NextNumber(-jitter, jitter)
+	sound.Volume = FieldConfig.POP_VOLUME / (1 + cutRate / FieldConfig.POP_QUIET_RATE)
+	sound:Play() -- un seul son à la fois : il repart du début au lieu de s'empiler
 end
 
 local function onCellCut(_index: number, slot: number, x: number, z: number, wasPredicted: boolean)

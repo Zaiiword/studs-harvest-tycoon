@@ -65,7 +65,7 @@ local function buildPanel(remote: RemoteEvent): ScreenGui
 		end)
 	end
 	local events = newColumn(gui, PANEL.LEFT_MARGIN + PANEL.BUTTON_WIDTH + PANEL.PADDING)
-	newButton(events, "☄️ Boss", function()
+	newButton(events, "Boss", function()
 		remote:FireServer("meteor")
 	end)
 	for _, weather in EventConfig.WEATHERS do

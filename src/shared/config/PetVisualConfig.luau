@@ -221,7 +221,7 @@ return Freeze.deep({
 		BORDER_COLOR = { 236, 233, 225 },
 		HEDGE_COLOR = { 62, 140, 66 },
 		HEDGE_HEIGHT = 3,
-		SIGN_TEXT = "🥚 COUVOIR 🥚",
+		SIGN_TEXT = "COUVOIR",
 		SIGN_SIZE = { 16, 3 },
 		SIGN_POST_HEIGHT = 12,
 		SIGN_COLOR = { 122, 82, 52 },

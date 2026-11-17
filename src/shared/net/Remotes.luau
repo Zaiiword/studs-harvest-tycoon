@@ -29,6 +29,7 @@ Remotes.CLAIM_ACHIEVEMENT = "ClaimAchievement" -- client → serveur : (id) réc
 Remotes.BUY_UPGRADE = "BuyUpgrade" -- client → serveur : (id) acheter un niveau d'amélioration en gemmes (A65)
 Remotes.UNLOADED = "Unloaded" -- serveur → client : (valeur) sac vidé au silo, pour l'effet (A68)
 Remotes.TELEPORT_HOME = "TeleportHome" -- client → serveur : « Retour Base Instantané » (A19)
+Remotes.SPILL_PICKED_UP = "SpillPickedUp" -- serveur → client : (x, z, places) butin d'un choc ramassé (A71)
 Remotes.NOTIFY = "Notify" -- serveur → client : (message) récompense ou refus à afficher
 Remotes.OFFLINE_EARNINGS = "OfflineEarnings" -- serveur → client : (secondes, argent) gains hors ligne (A60)
 
@@ -45,6 +46,7 @@ local KINDS: { [string]: string } = {
 	[Remotes.CODE_RESULT] = "RemoteEvent",
 	[Remotes.TELEPORT_HOME] = "RemoteEvent",
 	[Remotes.NOTIFY] = "RemoteEvent",
+	[Remotes.SPILL_PICKED_UP] = "RemoteEvent",
 	[Remotes.UNLOADED] = "RemoteEvent",
 	[Remotes.OFFLINE_EARNINGS] = "RemoteEvent",
 	[Remotes.OPEN_EGG] = "RemoteEvent",

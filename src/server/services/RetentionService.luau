@@ -101,7 +101,7 @@ local function grant(player: Player, reward: RetentionConfig.Reward, source: str
 	if resolved.item then
 		InventoryService.add(player, resolved.item, resolved.count or 1)
 	end
-	notify:FireClient(player, `🎁 {source} : {RewardText.label(resolved)} !`)
+	notify:FireClient(player, `{source} : {RewardText.label(resolved)} !`)
 end
 
 local function record(player: Player, stat: string, amount: number)

@@ -8,8 +8,8 @@ local RewardPopup = require(script.Parent.Parent.ui.RewardPopup)
 
 local OfflineController = {}
 
-local ICON = "🏭"
-local HEADING = "👋 BON RETOUR ! 👋"
+local ICON = "factory"
+local HEADING = "BON RETOUR !"
 local SECONDS_PER_HOUR, SECONDS_PER_MINUTE = 3600, 60
 
 -- 11 520 s → « 3 h 12 » ; 300 s → « 5 min ».

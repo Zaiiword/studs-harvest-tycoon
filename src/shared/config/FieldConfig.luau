@@ -76,7 +76,14 @@ return Freeze.deep({
 	BRICK_FLIGHT_SECONDS = 0.45,
 	BRICK_ARC_HEIGHT = 6,
 	BRICK_POOL_SIZE = 150,
-	POP_PITCH_STEP = 0.03, -- CDC §2 : la tonalité monte à chaque coupe consécutive
-	POP_PITCH_MAX = 1.6,
+	-- Son de coupe (CDC §2, adouci en A70) : la tonalité monte un peu pendant une série, sans devenir aiguë ; au plus
+	-- un son tous les POP_MIN_INTERVAL, et de moins en moins fort quand les coupes s'enchaînent (grosse moissonneuse).
+	POP_PITCH_STEP = 0.01,
+	POP_PITCH_MAX = 1.2,
+	POP_PITCH_JITTER = 0.06, -- variation aléatoire : jamais deux fois exactement la même note
 	POP_COMBO_RESET_SECONDS = 1.5,
+	POP_MIN_INTERVAL = 0.12, -- secondes : 8 sons par seconde au plus, quel que soit le nombre de brins coupés
+	POP_VOLUME = 0.4,
+	POP_QUIET_RATE = 10, -- coupes par seconde à partir desquelles le volume est divisé par deux
+	POP_RATE_SMOOTHING = 0.8, -- secondes de lissage de la cadence de coupe
 })

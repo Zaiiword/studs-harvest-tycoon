@@ -14,10 +14,10 @@ export type ItemDef = {
 
 return Freeze.deep({
 	ITEMS = {
-		{ id = "Mud", name = "Flaque de Boue", icon = "🟫", gemPrice = 5, chargesPerPurchase = 1 },
-		{ id = "Glove", name = "Gant de Boxe", icon = "🥊", gemPrice = 8, chargesPerPurchase = 1 },
-		{ id = "Dynamite", name = "Onde de Choc", icon = "🧨", gemPrice = 12, chargesPerPurchase = 1 },
-		{ id = "Bazooka", name = "Bazooka Éjecteur", icon = "🚀", gemPrice = nil, chargesPerPurchase = 3 },
+		{ id = "Mud", name = "Flaque de Boue", icon = "mud", gemPrice = 5, chargesPerPurchase = 1 },
+		{ id = "Glove", name = "Gant de Boxe", icon = "glove", gemPrice = 8, chargesPerPurchase = 1 },
+		{ id = "Dynamite", name = "Onde de Choc", icon = "dynamite", gemPrice = 12, chargesPerPurchase = 1 },
+		{ id = "Bazooka", name = "Bazooka Éjecteur", icon = "rocket", gemPrice = nil, chargesPerPurchase = 3 },
 	} :: { ItemDef },
 	-- Objets qu'on garde sans les utiliser (récompenses), sauvegardés avec l'inventaire.
 	TROPHIES = { LegendaryEgg = true } :: { [string]: boolean },

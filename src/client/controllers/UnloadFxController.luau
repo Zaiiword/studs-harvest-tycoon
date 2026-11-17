@@ -124,7 +124,7 @@ local function onUnloaded(value: number)
 	if target then
 		launch(value, root.Position, target)
 	end
-	floatText(root.Position, `+{Format.money(value)} 💰 au silo`)
+	floatText(root.Position, `+{Format.money(value)} $ au silo`)
 	if sound then
 		SoundService:PlayLocalSound(sound)
 	end

@@ -73,7 +73,7 @@ local TIERS: { TierDef } = {
 	{
 		id = 6,
 		name = "Moissonneuse Dorée XL",
-		price = 450_000,
+		price = 900_000,
 		hitboxStuds = 28,
 		speed = 40,
 		mass = 220,
@@ -84,7 +84,7 @@ local TIERS: { TierDef } = {
 	{
 		id = 7,
 		name = "Moissonneuse Cyber-Laser",
-		price = 3_500_000,
+		price = 12_000_000,
 		hitboxStuds = 38,
 		speed = 46,
 		mass = 350,

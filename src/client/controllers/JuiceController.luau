@@ -10,6 +10,7 @@ local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local AssetIds = require(ReplicatedStorage.Shared.config.AssetIds)
+local BumperConfig = require(ReplicatedStorage.Shared.config.BumperConfig)
 local FieldConfig = require(ReplicatedStorage.Shared.config.FieldConfig)
 local MapConfig = require(ReplicatedStorage.Shared.config.MapConfig)
 local PlantConfig = require(ReplicatedStorage.Shared.config.PlantConfig)
@@ -78,7 +79,7 @@ end
 local function cutText(index: number): (string, { number })
 	local cell = FieldController.grid():cell(index)
 	if not cell then
-		return "+🌾", { 255, 255, 255 }
+		return "+1", { 255, 255, 255 }
 	end
 	local rarity = Rarity.byId(cell.rarity)
 	local value = FieldConfig.WHEAT_ZONES[cell.zone].value * rarity.valueMultiplier
@@ -87,7 +88,7 @@ local function cutText(index: number): (string, { number })
 	elseif cell.rarity == Rarity.GIANT then
 		return `CRITIQUE ×{rarity.valueMultiplier} !`, JUICE.CRITICAL_COLOR
 	end
-	return `+{value} 🌾`, { 255, 255, 255 }
+	return `+{value}`, { 255, 255, 255 }
 end
 
 local function onCellCut(index: number, slot: number, x: number, z: number)
@@ -96,8 +97,15 @@ local function onCellCut(index: number, slot: number, x: number, z: number)
 	end
 	local text, color = cutText(index)
 	float(x, z, text, color)
+	local cell = FieldController.grid():cell(index)
+	if cell and cell.rarity ~= Rarity.NORMAL then
+		trauma = math.min(1, trauma + JUICE.SHAKE_ON_CRITICAL)
+		return
+	end
+	-- Coupe ordinaire : un frémissement, qui ne s'accumule pas au-delà du plafond.
 	local tier = Perks.tierOf(localPlayer)
-	trauma = math.min(1, trauma + JUICE.SHAKE_PER_CUT * tier.hitboxStuds / JUICE.BIGGEST_HITBOX)
+	local added = JUICE.SHAKE_PER_CUT * tier.hitboxStuds / JUICE.BIGGEST_HITBOX
+	trauma = math.max(trauma, math.min(JUICE.SHAKE_HARVEST_CAP, trauma + added))
 end
 
 -- Éjection du joueur local : forte secousse et « swoosh ».
@@ -117,7 +125,7 @@ local function shakeCamera(deltaTime: number)
 	end
 	local camera = Workspace.CurrentCamera
 	local strength = trauma * trauma * JUICE.SHAKE_MAX_ANGLE
-	local t = os.clock() * 40
+	local t = os.clock() * JUICE.SHAKE_SPEED
 	camera.CFrame *= CFrame.Angles(
 		math.noise(t, 1) * strength,
 		math.noise(t, 2) * strength,
@@ -152,6 +160,11 @@ function JuiceController:Start()
 	FieldController.CellCut:Connect(onCellCut)
 	localPlayer:GetAttributeChangedSignal(PlayerAttributes.DIZZY_UNTIL):Connect(onDizzyChanged)
 	Remotes.event(Remotes.NOTIFY).OnClientEvent:Connect(function()
+		play("reward")
+	end)
+	-- Butin d'un choc ramassé (A71) : le gain s'envole du tas, comme pour une coupe.
+	Remotes.event(Remotes.SPILL_PICKED_UP).OnClientEvent:Connect(function(x: number, z: number, places: number)
+		float(x, z, `+{places}`, BumperConfig.SPILL.PICKUP_COLOR)
 		play("reward")
 	end)
 	RunService:BindToRenderStep("JuiceShake", Enum.RenderPriority.Camera.Value + 1, shakeCamera)

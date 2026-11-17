@@ -78,7 +78,7 @@ local function refreshWeather(now: number)
 	weatherBanner.frame.Visible = isEvent
 	if isEvent then
 		local remaining = numberOf(world(WorldAttributes.WEATHER_ENDS_AT)) - now
-		weatherBanner.label.Text = `🌦️ {def.name} · {def.description} · {Format.duration(remaining)}`
+		weatherBanner.label.Text = `{def.name} · {def.description} · {Format.duration(remaining)}`
 	end
 end
 
@@ -91,11 +91,11 @@ local function refreshBoss(now: number)
 		bossBanner.fill.Size = UDim2.fromScale(hp / maxHp, 1)
 		local leaves = numberOf(world(WorldAttributes.BOSS_LEAVES_AT)) - now
 		bossBanner.label.Text =
-			`☄️ Épi de Cristal : {Format.money(hp)} PV · Top 3 récompensé · {Format.duration(leaves)}`
+			`Épi de Cristal : {Format.money(hp)} PV · Top 3 récompensé · {Format.duration(leaves)}`
 	elseif untilImpact > 0 and untilImpact <= EventConfig.METEOR.ANNOUNCE_SECONDS then
 		bossBanner.frame.Visible = true
 		bossBanner.fill.Size = UDim2.fromScale(1, 1)
-		bossBanner.label.Text = `☄️ Météorite dans {math.ceil(untilImpact)} s : fonce au bout du champ !`
+		bossBanner.label.Text = `Météorite dans {math.ceil(untilImpact)} s : fonce au bout du champ !`
 	else
 		bossBanner.frame.Visible = false
 	end
@@ -106,7 +106,7 @@ local function refreshBoost(now: number)
 	boostBanner.frame.Visible = remaining > 0
 	if remaining > 0 then
 		local multiplier = EventConfig.METEOR.REWARD_INCOME_MULTIPLIER
-		boostBanner.label.Text = `🏆 Revenus ×{multiplier} · {Format.duration(remaining)}`
+		boostBanner.label.Text = `Revenus ×{multiplier} · {Format.duration(remaining)}`
 	end
 end
 

@@ -20,7 +20,7 @@ export type Board = { rows: { Row } }
 local STYLE = DecorConfig.SCOREBOARD
 local FONT = (Enum.Font :: any)[UiConfig.FONT] :: Enum.Font
 local WHITE = Color3.new(1, 1, 1)
-local MEDALS = { "🥇", "🥈", "🥉" }
+local MEDALS = { "1er", "2e", "3e" }
 local TITLE_SHARE = 0.15 -- part de la hauteur occupée par le titre
 local STROKE = 2
 

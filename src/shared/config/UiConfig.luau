@@ -71,7 +71,7 @@ return Freeze.deep({
 		MAX_COLUMNS = 6,
 		DETAIL_WIDTH = 0.36, -- part de la largeur occupée par la fiche
 		HEADER_HEIGHT = 34, -- bandeau « Équipés 2 / 3 · Bonus ×3,4 »
-		HEADER_SHARE = 0.64, -- part du bandeau laissée au texte ; le reste pour « ⭐ MEILLEURS » (A66)
+		HEADER_SHARE = 0.64, -- part du bandeau laissée au texte ; le reste pour « MEILLEURS » (A66)
 		INDEX_MAX_COLUMNS = 7, -- l'index occupe toute la largeur de la fenêtre
 		LOCKED_TOP = { 90, 95, 110 }, -- carte d'un Pet pas encore découvert
 		LOCKED_BOTTOM = { 45, 48, 60 },
@@ -146,12 +146,12 @@ return Freeze.deep({
 		WHEEL_LABEL_RADIUS = 0.3, -- position des cases, en part du diamètre
 		POINTER_COLOR = { 230, 30, 40 },
 		QUEST_ICONS = {
-			Harvest = "🌾",
-			Corn = "🌽",
-			Diamond = "💠",
-			Bumper = "💥",
-			Unload = "🚜",
-			Boss = "☄️",
+			Harvest = "wheat",
+			Corn = "corn",
+			Diamond = "diamondWheat",
+			Bumper = "boom",
+			Unload = "silo",
+			Boss = "meteor",
 		} :: {
 			[string]: string,
 		},
@@ -202,7 +202,6 @@ return Freeze.deep({
 		MARKER_BOB = { height = 1.2, speed = 4 },
 	},
 	-- Icône de chaque palier dans la pop-up « NOUVEL OUTIL ! » (A68).
-	TIER_ICONS = { "✋", "🌾", "🚜", "🚜", "🌀", "👑", "⚡" } :: { string },
 	-- Déchargement au silo (A68) : gerbe de briques vers le silo et montant qui s'envole.
 	UNLOAD_FX = {
 		FLIGHT_SECONDS = 0.8,
@@ -252,10 +251,15 @@ return Freeze.deep({
 		FLOAT_POOL = 24,
 		FLOAT_RISE = 4,
 		FLOAT_SECONDS = 0.8,
-		SHAKE_PER_CUT = 0.08, -- « trauma » ajouté par coupe, pondéré par la taille de l'outil
+		-- Tremblement de caméra, calmé en A70 : la récolte courante ne fait qu'un frémissement plafonné ; les vraies
+		-- secousses sont réservées aux blés géants ou arc-en-ciel et à l'éjection.
+		SHAKE_PER_CUT = 0.03, -- « trauma » ajouté par coupe, pondéré par la taille de l'outil
+		SHAKE_HARVEST_CAP = 0.3, -- plafond du trauma dû aux coupes ordinaires (l'angle suit le carré : 9 % du maximum)
+		SHAKE_ON_CRITICAL = 0.55,
 		SHAKE_ON_EJECT = 0.9,
 		SHAKE_DECAY = 2.5, -- par seconde
-		SHAKE_MAX_ANGLE = 0.03, -- radians
+		SHAKE_MAX_ANGLE = 0.022, -- radians
+		SHAKE_SPEED = 26, -- vitesse du bruit : plus bas, la secousse est plus ronde
 		BIGGEST_HITBOX = 38, -- hitbox du Tier 7 : tremblement maximal par coupe
 		BOUNCE_SCALE = 0.88,
 		BOUNCE_SECONDS = 0.25,
@@ -284,21 +288,27 @@ return Freeze.deep({
 		BADGE_COLOR = { 255, 60, 90 },
 		-- Habillage de chaque offre : icône, dégradé de la carte, bandeau facultatif.
 		CARDS = {
-			InfiniteTrailer = { icon = "🚛", top = { 90, 200, 255 }, bottom = { 30, 110, 220 }, badge = "MEILLEUR" },
-			IncomeX2 = { icon = "💰", top = { 255, 220, 70 }, bottom = { 240, 140, 20 }, badge = "POPULAIRE" },
-			Titan = { icon = "🛡️", top = { 255, 120, 90 }, bottom = { 200, 40, 50 } },
-			Magnet = { icon = "🧲", top = { 200, 120, 255 }, bottom = { 120, 50, 210 } },
-			TripleHatch = { icon = "🥚", top = { 120, 235, 160 }, bottom = { 30, 160, 90 } },
-			Bazooka = { icon = "💥", top = { 255, 150, 80 }, bottom = { 220, 70, 30 } },
-			Meteor = { icon = "☄️", top = { 255, 210, 90 }, bottom = { 190, 110, 20 }, badge = "ÉPIQUE" },
+			InfiniteTrailer = {
+				icon = "trailer",
+				top = { 90, 200, 255 },
+				bottom = { 30, 110, 220 },
+				badge = "MEILLEUR",
+			},
+			IncomeX2 = { icon = "coin", top = { 255, 220, 70 }, bottom = { 240, 140, 20 }, badge = "POPULAIRE" },
+			Titan = { icon = "shield", top = { 255, 120, 90 }, bottom = { 200, 40, 50 } },
+			Magnet = { icon = "magnet", top = { 200, 120, 255 }, bottom = { 120, 50, 210 } },
+			TripleHatch = { icon = "egg:BasicEgg", top = { 120, 235, 160 }, bottom = { 30, 160, 90 } },
+			Bazooka = { icon = "rocket", top = { 255, 150, 80 }, bottom = { 220, 70, 30 } },
+			Meteor = { icon = "meteor", top = { 255, 210, 90 }, bottom = { 190, 110, 20 }, badge = "ÉPIQUE" },
 			-- Améliorations en gemmes (A65).
-			Bag = { icon = "🎒", top = { 120, 220, 255 }, bottom = { 40, 120, 210 } },
-			Blades = { icon = "⚔️", top = { 255, 140, 120 }, bottom = { 190, 50, 60 } },
-			Accountant = { icon = "📈", top = { 140, 240, 150 }, bottom = { 40, 160, 80 }, badge = "REVENUS" },
+			Bag = { icon = "backpack", top = { 120, 220, 255 }, bottom = { 40, 120, 210 } },
+			Blades = { icon = "scythe", top = { 255, 140, 120 }, bottom = { 190, 50, 60 } },
+			Accountant = { icon = "chart", top = { 140, 240, 150 }, bottom = { 40, 160, 80 }, badge = "REVENUS" },
 		} :: { [string]: { icon: string, top: { number }, bottom: { number }, badge: string? } },
 	},
 	-- Fenêtres de menu « premium » (boutique…) : dégradé, gros contour, croix rouge, ouverture qui rebondit.
 	WINDOW = {
+		DISPLAY_ORDER = 10, -- au-dessus du HUD (0), sous l'éclosion (20)
 		SCALE = { 0.9, 0.86 }, -- part de l'écran occupée, bornée par MAX_SIZE
 		MAX_SIZE = { 820, 560 },
 		HEADER_HEIGHT = 64,

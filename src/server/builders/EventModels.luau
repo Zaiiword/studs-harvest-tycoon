@@ -90,7 +90,7 @@ function EventModels.showSummoner(boss: BossModel, displayName: string)
 	label.TextScaled = true
 	label.TextColor3 = Color3.fromRGB(255, 196, 0)
 	label.TextStrokeTransparency = 0
-	label.Text = `☄️ Météorite Dorée invoquée par {displayName} !`
+	label.Text = `Météorite Dorée invoquée par {displayName} !`
 	label.Parent = gui
 	gui.Parent = core
 end

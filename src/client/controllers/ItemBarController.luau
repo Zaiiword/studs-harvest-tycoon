@@ -8,6 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local SabotageConfig = require(ReplicatedStorage.Shared.config.SabotageConfig)
 local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
+local BrickIcon = require(ReplicatedStorage.Shared.util.BrickIcon)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
@@ -70,7 +71,8 @@ local function buildSlot(column: Frame, item: SabotageConfig.ItemDef, index: num
 	slot.LayoutOrder = index
 	slot.Parent = column
 	local size = UDim2.fromOffset(ITEM_BAR.BUTTON_SIZE, ITEM_BAR.BUTTON_SIZE)
-	local use = newTextButton(slot, size, `{item.icon}`, ITEM_BAR.COLOR)
+	local use = newTextButton(slot, size, "", ITEM_BAR.COLOR)
+	BrickIcon.new(use, item.icon, UDim2.fromScale(0.84, 0.84)).Position = UDim2.fromScale(0.08, 0.04)
 	use.Activated:Connect(function()
 		remotes.use:FireServer(item.id)
 	end)
@@ -83,9 +85,10 @@ local function buildSlot(column: Frame, item: SabotageConfig.ItemDef, index: num
 	count.TextScaled = true
 	count.TextColor3 = Color3.new(1, 1, 1)
 	count.TextStrokeTransparency = 0
+	count.ZIndex = 3
 	count.Parent = use
 	countLabels[item.id] = count
-	local price = if item.gemPrice then `+ {item.gemPrice} 💎` else "Robux"
+	local price = if item.gemPrice then `{item.gemPrice} gemmes` else "Robux"
 	local buy =
 		newTextButton(slot, UDim2.fromOffset(ITEM_BAR.BUTTON_SIZE, ITEM_BAR.BUY_HEIGHT), price, ITEM_BAR.BUY_COLOR)
 	buy.Position = UDim2.fromOffset(0, ITEM_BAR.BUTTON_SIZE + 4)

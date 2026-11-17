@@ -6,7 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local UiConfig = require(ReplicatedStorage.Shared.config.UiConfig)
+local IconConfig = require(ReplicatedStorage.Shared.config.IconConfig)
 local VehicleConfig = require(ReplicatedStorage.Shared.config.VehicleConfig)
 local PlayerAttributes = require(ReplicatedStorage.Shared.net.PlayerAttributes)
 local Format = require(ReplicatedStorage.Shared.util.Format)
@@ -38,7 +38,7 @@ local function onTierChanged()
 	end
 	local tier, before = VehicleConfig.TIERS[value], VehicleConfig.TIERS[previous]
 	if tier and before then
-		RewardPopup.show(UiConfig.TIER_ICONS[value] or "⭐", describe(tier, before), "🎉 NOUVEL OUTIL ! 🎉")
+		RewardPopup.show(IconConfig.TIERS[value] or "star", describe(tier, before), "NOUVEL OUTIL !")
 	end
 end
 

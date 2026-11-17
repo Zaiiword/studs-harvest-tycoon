@@ -19,7 +19,7 @@ return Freeze.deep({
 		{
 			id = "Bag",
 			name = "Sac XXL",
-			icon = "🎒",
+			icon = "backpack",
 			description = "+10 % de places / niveau",
 			effect = "bag",
 			perLevel = 0.1,
@@ -28,7 +28,7 @@ return Freeze.deep({
 		{
 			id = "Blades",
 			name = "Lames Affûtées",
-			icon = "⚔️",
+			icon = "scythe",
 			description = "+15 % de coupe / niveau",
 			effect = "cut",
 			perLevel = 0.15,
@@ -37,7 +37,7 @@ return Freeze.deep({
 		{
 			id = "Accountant",
 			name = "Comptable Génial",
-			icon = "📈",
+			icon = "chart",
 			description = "+10 % de revenus / niveau",
 			effect = "income",
 			perLevel = 0.1,

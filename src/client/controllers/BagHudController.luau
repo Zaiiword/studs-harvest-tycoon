@@ -81,11 +81,11 @@ local function refresh()
 	if ratio >= 1 then
 		label.Text = "PLEIN !"
 	elseif blocked > capacity then
-		label.Text = `🔒 Sac trop petit : ce blé prend {blocked} places`
+		label.Text = `Sac trop petit : ce blé prend {blocked} places`
 	elseif blocked > 0 then
 		label.Text = `{count} / {capacity} · il faut {blocked} places : décharge !`
 	else
-		label.Text = `{count} / {capacity} 🌾`
+		label.Text = `{count} / {capacity}`
 	end
 	if not isAlerting then
 		fill.BackgroundColor3 = Bricks.rgb(BAR.FILL)
@@ -117,7 +117,7 @@ local function buildHomeButton(gui: ScreenGui)
 	homeButton.TextColor3 = Bricks.rgb(BAR.TEXT)
 	homeButton.Font = FONT
 	homeButton.TextScaled = true
-	homeButton.Text = "🏠 Retour Base Instantané"
+	homeButton.Text = "Retour Base Instantané"
 	homeButton.Visible = false
 	decorate(homeButton)
 	homeButton.Activated:Connect(function()

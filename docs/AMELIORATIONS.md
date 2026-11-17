@@ -61,7 +61,7 @@ la carte est maintenant belle. Il manque ce qui fait qu'un jeu Roblox se propage
 |---|---|---|
 | **L'anglais** | Tout le jeu est en français : cela exclut la très grande majorité des joueurs Roblox. | 🧑 Creator Hub → Localisation : capture automatique des textes et traduction automatique. Puis titre, description et icône en anglais. |
 | **Une accroche en une phrase** | « Tycoon de récolte avec tracteur » décrit un genre, pas une envie. Ce que les autres jeux de ferme n'ont pas : les engins qui se rentrent dedans dans un champ partagé. | À décider : l'icône et les miniatures doivent montrer ce moment-là. |
-| **Un moment que les joueurs filment** | Se faire éjecter ne coûte rien à la victime (choix assumé). Sans enjeu, pas de vidéo, pas de rivalité. | ⚖️ À décider : la victime lâche une part de son sac, ramassable par tous. Risque : frustration des plus jeunes. |
+| **Un moment que les joueurs filment** | Fait en A71 : la victime lâche 30 % de son sac. À surveiller : la frustration des plus jeunes. | ✅ A71 |
 | **Du rare qui s'échange** | Les Pets ont des raretés et un index, mais aucun échange : rien ne circule entre joueurs. | ⭐ Échange de Pets entre joueurs. Gros chantier, à sécuriser. |
 | **Du son** | Aucune musique, deux sons pour tout le jeu. La satisfaction d'une récolte passe pour moitié par l'oreille. | 🧑 Choisir musique et sons dans le Creator Store. |
 | **Des raisons de revenir à heure fixe** | Calendrier et gains hors ligne existent ; il n'y a ni marchand qui passe, ni stock limité, ni événement de week-end. | ⭐ Marchand ambulant, objectif commun du serveur, événements saisonniers. |
@@ -212,5 +212,8 @@ enjeu des chocs selon ce que montrent les chiffres.
 | A67 | Flèches vers le champ pour les débutants, apparition face au champ |
 | A68 | Premier quart d'heure : prix d'entrée, flèches utiles, effets de déchargement et de gain, « Nouvel outil », offres moins envahissantes |
 | A69 | Paysage complet autour de la carte, lumière d'après-midi, œufs en 3D, éclosion animée, HUD allégé pour les débutants |
+| A70 | Fin de partie allongée (Rebirth 500 M, prix × 2,5 par Rebirth), son de récolte et caméra adoucis |
+| A71 | Un joueur éjecté lâche 30 % de son sac en tas ramassables |
+| A72 | Icônes en briques 3D à la place des emojis |
 
 Profil sauvegardé : v6 → v9 (migration automatique, aucun profil existant n'est perdu).

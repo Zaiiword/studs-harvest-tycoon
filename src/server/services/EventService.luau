@@ -86,7 +86,7 @@ end
 
 local function refreshBossLabel(active: ActiveBoss)
 	local boss = active.boss
-	active.model.hpLabel.Text = `☄️ Épi de Cristal  {math.ceil(boss.hp)} / {boss.maxHp} PV`
+	active.model.hpLabel.Text = `Épi de Cristal  {math.ceil(boss.hp)} / {boss.maxHp} PV`
 	setWorld(WorldAttributes.BOSS_HP, math.ceil(boss.hp))
 end
 

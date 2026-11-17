@@ -17,6 +17,7 @@ local Perks = require(ReplicatedStorage.Shared.net.Perks)
 local Bricks = require(ReplicatedStorage.Shared.util.Bricks)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Trove = require(ReplicatedStorage.Packages.Trove)
+local Spill = require(ReplicatedStorage.Shared.domain.Spill)
 local FieldService = require(script.Parent.FieldService)
 local PlotService = require(script.Parent.PlotService)
 local Remotes = require(ReplicatedStorage.Shared.net.Remotes)
@@ -67,6 +68,21 @@ end
 -- Capacité du sac : celle du palier × Sac XXL (A65).
 local function capacityOf(player: Player, tier: VehicleConfig.TierDef): number
 	return math.floor(tier.capacity * multiplierOf(player, ATTR.BAG_UPGRADE))
+end
+
+-- Butin des chocs (A71) : retire du sac la part lâchée par un joueur éjecté. Renvoie (places, valeur).
+function HarvestService.spill(player: Player): (number, number)
+	local state = states[player]
+	if not state then
+		return 0, 0
+	end
+	return Spill.take(state.bag)
+end
+
+-- Ramasse un tas de butin dans le sac du joueur, dans la limite des places libres. Renvoie les places prises.
+function HarvestService.collect(player: Player, pile: Spill.Pile): number
+	local state = states[player]
+	return if state then Spill.pickUp(state.bag, pile) else 0
 end
 
 local function setIfChanged(player: Player, name: string, value: any)
@@ -160,10 +176,7 @@ local function harvestTick(player: Player, state: PlayerState)
 				unloadedRemote:FireClient(player, accepted)
 			elseif not state.hasWarnedSiloFull then
 				state.hasWarnedSiloFull = true
-				notifyRemote:FireClient(
-					player,
-					"🛢️ Silo plein ! Agrandis-le, ou monte le tapis pour le vider plus vite."
-				)
+				notifyRemote:FireClient(player, "Silo plein ! Agrandis-le, ou monte le tapis pour le vider plus vite.")
 			end
 		end
 	else

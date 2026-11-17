@@ -42,10 +42,10 @@ return Freeze.deep({
 		BEAM_HEIGHT = 5,
 		SIGN_TEXT_COLOR = { 255, 255, 255 },
 		LABELS = {
-			GreenWheat = "🌾 BLÉ VERT · ZONE SÛRE",
-			GoldenCorn = "🌽 MAÏS DORÉ · 25 $",
-			DiamondWheat = "💎 BLÉ DIAMANT · 250 $",
-			Core = "☄️ ARÈNE DU BOSS",
+			GreenWheat = "BLÉ VERT · ZONE SÛRE",
+			GoldenCorn = "MAÏS DORÉ · 25 $",
+			DiamondWheat = "BLÉ DIAMANT · 250 $",
+			Core = "ARÈNE DU BOSS",
 		} :: { [string]: string },
 		COLORS = {
 			GreenWheat = { 75, 151, 75 },
@@ -75,8 +75,8 @@ return Freeze.deep({
 			beamHeight = 4,
 			color = { 27, 42, 53 },
 			neon = { 215, 160, 35 },
-			toField = "🌾 VERS LE CHAMP 🌾",
-			toBases = "🏠 VERS LES BASES",
+			toField = "VERS LE CHAMP",
+			toBases = "VERS LES BASES",
 		},
 	},
 

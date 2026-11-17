@@ -179,7 +179,7 @@ local function onUse(player: Player, itemId: any)
 	end
 	lastUseAt[player] = now
 	InventoryService.take(player, item.id) -- consommé seulement si l'effet a eu lieu
-	feedback:FireClient(player, `{item.icon} {item.name} !`)
+	feedback:FireClient(player, `{item.name} !`)
 end
 
 local function onBuy(player: Player, itemId: any)
@@ -193,11 +193,11 @@ local function onBuy(player: Player, itemId: any)
 		return
 	end
 	if not TycoonService.spendGems(player, price) then
-		feedback:FireClient(player, `Il faut {price} 💎 pour {item.name}.`)
+		feedback:FireClient(player, `Il faut {price} gemmes pour {item.name}.`)
 		return
 	end
 	InventoryService.add(player, item.id, item.chargesPerPurchase)
-	feedback:FireClient(player, `+{item.chargesPerPurchase} {item.icon} {item.name}`)
+	feedback:FireClient(player, `+{item.chargesPerPurchase} {item.name}`)
 end
 
 -- Les engins qui roulent dans la boue d'un autre joueur tournent sur eux-mêmes (CDC §6).

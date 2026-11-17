@@ -109,6 +109,11 @@ local function buildBody(frame: Frame): Frame
 end
 
 function Window.new(parent: Instance, name: string, title: string): Window
+	-- Au-dessus du HUD, quel que soit l'ordre de chargement des contrôleurs (A72) : sans cela, la trésorerie et
+	-- l'objectif recouvraient le haut de certaines fenêtres.
+	if parent:IsA("ScreenGui") then
+		parent.DisplayOrder = math.max(parent.DisplayOrder, UiConfig.WINDOW.DISPLAY_ORDER)
+	end
 	local backdrop = buildBackdrop(parent)
 	local frame, scale = buildFrame(backdrop)
 	buildTitle(frame, title)

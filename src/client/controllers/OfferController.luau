@@ -79,10 +79,9 @@ local function buildStarter()
 	starterCard.Visible = false
 	styled(starterCard, UiConfig.BAG_BAR.BACKGROUND)
 	starterCard.Parent = screenGui
-	local title = newButton(starterCard, "🎉 STARTER PACK : offre unique !", SHOP.BUY_COLOR)
+	local title = newButton(starterCard, "STARTER PACK : offre unique !", SHOP.BUY_COLOR)
 	title.Size, title.Position, title.Active = UDim2.new(1, -16, 0, 40), UDim2.fromOffset(8, 8), false
-	local content =
-		newButton(starterCard, "🚜 Mini-Tracteur Turbo\n🐾 1 Pet Épique\n💰 10 000 $", SHOP.ROW_COLOR)
+	local content = newButton(starterCard, "Mini-Tracteur Turbo\n1 Pet Épique\n10 000 $", SHOP.ROW_COLOR)
 	content.Size, content.Position, content.Active = UDim2.new(1, -16, 0, 90), UDim2.fromOffset(8, 54), false
 	local buy = newButton(starterCard, `{priceOf("StarterPack")} R$`, SHOP.BUY_COLOR)
 	buy.Size, buy.Position = UDim2.fromOffset(180, 44), UDim2.fromOffset(8, 160)
@@ -115,7 +114,7 @@ local function refresh()
 	revengeButton.Visible = revengeLeft > 0
 	if revengeLeft > 0 then
 		local target = localPlayer:GetAttribute(PlayerAttributes.REVENGE_TARGET) or "?"
-		revengeButton.Text = `💥 Se venger ! Éjecter {target} ({priceOf("Revenge")} R$)`
+		revengeButton.Text = `Se venger ! Éjecter {target} ({priceOf("Revenge")} R$)`
 	end
 	local offerLeft = numberAttribute(PlayerAttributes.STARTER_OFFER_UNTIL) - now
 	-- A68 : l'offre attend que le joueur soit sorti du champ, pour ne pas lui cacher la route du silo.

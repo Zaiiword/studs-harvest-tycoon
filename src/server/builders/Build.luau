@@ -67,6 +67,26 @@ function Build.attached(anchor: BasePart, spec: BlockSpec): Part
 	return part
 end
 
+-- Texte qui flotte au-dessus d'une pièce, toujours tourné vers la caméra (butin des chocs).
+function Build.floatingLabel(part: BasePart, heightAbove: number, text: string): TextLabel
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.fromScale(7, 2.4)
+	gui.StudsOffset = Vector3.new(0, heightAbove, 0)
+	gui.MaxDistance = 160
+	gui.LightInfluence = 0
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = Enum.Font.FredokaOne
+	label.TextScaled = true
+	label.TextColor3 = part.Color
+	label.TextStrokeTransparency = 0
+	label.Text = text
+	label.Parent = gui
+	gui.Parent = part
+	return label
+end
+
 -- Panneau texte collé sur une face d'une pièce (enseignes, portiques).
 function Build.sign(part: BasePart, face: Enum.NormalId, text: string, color: { number }): TextLabel
 	local gui = Instance.new("SurfaceGui")
