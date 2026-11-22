@@ -2,6 +2,22 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Une entrée par sprint.
 
+## Musique et sons (A74)
+
+Préparation du test de pub de fin décembre : le jeu n'avait aucune musique et deux sons intégrés de base.
+
+### Ajouté
+- **Musique de fond** : cinq morceaux country et banjo à la ferme, deux plus rythmés tant que le boss Météorite a
+  des PV, avec un fondu entre les deux ambiances. Morceaux APM sous licence Roblox (`AudioConfig`). Le morceau
+  suivant est tiré au hasard sans rejouer le précédent (`domain/Playlist`, testé).
+- **Couper la musique** : touche M ou bouton ♪ en haut à gauche.
+
+### Modifié
+- **Sons** : un « bonk » de dessin animé à l'éjection (il n'y avait aucun son), un tintement clair pour les
+  récompenses et le déchargement au silo (joué plus grave), à la place du « ping » électronique.
+- **Docs** : `docs/FICHE_ROBLOX.md` (fiche du jeu, traductions, brief des miniatures) rapatriée sur `main`, avec le
+  plan du test de pub.
+
 ## Silo, Rebirth et récompenses : fin des raccourcis (A73)
 
 Retour du porteur de projet : le silo de départ avalait le sac de la Cyber-Laser, on gardait son blé au Rebirth (plus

@@ -63,7 +63,7 @@ la carte est maintenant belle. Il manque ce qui fait qu'un jeu Roblox se propage
 | **Une accroche en une phrase** | « Tycoon de récolte avec tracteur » décrit un genre, pas une envie. Ce que les autres jeux de ferme n'ont pas : les engins qui se rentrent dedans dans un champ partagé. | À décider : l'icône et les miniatures doivent montrer ce moment-là. |
 | **Un moment que les joueurs filment** | Fait en A71 : la victime lâche 30 % de son sac. À surveiller : la frustration des plus jeunes. | ✅ A71 |
 | **Du rare qui s'échange** | Les Pets ont des raretés et un index, mais aucun échange : rien ne circule entre joueurs. | ⭐ Échange de Pets entre joueurs. Gros chantier, à sécuriser. |
-| **Du son** | Aucune musique, deux sons pour tout le jeu. La satisfaction d'une récolte passe pour moitié par l'oreille. | 🧑 Choisir musique et sons dans le Creator Store. |
+| **Du son** | Aucune musique, deux sons pour tout le jeu. La satisfaction d'une récolte passe pour moitié par l'oreille. | ✅ A74 : musique (ferme et boss), sons d'éjection et de récompense. Reste : moteur des engins. |
 | **Des raisons de revenir à heure fixe** | Calendrier et gains hors ligne existent ; il n'y a ni marchand qui passe, ni stock limité, ni événement de week-end. | ⭐ Marchand ambulant, objectif commun du serveur, événements saisonniers. |
 | **De la profondeur** | Premier Rebirth vers 2 h 37, puis la même boucle. Les jeux qui durent ont des dizaines d'heures et une mise à jour par semaine. | ⭐ Nouvelles zones, paliers après le Rebirth. |
 | **Des chiffres** | Personne n'a encore mesuré combien de joueurs restent 10 minutes ou reviennent le lendemain. Sans cela, on règle à l'aveugle. | 🧑 Publier, puis une petite campagne de pub pour amener les mille premiers joueurs. |
